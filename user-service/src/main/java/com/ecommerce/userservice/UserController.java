@@ -12,20 +12,19 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 
-
 @RestController
 @RequestMapping("/users")
 @RequiredArgsConstructor
 public class UserController {
-  private final UserService userService;
+	private final UserService userService;
 
-  @GetMapping
-  public List<UserResponse> getUsers() {
-      return userService.getAllUsers();
-  }
+	@GetMapping
+	public List<UserResponse> getUsers() {
+		return userService.getAllUsers();
+	}
 
-  @GetMapping("/{id}")
-  public UserResponse getUser(@PathVariable String id) {
-      return userService.getUserById(id);
-  }
+	@GetMapping("/{id}")
+	public UserResponse getUser(@PathVariable String id) {
+		return userService.getUserById(id);
+	}
 }
