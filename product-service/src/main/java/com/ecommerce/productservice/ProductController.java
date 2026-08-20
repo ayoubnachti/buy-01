@@ -3,6 +3,7 @@ package com.ecommerce.productservice;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.ecommerce.productservice.dtos.ProductResponse;
+import com.ecommerce.productservice.dtos.UserResponse;
 
 import lombok.AllArgsConstructor;
 
@@ -11,7 +12,6 @@ import java.util.List;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
-
 
 
 @RestController
@@ -26,9 +26,14 @@ public class ProductController {
   }
 
   @GetMapping("/{id}")
-  public ProductResponse getMethodName(@PathVariable String id) {
+  public ProductResponse getProduct(@PathVariable String id) {
       return productService.getProductById(id);
   }
+
+  @GetMapping("/{id}/seller")
+  public UserResponse getMethodName(@PathVariable String id) {
+      return productService.getProductSeller(id);
+  }
   
-  
+
 }
