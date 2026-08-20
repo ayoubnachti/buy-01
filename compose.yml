@@ -1,5 +1,12 @@
 services:
 
+  discovery-server:
+    build: ./discovery-server
+    container_name: discovery-server
+    restart: unless-stopped
+    ports:
+      - "8761:8761"
+
   mongodb:
     image: mongo:7
     container_name: mongodb
@@ -17,8 +24,10 @@ services:
       - "8081:8081"
     environment:
       - MONGODB_URI=mongodb://mongodb:27017/users_db
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka
     depends_on:
       - mongodb
+      - discovery-server
 
   product-service:
     build: ./product-service
@@ -28,8 +37,10 @@ services:
       - "8082:8082"
     environment:
       - MONGODB_URI=mongodb://mongodb:27017/products_db
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka
     depends_on:
       - mongodb
+      - discovery-server
 
 volumes:
   mongodb_data:

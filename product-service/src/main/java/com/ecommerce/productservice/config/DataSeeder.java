@@ -1,8 +1,11 @@
-package com.ecommerce.productservice;
+package com.ecommerce.productservice.config;
 
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+
+import com.ecommerce.productservice.Product;
+import com.ecommerce.productservice.ProductRepository;
 
 @Configuration
 public class DataSeeder {
