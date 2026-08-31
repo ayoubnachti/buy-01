@@ -37,9 +37,9 @@ services:
       - MONGODB_URI=mongodb://mongodb:27017/users_db
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka
     depends_on:
-      "mongodb":
+      mongodb:
         condition: service_healthy
-      "discovery-server": 
+      discovery-server:
         condition: service_healthy
 
   product-service:
@@ -52,9 +52,21 @@ services:
       - MONGODB_URI=mongodb://mongodb:27017/products_db
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka
     depends_on:
-      "mongodb":
+      mongodb:
         condition: service_healthy
-      "discovery-server":
+      discovery-server:
+        condition: service_healthy
+
+  api-gateway:
+    build: ./api-gateway
+    container_name: api-gateway
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka
+    depends_on:
+      discovery-server:
         condition: service_healthy
 
 volumes:
