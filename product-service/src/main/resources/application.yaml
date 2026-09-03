@@ -6,6 +6,17 @@ spring:
     name: product-service
   mongodb:
     uri: ${MONGODB_URI:mongodb://localhost:27017/products_db}
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    consumer:
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      group-id: product-service
+      properties:
+        spring:
+          json:
+            trusted:
+              packages: "*"
+        
 
 eureka:
   client: 
