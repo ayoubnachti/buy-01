@@ -30,6 +30,22 @@ public class DataSeeder {
             .quantity(150)
             .userId("1")
             .build());
+        repository.save(Product.builder()
+            .id("3")
+            .name("product-3")
+            .description("product 3 description")
+            .price(12.5)
+            .quantity(150)
+            .userId("2")
+            .build());
+        repository.save(Product.builder()
+            .id("4")
+            .name("product-4")
+            .description("product 4 description")
+            .price(12.5)
+            .quantity(150)
+            .userId("2")
+            .build());
       }
     };
   }
