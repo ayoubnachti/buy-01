@@ -2,6 +2,7 @@ package com.ecommerce.productservice;
 
 import java.util.List;
 
+import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 
 import com.ecommerce.productservice.client.UserClient;
@@ -31,5 +32,10 @@ public class ProductService {
   public UserResponse getProductSeller(String id){
     ProductResponse product = getProductById(id);
     return userClient.getSeller(product.userId());
+  }
+
+  @KafkaListener(topics = "user-events", groupId = "product-service")
+  public void deleteProductByUserId(String id ) { 
+    productRepository.deleteByUserId(id);
   }
 }
