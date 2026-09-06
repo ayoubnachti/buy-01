@@ -3,6 +3,7 @@ package com.ecommerce.userservice.config;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import com.ecommerce.userservice.enums.UserRole;
 import com.ecommerce.userservice.model.User;
@@ -12,7 +13,10 @@ import com.ecommerce.userservice.repository.UserRepository;
 public class DataSeeder {
 
     @Bean
-    CommandLineRunner seedUsers(UserRepository repository) {
+    CommandLineRunner seedUsers(
+            UserRepository repository,
+            PasswordEncoder passwordEncoder) {
+
         return args -> {
             if (repository.count() == 0) {
 
@@ -22,7 +26,7 @@ public class DataSeeder {
                         .name("Ayoub Nachti")
                         .email("ayoub@gmail.com")
                         .role(UserRole.CLIENT)
-                        .password("123456")
+                        .password(passwordEncoder.encode("123456"))
                         .build()
                 );
 
@@ -32,7 +36,7 @@ public class DataSeeder {
                         .name("Bob Walts")
                         .email("Bob@gmail.com")
                         .role(UserRole.CLIENT)
-                        .password("123456")
+                        .password(passwordEncoder.encode("123456"))
                         .build()
                 );
             }
