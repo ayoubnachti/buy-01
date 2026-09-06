@@ -5,7 +5,7 @@ import java.util.List;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
-import com.ecommerce.userservice.dto.UserResponse;
+import com.ecommerce.userservice.dto.response.UserResponse;
 import com.ecommerce.userservice.events.UserDeletedEvent;
 import com.ecommerce.userservice.model.User;
 import com.ecommerce.userservice.repository.UserRepository;
