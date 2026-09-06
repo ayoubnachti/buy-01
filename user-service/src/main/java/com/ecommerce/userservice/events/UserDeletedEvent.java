@@ -1,4 +1,14 @@
 package com.ecommerce.userservice.events;
 
-public record UserDeletedEvent(String userId) {
+public class UserDeletedEvent {
+
+    private String userId;
+
+    public UserDeletedEvent(String userId) {
+        this.userId = userId;
+    }
+
+    public String getUserId() {
+        return userId;
+    }
 }

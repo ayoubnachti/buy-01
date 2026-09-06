@@ -1,7 +1,8 @@
-package com.ecommerce.userservice.dtos;
+package com.ecommerce.userservice.dto;
 
-import com.ecommerce.userservice.User;
-import com.ecommerce.userservice.UserRole;
+import com.ecommerce.userservice.model.User;
+
+import com.ecommerce.userservice.enums.UserRole;
 
 public record UserResponse(
 		String id,
