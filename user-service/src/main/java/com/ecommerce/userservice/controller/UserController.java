@@ -2,12 +2,11 @@ package com.ecommerce.userservice.controller;
 
 import org.springframework.web.bind.annotation.RestController;
 
-import com.ecommerce.userservice.dto.UserResponse;
-
 import lombok.RequiredArgsConstructor;
 
 import java.util.List;
 
+import com.ecommerce.userservice.dto.response.UserResponse;
 import com.ecommerce.userservice.service.UserService;
 
 import org.springframework.http.ResponseEntity;
