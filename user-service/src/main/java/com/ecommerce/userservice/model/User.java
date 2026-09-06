@@ -1,4 +1,4 @@
-package com.ecommerce.userservice;
+package com.ecommerce.userservice.model;
 
 import java.time.Instant;
 
@@ -10,6 +10,9 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+
+import com.ecommerce.userservice.enums.UserRole;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -23,28 +26,28 @@ import lombok.Setter;
 @Setter
 @Builder
 public class User {
-  @Id
-  private String id;
 
-  @NotBlank
-  private String name;
+    @Id
+    private String id;
 
-  @NotBlank
-  @Email
-  @Indexed(unique = true)
-  private String email;
+    @NotBlank
+    private String name;
 
-  @NotBlank
-  private UserRole role; 
+    @NotBlank
+    @Email
+    @Indexed(unique = true)
+    private String email;
 
-  @NotBlank
-  private String password;
+    private UserRole role;
 
-  private String avatar;
+    @NotBlank
+    private String password;
 
-  @CreatedDate
-  private Instant createdAt;
+    private String avatar;
 
-  @LastModifiedDate
-  private Instant updatedAt;
+    @CreatedDate
+    private Instant createdAt;
+
+    @LastModifiedDate
+    private Instant updatedAt;
 }
