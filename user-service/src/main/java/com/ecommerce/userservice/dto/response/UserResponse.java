@@ -1,4 +1,4 @@
-package com.ecommerce.userservice.dto;
+package com.ecommerce.userservice.dto.response;
 
 import com.ecommerce.userservice.model.User;
 
