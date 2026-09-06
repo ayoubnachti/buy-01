@@ -20,11 +20,15 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
 
+    public boolean validateJwt(String userId, String role) {
+        return userId != null && !userId.isBlank()
+                && role != null && !role.isBlank();
+    }
+
     public String login(LoginRequest request) {
 
         User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() ->
-                        new BadCredentialsException("Invalid email or password"));
+                .orElseThrow(() -> new BadCredentialsException("Invalid email or password"));
 
         if (!passwordEncoder.matches(
                 request.getPassword(),
@@ -51,8 +55,7 @@ public class AuthService {
 
         // Hash password before saving
         user.setPassword(
-                passwordEncoder.encode(request.getPassword())
-        );
+                passwordEncoder.encode(request.getPassword()));
 
         user.setRole(request.getRole());
 
@@ -65,7 +68,6 @@ public class AuthService {
                 savedUser.getName(),
                 savedUser.getEmail(),
                 savedUser.getRole(),
-                savedUser.getAvatar()
-        );
+                savedUser.getAvatar());
     }
 }
