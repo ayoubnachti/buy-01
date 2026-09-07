@@ -1,9 +1,9 @@
-package com.ecommerce.productservice;
+package com.ecommerce.productservice.controllers;
 
 import org.springframework.web.bind.annotation.RestController;
 
-import com.ecommerce.productservice.dtos.ProductResponse;
-import com.ecommerce.productservice.dtos.UserResponse;
+import com.ecommerce.productservice.dtos.response.*;
+import com.ecommerce.productservice.services.ProductService;
 
 import lombok.AllArgsConstructor;
 
