@@ -2,6 +2,7 @@ package com.ecommerce.apigateway.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
@@ -29,11 +30,11 @@ public class SecurityConfig {
                     "/auth/register",
                     "/actuator/health"
                 ).permitAll()
+                .requestMatchers(HttpMethod.GET,"/products", "/products/*").permitAll()
 
                 // Everything else requires authentication
                 .anyRequest().authenticated()
             )
-
             .addFilterBefore(
                 jwtAuthenticationFilter,
                 UsernamePasswordAuthenticationFilter.class
