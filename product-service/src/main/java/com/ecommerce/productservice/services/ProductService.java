@@ -40,10 +40,7 @@ public class ProductService {
     return userClient.getSeller(product.userId());
   }
 
-  public Product create(CreateProductRequest request, String sellerId, String userRole) {
-    if (!"SELLER".equals(userRole)) {
-      throw new ForbiddenException("Only sellers can create products");
-    }
+  public Product create(CreateProductRequest request, String sellerId) {
 
     Product product = Product.builder()
         .name(request.name())
