@@ -1,12 +1,15 @@
 package com.ecommerce.productservice.services;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 
 import com.ecommerce.productservice.client.UserClient;
+import com.ecommerce.productservice.dtos.request.CreateProductRequest;
 import com.ecommerce.productservice.dtos.response.*;
+import com.ecommerce.productservice.exceptions.custom.ForbiddenException;
 import com.ecommerce.productservice.exceptions.custom.ResourceNotFoundException;
 import com.ecommerce.productservice.models.Product;
 import com.ecommerce.productservice.repositories.ProductRepository;
@@ -35,6 +38,22 @@ public class ProductService {
   public UserResponse getProductSeller(String id) {
     ProductResponse product = getProductById(id);
     return userClient.getSeller(product.userId());
+  }
+
+  public Product create(CreateProductRequest request, String sellerId, String userRole) {
+    if (!"SELLER".equals(userRole)) {
+      throw new ForbiddenException("Only sellers can create products");
+    }
+
+    Product product = Product.builder()
+        .name(request.name())
+        .description(request.description())
+        .price(request.price())
+        .quantity(request.quantity())
+        .userId(sellerId)
+        .imageUrls(new ArrayList<>())
+        .build();
+    return productRepository.save(product);
   }
 
   @KafkaListener(topics = "user-events", groupId = "product-service")
