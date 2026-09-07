@@ -1,5 +1,7 @@
 package com.ecommerce.productservice.config;
 
+import java.math.BigDecimal;
+
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -18,7 +20,7 @@ public class DataSeeder {
             .id("1")
             .name("product-1")
             .description("product 1 description")
-            .price(10.)
+            .price(BigDecimal.valueOf(10.00))
             .quantity(100)
             .userId("1")
             .build());
@@ -26,7 +28,7 @@ public class DataSeeder {
             .id("2")
             .name("product-2")
             .description("product 2 description")
-            .price(12.5)
+            .price(BigDecimal.valueOf(12.50))
             .quantity(150)
             .userId("1")
             .build());
@@ -34,7 +36,7 @@ public class DataSeeder {
             .id("3")
             .name("product-3")
             .description("product 3 description")
-            .price(12.5)
+            .price(BigDecimal.valueOf(12.50))
             .quantity(150)
             .userId("2")
             .build());
@@ -42,7 +44,7 @@ public class DataSeeder {
             .id("4")
             .name("product-4")
             .description("product 4 description")
-            .price(12.5)
+            .price(BigDecimal.valueOf(12.50))
             .quantity(150)
             .userId("2")
             .build());
