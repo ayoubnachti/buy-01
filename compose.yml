@@ -106,6 +106,7 @@ services:
     ports:
       - "8080:8080"
     environment:
+      - CORS_ALLOWED_ORIGIN=http://localhost:4200
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka
     depends_on:
       discovery-server:
