@@ -7,7 +7,8 @@ import org.springframework.resilience.annotation.Retryable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
-import com.ecommerce.productservice.dtos.UserResponse;
+import com.ecommerce.productservice.dtos.response.UserResponse;
+
 
 
 @Service
