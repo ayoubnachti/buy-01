@@ -1,6 +1,6 @@
-package com.ecommerce.productservice.dtos;
+package com.ecommerce.productservice.dtos.response;
 
-import com.ecommerce.productservice.Product;
+import com.ecommerce.productservice.models.Product;
 
 public record ProductResponse(
         String id,

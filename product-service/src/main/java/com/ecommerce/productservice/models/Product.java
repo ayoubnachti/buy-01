@@ -1,4 +1,4 @@
-package com.ecommerce.productservice;
+package com.ecommerce.productservice.models;
 
 import java.time.Instant;
 
