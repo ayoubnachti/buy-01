@@ -14,6 +14,7 @@ import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -37,13 +38,12 @@ public class ProductController {
     return productService.getProductById(id);
   }
 
+  @PreAuthorize("hasRole('SELLER')")
   @PostMapping
   public ResponseEntity<ProductResponse> createProduct(
       @Valid @RequestBody CreateProductRequest request,
-      @RequestHeader("X-User-Id") String userId,
-      @RequestHeader("X-User-Role") String userRole) {
-
-    Product product = productService.create(request, userId, userRole);
+      @RequestHeader("X-User-Id") String userId) {
+    Product product = productService.create(request, userId);
     return ResponseEntity.status(HttpStatus.CREATED).body(ProductResponse.from(product));
   }
 
