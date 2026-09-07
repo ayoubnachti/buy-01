@@ -2,6 +2,7 @@ package com.ecommerce.apigateway.security;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 
 import javax.crypto.SecretKey;
 
@@ -24,100 +25,95 @@ import jakarta.servlet.http.HttpServletResponse;
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
-    private final SecretKey secretKey;
+        public static final String USER_ID_ATTRIBUTE = "userId";
+        public static final String USER_ROLE_ATTRIBUTE = "role";
 
-    public JwtAuthenticationFilter(
-            @Value("${jwt.secret}") String secret) {
+        private final SecretKey secretKey;
 
-        this.secretKey = Keys.hmacShaKeyFor(
-                secret.getBytes(StandardCharsets.UTF_8)
-        );
-    }
+        public JwtAuthenticationFilter(
+                        @Value("${jwt.secret}") String secret) {
 
-    @Override
-    protected void doFilterInternal(
-            HttpServletRequest request,
-            HttpServletResponse response,
-            FilterChain filterChain)
-            throws ServletException, IOException {
-
-        String authorizationHeader =
-                request.getHeader(HttpHeaders.AUTHORIZATION);
-
-        // No JWT → let Spring Security handle authentication
-        if (authorizationHeader == null
-                || !authorizationHeader.startsWith("Bearer ")) {
-
-            filterChain.doFilter(request, response);
-            return;
+                this.secretKey = Keys.hmacShaKeyFor(
+                                secret.getBytes(StandardCharsets.UTF_8));
         }
 
-        String token = authorizationHeader.substring(7);
+        @Override
+        protected void doFilterInternal(
+                        HttpServletRequest request,
+                        HttpServletResponse response,
+                        FilterChain filterChain)
+                        throws ServletException, IOException {
 
-        try {
+                String authorizationHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
 
-            Claims claims = Jwts.parser()
-                    .verifyWith(secretKey)
-                    .build()
-                    .parseSignedClaims(token)
-                    .getPayload();
+                // No JWT.
+                // Let Spring Security decide whether the endpoint is public.
+                if (authorizationHeader == null
+                                || !authorizationHeader.startsWith("Bearer ")) {
 
-            String userId = claims.get("userId", String.class);
-            String role = claims.get("role", String.class);
+                        filterChain.doFilter(request, response);
+                        return;
+                }
 
-            if (userId == null || role == null) {
-                sendUnauthorized(response, "Invalid JWT claims");
-                return;
-            }
+                String token = authorizationHeader.substring(7);
 
-            /*
-             * Put authenticated user into Spring Security context.
-             */
-            var authorities = java.util.List.of(
-                    new SimpleGrantedAuthority("ROLE_" + role)
-            );
+                try {
 
-            var authentication =
-                    new UsernamePasswordAuthenticationToken(
-                            userId,
-                            null,
-                            authorities
-                    );
+                        Claims claims = Jwts.parser()
+                                        .verifyWith(secretKey)
+                                        .build()
+                                        .parseSignedClaims(token)
+                                        .getPayload();
 
-            SecurityContextHolder
-                    .getContext()
-                    .setAuthentication(authentication);
+                        String userId = claims.get("userId", String.class);
+                        String role = claims.get("role", String.class);
 
-            /*
-             * Forward trusted user information
-             * to the downstream microservice.
-             */
-            HttpServletRequest wrappedRequest =
-                    new UserClaimsRequestWrapper(
-                            request,
-                            userId,
-                            role
-                    );
+                        if (userId == null || role == null) {
+                                sendUnauthorized(response, "Invalid JWT claims");
+                                return;
+                        }
 
-            filterChain.doFilter(wrappedRequest, response);
+                        var authorities = List.of(
+                                        new SimpleGrantedAuthority("ROLE_" + role));
 
-        } catch (Exception e) {
+                        var authentication = new UsernamePasswordAuthenticationToken(
+                                        userId,
+                                        null,
+                                        authorities);
 
-            SecurityContextHolder.clearContext();
+                        SecurityContextHolder
+                                        .getContext()
+                                        .setAuthentication(authentication);
 
-            sendUnauthorized(response, "Invalid or expired JWT");
+                        /*
+                         * Store trusted JWT claims as request attributes.
+                         *
+                         * The Gateway WebMVC filter will read these values
+                         * and inject them into the downstream request.
+                         */
+                        request.setAttribute(USER_ID_ATTRIBUTE, userId);
+                        request.setAttribute(USER_ROLE_ATTRIBUTE, role);
+
+                        filterChain.doFilter(request, response);
+
+                } catch (Exception e) {
+
+                        SecurityContextHolder.clearContext();
+
+                        sendUnauthorized(
+                                        response,
+                                        "Invalid or expired JWT");
+                }
         }
-    }
 
-    private void sendUnauthorized(
-            HttpServletResponse response,
-            String message) throws IOException {
+        private void sendUnauthorized(
+                        HttpServletResponse response,
+                        String message) throws IOException {
 
-        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-        response.setContentType("application/json");
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                response.setContentType("application/json");
 
-        response.getWriter().write(
-                "{\"error\":\"" + message + "\"}"
-        );
-    }
+                response.getWriter().write(
+                                "{\"error\":\"" + message + "\"}");
+        }
 }
