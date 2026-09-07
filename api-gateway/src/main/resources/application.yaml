@@ -36,3 +36,6 @@ eureka:
 logging:
   level:
     org.springframework.cloud.gateway: DEBUG
+
+cors:
+  allowed-origin: ${CORS_ALLOWED_ORIGIN:http://localhost:4200}
