@@ -99,6 +99,24 @@ services:
       kafka:
         condition: service_healthy
 
+  media-service:
+    build: ./media-service
+    container_name: media-service
+    restart: unless-stopped
+    ports:
+      - "8083:8083"
+    environment:
+      - MONGODB_URI=mongodb://mongodb:27017/media_db
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      discovery-server:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+
   api-gateway:
     build: ./api-gateway
     container_name: api-gateway
@@ -106,7 +124,6 @@ services:
     ports:
       - "8080:8080"
     environment:
-      - CORS_ALLOWED_ORIGIN=http://localhost:4200
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka
     depends_on:
       discovery-server:
