@@ -24,3 +24,9 @@ logging:
 
 cors:
   allowed-origin: ${CORS_ALLOWED_ORIGIN:http://localhost:4200}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
