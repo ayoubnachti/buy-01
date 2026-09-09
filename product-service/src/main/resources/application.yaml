@@ -16,7 +16,6 @@ spring:
           json:
             trusted:
               packages: "*"
-        
 
 eureka:
   client: 
