@@ -1,1 +1,62 @@
-/* You can add global styles to this file, and also import other style files */
+:root {
+  /* Buy-01 design tokens */
+  --color-bg: #fafaf9;
+  --color-text: #1a1a18;      /* dark ink */
+  --color-accent: #0f6e56;    /* teal — status/emphasis */
+  --color-accent-hover: #085041;
+  --color-border: #e5e3de;
+
+  /* Bootstrap 5 CSS variable overrides */
+  --bs-body-bg: var(--color-bg);
+  --bs-body-color: var(--color-text);
+  --bs-primary: var(--color-accent);
+  --bs-primary-rgb: 15, 110, 86;   /* teal as r,g,b for Bootstrap's rgba() usages */
+  --bs-border-color: var(--color-border);
+}
+
+body {
+  background-color: var(--color-bg);
+  color: var(--color-text);
+}
+
+.btn-primary {
+  --bs-btn-bg: var(--color-accent) ;
+  --bs-btn-border-color: var(--color-accent);
+  --bs-btn-hover-bg: var(--color-accent-hover) ;
+  --bs-btn-hover-border-color: var(--color-accent-hover) ;
+  --bs-btn-active-bg: var(--color-accent-hover);
+  --bs-btn-active-border-color: var(--color-accent-hover);
+}
+
+.btn-outline-primary {
+  --bs-btn-color: var(--color-accent) ;
+  --bs-btn-border-color: var(--color-accent);
+  --bs-btn-hover-bg: var(--color-accent);
+  --bs-btn-hover-border-color: var(--color-accent);
+}
+
+.form-control:focus,
+.form-select:focus {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 0.25rem rgba(15, 110, 86, 0.25); /* teal, matches --color-accent */
+}
+
+.form-check-input:checked {
+  background-color: var(--color-accent);
+  border-color: var(--color-accent);
+}
+
+.form-check-input:focus {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 0.25rem rgba(15, 110, 86, 0.25);
+}
+
+.role-client {
+  background-color: var(--color-border);
+  color: var(--color-text);
+}
+
+.role-seller {
+  background-color: var(--color-accent);
+  color: #fafaf9;
+}
