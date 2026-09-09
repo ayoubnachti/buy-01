@@ -42,7 +42,18 @@ public class GatewayRoutesConfig {
                         .filter(lb("product-service"))
                         .build();
 
+        RouterFunction<ServerResponse> mediaServiceRoute =
+                route("media-service-route")
+                        .route(
+                                request -> request.path().startsWith("/media"),
+                                http()
+                        )
+                        .before(userClaimsGatewayFilter::apply)
+                        .filter(lb("media-service"))
+                        .build();
+
         return userServiceRoute
-                .and(productServiceRoute);
+                .and(productServiceRoute)
+                .and(mediaServiceRoute);
     }
 }
