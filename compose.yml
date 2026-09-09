@@ -129,6 +129,21 @@ services:
       discovery-server:
         condition: service_healthy
 
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    container_name: frontend
+    restart: unless-stopped
+    ports:
+      - "4200:4200"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    depends_on:
+      api-gateway:
+        condition: service_healthy
+
 volumes:
   mongodb_data:
 
