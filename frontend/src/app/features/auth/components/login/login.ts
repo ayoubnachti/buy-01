@@ -16,7 +16,7 @@ import { AuthService } from '../../services/auth.service';
     RouterLink
   ],
   templateUrl: './login.html',
-  styleUrl: './login.css',
+  styleUrl: './../../styles/auth.css',
 })
 export class Login implements OnInit {
 
@@ -25,6 +25,9 @@ export class Login implements OnInit {
   private readonly router = inject(Router);
 
   readonly isLoading = signal(false);
+
+  readonly showPassword = signal(false);
+  
   readonly errorMessage = signal('');
 
   ngOnInit(): void {
