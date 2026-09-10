@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.ecommerce.userservice.dto.request.LoginRequest;
 import com.ecommerce.userservice.dto.request.RegisterRequest;
+import com.ecommerce.userservice.dto.response.ApiResponse;
 import com.ecommerce.userservice.service.AuthService;
 
 import jakarta.validation.Valid;
@@ -20,31 +21,33 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class AuthController {
 
-    private final AuthService authService;
+        private final AuthService authService;
 
-    @PostMapping("/login")
-    public ResponseEntity<?> login(
-            @Valid @RequestBody LoginRequest request) {
+        @PostMapping("/login")
+        public ResponseEntity<ApiResponse<String>> login(
+                        @Valid @RequestBody LoginRequest request) {
 
-        return ResponseEntity.ok(
-                authService.login(request));
-    }
+                return ResponseEntity.ok(
+                                authService.login(request));
+        }
 
-    @PostMapping("/validateJwt")
-    public ResponseEntity<?> validationJwt(
-            @RequestHeader("X-User-Id") String userId,
-            @RequestHeader("X-User-Role") String role) {
+        @PostMapping("/validateJwt")
+        public ResponseEntity<ApiResponse<Boolean>> validationJwt(
+                        @RequestHeader("X-User-Id") String userId,
+                        @RequestHeader("X-User-Role") String role) {
 
-        return ResponseEntity.ok(
-                authService.validateJwt(userId, role));
-    }
+                return ResponseEntity.ok(
+                                ApiResponse.success(
+                                                "JWT is valid",
+                                                authService.validateJwt(userId, role)));
+        }
 
-    @PostMapping("/register")
-    public ResponseEntity<?> register(
-            @Valid @RequestBody RegisterRequest request) {
+        @PostMapping("/register")
+        public ResponseEntity<ApiResponse<Void>> register(
+                        @Valid @RequestBody RegisterRequest request) {
 
-        return ResponseEntity
-                .status(HttpStatus.CREATED)
-                .body(authService.register(request));
-    }
+                return ResponseEntity
+                                .status(HttpStatus.CREATED)
+                                .body(authService.register(request));
+        }
 }
