@@ -38,7 +38,7 @@ describe('Register', () => {
 
         provideRouter([
           {
-            path: 'auth/login',
+            path: 'login',
             component: DummyComponent
           }
         ])
@@ -303,7 +303,7 @@ describe('Register', () => {
     component.onSubmit();
 
     expect(navigateSpy)
-      .toHaveBeenCalledWith(['/auth/login']);
+      .toHaveBeenCalledWith(['/login']);
 
   });
 
