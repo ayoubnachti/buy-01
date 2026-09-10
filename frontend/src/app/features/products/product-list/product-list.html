@@ -1,0 +1,45 @@
+<div class="container py-5">
+  <h1 class="mb-4">Products</h1>
+
+  @if (loading()) {
+    <div class="text-center text-secondary py-5">
+      Loading products…
+    </div>
+  }
+
+  @if (error()) {
+    <div class="alert alert-danger" role="alert">
+      Couldn't load products. Please try again later.
+    </div>
+  }
+
+  @if (!loading() && !error() && products().length === 0) {
+    <div class="text-secondary py-5">
+      No products yet.
+    </div>
+  }
+
+  @if (!loading() && !error() && products().length > 0) {
+    <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4">
+      @for (product of products(); track product.id) {
+        <div class="col">
+          <div class="card h-100">
+            @if (product.imageUrls && product.imageUrls.length > 0) {
+              <img
+                [src]="product.imageUrls[0]"
+                [alt]="product.name"
+                class="card-img-top"
+                style="height: 180px; object-fit: cover;"
+              />
+            }
+            <div class="card-body">
+              <h5 class="card-title">{{ product.name }}</h5>
+              <p class="card-text text-secondary">{{ product.description }}</p>
+              <p class="fw-semibold">{{ product.price | currency }}</p>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+  }
+</div>
