@@ -16,7 +16,7 @@ import { AuthService } from '../../services/auth.service';
     RouterLink
   ],
   templateUrl: './register.html',
-  styleUrl: './register.css',
+  styleUrl: './../../styles/auth.css',
 })
 export class Register implements OnInit {
 
@@ -28,6 +28,8 @@ export class Register implements OnInit {
   readonly errorMessage = signal('');
   readonly successMessage = signal('');
 
+  readonly showPassword = signal(false);
+  
   readonly registerForm = this.fb.nonNullable.group({
 
     name: ['', [
