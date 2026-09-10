@@ -1,0 +1,305 @@
+<div class="auth-page">
+
+  <main class="auth-card">
+
+    <!-- Header -->
+    <header class="auth-header">
+
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true">B</span>
+        <span class="brand-name">Buy-01</span>
+      </div>
+
+      <h1>Create your account</h1>
+
+      <p>
+        Join Buy-01 and start shopping or selling today.
+      </p>
+
+    </header>
+
+
+    <!-- Server error -->
+    @if (errorMessage()) {
+      <div
+        class="alert alert-error"
+        role="alert"
+        aria-live="assertive"
+      >
+        {{ errorMessage() }}
+      </div>
+    }
+
+
+    <!-- Success message -->
+    @if (successMessage()) {
+      <div
+        class="alert alert-success"
+        role="status"
+        aria-live="polite"
+      >
+        {{ successMessage() }}
+      </div>
+    }
+
+
+    <!-- Register form -->
+    <form
+      [formGroup]="registerForm"
+      (ngSubmit)="onSubmit()"
+      novalidate
+      aria-label="Create account"
+    >
+
+      <!-- Name -->
+      <div class="form-group">
+
+        <label for="name">
+          Full name
+        </label>
+
+        <input
+          id="name"
+          type="text"
+          formControlName="name"
+          autocomplete="name"
+          placeholder="Enter your full name"
+          [attr.aria-invalid]="name.invalid && name.touched"
+          [attr.aria-describedby]="
+            name.invalid && name.touched
+              ? 'name-error'
+              : null
+          "
+        />
+
+        @if (name.invalid && name.touched) {
+          <div
+            id="name-error"
+            class="field-error"
+            role="alert"
+          >
+
+            @if (name.hasError('required')) {
+              <span>Name is required.</span>
+            }
+
+            @if (name.hasError('minlength')) {
+              <span>
+                Name must be at least 2 characters.
+              </span>
+            }
+
+            @if (name.hasError('maxlength')) {
+              <span>
+                Name cannot exceed 50 characters.
+              </span>
+            }
+
+          </div>
+        }
+
+      </div>
+
+
+      <!-- Email -->
+      <div class="form-group">
+
+        <label for="email">
+          Email address
+        </label>
+
+        <input
+          id="email"
+          type="email"
+          formControlName="email"
+          autocomplete="email"
+          inputmode="email"
+          placeholder="you@example.com"
+          [attr.aria-invalid]="email.invalid && email.touched"
+          [attr.aria-describedby]="
+            email.invalid && email.touched
+              ? 'email-error'
+              : null
+          "
+        />
+
+        @if (email.invalid && email.touched) {
+          <div
+            id="email-error"
+            class="field-error"
+            role="alert"
+          >
+
+            @if (email.hasError('required')) {
+              <span>Email is required.</span>
+            }
+
+            @if (email.hasError('email')) {
+              <span>
+                Please enter a valid email address.
+              </span>
+            }
+
+          </div>
+        }
+
+      </div>
+
+
+      <!-- Password -->
+      <div class="form-group">
+
+        <label for="password">
+          Password
+        </label>
+
+        <input
+          id="password"
+          type="password"
+          formControlName="password"
+          autocomplete="new-password"
+          placeholder="Create a password"
+          [attr.aria-invalid]="password.invalid && password.touched"
+          [attr.aria-describedby]="
+            password.invalid && password.touched
+              ? 'password-error password-hint'
+              : 'password-hint'
+          "
+        />
+
+        <small
+          id="password-hint"
+          class="input-hint"
+        >
+          Use at least 8 characters.
+        </small>
+
+        @if (password.invalid && password.touched) {
+          <div
+            id="password-error"
+            class="field-error"
+            role="alert"
+          >
+
+            @if (password.hasError('required')) {
+              <span>Password is required.</span>
+            }
+
+            @if (password.hasError('minlength')) {
+              <span>
+                Password must be at least 8 characters.
+              </span>
+            }
+
+            @if (password.hasError('maxlength')) {
+              <span>
+                Password cannot exceed 100 characters.
+              </span>
+            }
+
+          </div>
+        }
+
+      </div>
+
+
+      <!-- Account type -->
+      <fieldset class="role-group">
+
+        <legend>
+          Account type
+        </legend>
+
+        <p class="role-description">
+          Choose how you want to use Buy-01.
+        </p>
+
+        <div class="role-options">
+
+          <!-- Client -->
+          <label class="role-option">
+
+            <input
+              type="radio"
+              formControlName="role"
+              value="CLIENT"
+            />
+
+            <span class="role-content">
+
+              <span class="role-title">
+                Client
+              </span>
+
+              <span class="role-text">
+                Shop products from sellers
+              </span>
+
+            </span>
+
+          </label>
+
+
+          <!-- Seller -->
+          <label class="role-option">
+
+            <input
+              type="radio"
+              formControlName="role"
+              value="SELLER"
+            />
+
+            <span class="role-content">
+
+              <span class="role-title">
+                Seller
+              </span>
+
+              <span class="role-text">
+                Sell and manage your products
+              </span>
+
+            </span>
+
+          </label>
+
+        </div>
+
+      </fieldset>
+
+
+      <!-- Submit -->
+      <button
+        type="submit"
+        class="submit-btn"
+        [disabled]="isLoading()"
+        [attr.aria-busy]="isLoading()"
+      >
+
+        @if (isLoading()) {
+          <span>Creating account...</span>
+        } @else {
+          <span>Create account</span>
+        }
+
+      </button>
+
+    </form>
+
+
+    <!-- Login link -->
+    <footer class="auth-footer">
+
+      <span>
+        Already have an account?
+      </span>
+
+      <a routerLink="/auth/login">
+        Sign in
+      </a>
+
+    </footer>
+
+  </main>
+
+</div>

@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 
 import com.ecommerce.userservice.dto.request.LoginRequest;
 import com.ecommerce.userservice.dto.request.RegisterRequest;
+import com.ecommerce.userservice.dto.response.ApiResponse;
 import com.ecommerce.userservice.dto.response.RegisterResponse;
 import com.ecommerce.userservice.model.User;
 import com.ecommerce.userservice.repository.UserRepository;
@@ -16,58 +17,64 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class AuthService {
 
-    private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder;
-    private final JwtService jwtService;
+        private final UserRepository userRepository;
+        private final PasswordEncoder passwordEncoder;
+        private final JwtService jwtService;
 
-    public boolean validateJwt(String userId, String role) {
-        return userId != null && !userId.isBlank()
-                && role != null && !role.isBlank();
-    }
-
-    public String login(LoginRequest request) {
-
-        User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new BadCredentialsException("Invalid email or password"));
-
-        if (!passwordEncoder.matches(
-                request.getPassword(),
-                user.getPassword())) {
-
-            throw new BadCredentialsException("Invalid email or password");
+        public boolean validateJwt(String userId, String role) {
+                return userId != null && !userId.isBlank()
+                                && role != null && !role.isBlank();
         }
 
-        return jwtService.generateToken(user);
-    }
+        public ApiResponse<String> login(LoginRequest request) {
 
-    public RegisterResponse register(RegisterRequest request) {
+                String email = request.getEmail()
+                                .trim()
+                                .toLowerCase();
 
-        // Check if email already exists
-        if (userRepository.findByEmail(request.getEmail()).isPresent()) {
-            throw new IllegalArgumentException("Email already exists");
+                User user = userRepository.findByEmail(email)
+                                .orElseThrow(() -> new BadCredentialsException(
+                                                "Invalid email or password"));
+
+                if (!passwordEncoder.matches(
+                                request.getPassword(),
+                                user.getPassword())) {
+
+                        throw new BadCredentialsException(
+                                        "Invalid email or password");
+                }
+
+                String token = jwtService.generateToken(user);
+
+                return ApiResponse.success(
+                                "Login successful",
+                                token);
         }
 
-        // Create user
-        User user = new User();
+        public ApiResponse<Void> register(RegisterRequest request) {
 
-        user.setName(request.getName());
-        user.setEmail(request.getEmail());
+                String email = request.getEmail()
+                                .trim()
+                                .toLowerCase();
 
-        // Hash password before saving
-        user.setPassword(
-                passwordEncoder.encode(request.getPassword()));
+                String name = request.getName()
+                                .trim();
 
-        user.setRole(request.getRole());
+                if (userRepository.findByEmail(email).isPresent()) {
+                        throw new IllegalArgumentException("Email already exists");
+                }
 
-        // Save user
-        User savedUser = userRepository.save(user);
+                User user = User.builder()
+                                .name(name)
+                                .email(email)
+                                .password(passwordEncoder.encode(request.getPassword()))
+                                .role(request.getRole())
+                                .build();
 
-        // Return response WITHOUT password
-        return new RegisterResponse(
-                savedUser.getId(),
-                savedUser.getName(),
-                savedUser.getEmail(),
-                savedUser.getRole(),
-                savedUser.getAvatar());
-    }
+                userRepository.save(user);
+
+                return ApiResponse.success(
+                                "User registered successfully",
+                                null);
+        }
 }

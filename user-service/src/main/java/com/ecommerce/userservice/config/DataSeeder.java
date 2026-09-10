@@ -26,7 +26,7 @@ public class DataSeeder {
                         .name("Ayoub Nachti")
                         .email("ayoub@gmail.com")
                         .role(UserRole.CLIENT)
-                        .password(passwordEncoder.encode("123456"))
+                        .password(passwordEncoder.encode("12345678"))
                         .build()
                 );
 
@@ -36,7 +36,7 @@ public class DataSeeder {
                         .name("Bob Walts")
                         .email("Bob@gmail.com")
                         .role(UserRole.CLIENT)
-                        .password(passwordEncoder.encode("123456"))
+                        .password(passwordEncoder.encode("12345678"))
                         .build()
                 );
             }
