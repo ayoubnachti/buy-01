@@ -5,6 +5,7 @@
   --color-accent: #0f6e56;    /* teal — status/emphasis */
   --color-accent-hover: #085041;
   --color-border: #e5e3de;
+  --color-error: rgb(252, 29, 29);
 
   /* Bootstrap 5 CSS variable overrides */
   --bs-body-bg: var(--color-bg);
