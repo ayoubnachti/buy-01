@@ -25,7 +25,8 @@ public class GatewayRoutesConfig {
         RouterFunction<ServerResponse> userServiceRoute =
                 route("user-service-route")
                         .route(
-                                request -> request.path().startsWith("/auth/"),
+                                request -> request.path().startsWith("/auth/") ||
+                                 request.path().equals("/MyProfile"),
                                 http()
                         )
                         .before(userClaimsGatewayFilter::apply)
