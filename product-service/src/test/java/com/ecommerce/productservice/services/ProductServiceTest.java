@@ -86,7 +86,8 @@ class ProductServiceTest {
     assertThat(captor.getValue().getImageUrls()).containsExactlyElementsOf(urls);
   }
 
-  // --- updateProduct: ownership (the bug we just fixed — this is the important one) ---
+  // --- updateProduct: ownership (the bug we just fixed — this is the important
+  // one) ---
 
   @Test
   void updateProduct_ownerMatches_savesAndReturnsUpdatedFields() {
@@ -146,5 +147,46 @@ class ProductServiceTest {
         .isInstanceOf(ResourceNotFoundException.class);
 
     verify(productRepository, never()).save(any());
+  }
+
+  @Test
+  void deleteProduct_ownerMatches_deletesProduct() {
+    Product existing = Product.builder()
+        .id(PRODUCT_ID)
+        .userId(SELLER_ID)
+        .imageUrls(List.of())
+        .build();
+
+    when(productRepository.findById(PRODUCT_ID)).thenReturn(Optional.of(existing));
+
+    productService.deleteProduct(PRODUCT_ID, SELLER_ID);
+
+    verify(productRepository).delete(existing);
+  }
+
+  @Test
+  void deleteProduct_callerIsNotOwner_throwsForbiddenAndDoesNotDelete() {
+    Product existing = Product.builder()
+        .id(PRODUCT_ID)
+        .userId(SELLER_ID)
+        .imageUrls(List.of())
+        .build();
+
+    when(productRepository.findById(PRODUCT_ID)).thenReturn(Optional.of(existing));
+
+    assertThatThrownBy(() -> productService.deleteProduct(PRODUCT_ID, OTHER_SELLER_ID))
+        .isInstanceOf(ForbiddenException.class);
+
+    verify(productRepository, never()).delete(any());
+  }
+
+  @Test
+  void deleteProduct_productDoesNotExist_throwsNotFound() {
+    when(productRepository.findById(PRODUCT_ID)).thenReturn(Optional.empty());
+
+    assertThatThrownBy(() -> productService.deleteProduct(PRODUCT_ID, SELLER_ID))
+        .isInstanceOf(ResourceNotFoundException.class);
+
+    verify(productRepository, never()).delete(any());
   }
 }
