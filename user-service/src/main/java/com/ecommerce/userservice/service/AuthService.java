@@ -7,7 +7,6 @@ import org.springframework.stereotype.Service;
 import com.ecommerce.userservice.dto.request.LoginRequest;
 import com.ecommerce.userservice.dto.request.RegisterRequest;
 import com.ecommerce.userservice.dto.response.ApiResponse;
-import com.ecommerce.userservice.dto.response.RegisterResponse;
 import com.ecommerce.userservice.model.User;
 import com.ecommerce.userservice.repository.UserRepository;
 
@@ -20,11 +19,6 @@ public class AuthService {
         private final UserRepository userRepository;
         private final PasswordEncoder passwordEncoder;
         private final JwtService jwtService;
-
-        public boolean validateJwt(String userId, String role) {
-                return userId != null && !userId.isBlank()
-                                && role != null && !role.isBlank();
-        }
 
         public ApiResponse<String> login(LoginRequest request) {
 

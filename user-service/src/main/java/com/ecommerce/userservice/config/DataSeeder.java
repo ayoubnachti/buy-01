@@ -22,7 +22,6 @@ public class DataSeeder {
 
                 repository.save(
                     User.builder()
-                        .id("1")
                         .name("Ayoub Nachti")
                         .email("ayoub@gmail.com")
                         .role(UserRole.CLIENT)
@@ -32,7 +31,6 @@ public class DataSeeder {
 
                 repository.save(
                     User.builder()
-                        .id("2")
                         .name("Bob Walts")
                         .email("Bob@gmail.com")
                         .role(UserRole.CLIENT)
