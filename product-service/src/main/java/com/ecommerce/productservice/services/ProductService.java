@@ -61,6 +61,16 @@ public class ProductService {
     return ProductResponse.from(saved);
   }
 
+  public void deleteProduct(String id, String userId) {
+    Product existingProduct = findProductById(id);
+
+    if (!existingProduct.getUserId().equals(userId)) {
+      throw new ForbiddenException("You do not own this product");
+    }
+
+    productRepository.delete(existingProduct);
+  }
+
   @KafkaListener(topics = "user-events", groupId = "product-service")
   public void deleteProductByUserId(String id) {
     productRepository.deleteByUserId(id);
