@@ -2,9 +2,8 @@ package com.ecommerce.productservice.controllers;
 
 import org.springframework.web.bind.annotation.RestController;
 
-import com.ecommerce.productservice.dtos.request.CreateProductRequest;
+import com.ecommerce.productservice.dtos.request.ProductRequest;
 import com.ecommerce.productservice.dtos.response.*;
-import com.ecommerce.productservice.models.Product;
 import com.ecommerce.productservice.services.ProductService;
 
 import jakarta.validation.Valid;
@@ -21,6 +20,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+
 
 @RestController
 @RequestMapping("/products")
@@ -29,7 +30,7 @@ public class ProductController {
   private final ProductService productService;
 
   @GetMapping()
-  public List<ProductResponse> getALlProducts() {
+  public List<ProductResponse> getAllProducts() {
     return this.productService.getAllProducts();
   }
 
@@ -41,17 +42,19 @@ public class ProductController {
   @PreAuthorize("hasRole('SELLER')")
   @PostMapping
   public ResponseEntity<ProductResponse> createProduct(
-      @Valid @RequestBody CreateProductRequest request,
+      @Valid @RequestBody ProductRequest request,
       @RequestHeader("X-User-Id") String userId) {
-    Product product = productService.create(request, userId);
-    return ResponseEntity.status(HttpStatus.CREATED).body(ProductResponse.from(product));
+    ProductResponse product = productService.create(request, userId);
+    return ResponseEntity.status(HttpStatus.CREATED).body(product);
   }
 
-  @GetMapping("/{id}/seller")
-  public UserResponse getMethodName(@PathVariable String id) {
-    return productService.getProductSeller(id);
+  @PreAuthorize("hasRole('SELLER')")
+  @PutMapping("/{id}")
+  public ResponseEntity<ProductResponse> updateProduct(
+      @PathVariable String id,
+      @Valid @RequestBody ProductRequest request,
+      @RequestHeader("X-User-Id") String userId) {
+    ProductResponse product = productService.updateProduct(request, id, userId);
+    return ResponseEntity.ok(product);
   }
-
-
-  
 }
