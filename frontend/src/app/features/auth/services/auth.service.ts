@@ -16,6 +16,13 @@ export class AuthService {
     private readonly apiUrl = 'http://localhost:8080/auth';
 
 
+    logout(): void {
+        localStorage.removeItem('jwt');
+        // If you store the user separately, clear it here too
+
+        window.location.href = '/login';
+    }
+
     login(request: LoginRequest) {
         return this.http.post<AuthResponse<string>>(
             `${this.apiUrl}/login`,
