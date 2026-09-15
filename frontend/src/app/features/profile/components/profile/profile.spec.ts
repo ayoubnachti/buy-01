@@ -3,7 +3,10 @@ import { of, throwError } from 'rxjs';
 
 import { Profile } from './profile';
 import { ProfileService } from '../../services/profile.service';
-import { ProfileResponse, ProfileRole } from '../../models/profile.model';
+import {
+  ProfileResponse,
+  ProfileRole,
+} from '../../models/profile.model';
 
 describe('Profile', () => {
   let component: Profile;
@@ -117,7 +120,9 @@ describe('Profile', () => {
 
     fixture.detectChanges();
 
-    expect(component.avatar()).toBe('https://example.com/avatar.jpg');
+    expect(component.avatar()).toBe(
+      'https://example.com/avatar.jpg',
+    );
   });
 
   // =========================================================
@@ -158,9 +163,13 @@ describe('Profile', () => {
 
     fixture.detectChanges();
 
-    expect(component.nameControl.value).toBe('Ayoub Nachti');
+    expect(component.nameControl.value).toBe(
+      'Ayoub Nachti',
+    );
 
-    expect(component.emailControl.value).toBe('ayoub@gmail.com');
+    expect(component.emailControl.value).toBe(
+      'ayoub@gmail.com',
+    );
   });
 
   // =========================================================
@@ -171,35 +180,49 @@ describe('Profile', () => {
     component.profileForm.controls.name.setValue('');
 
     expect(component.nameControl.invalid).toBe(true);
-    expect(component.nameControl.hasError('required')).toBe(true);
+    expect(
+      component.nameControl.hasError('required'),
+    ).toBe(true);
   });
 
   it('should reject a name shorter than 3 characters', () => {
     component.profileForm.controls.name.setValue('Ab');
 
     expect(component.nameControl.invalid).toBe(true);
-    expect(component.nameControl.hasError('minlength')).toBe(true);
+    expect(
+      component.nameControl.hasError('minlength'),
+    ).toBe(true);
   });
 
   it('should reject a name longer than 100 characters', () => {
-    component.profileForm.controls.name.setValue('A'.repeat(101));
+    component.profileForm.controls.name.setValue(
+      'A'.repeat(101),
+    );
 
     expect(component.nameControl.invalid).toBe(true);
-    expect(component.nameControl.hasError('maxlength')).toBe(true);
+    expect(
+      component.nameControl.hasError('maxlength'),
+    ).toBe(true);
   });
 
   it('should require an email', () => {
     component.profileForm.controls.email.setValue('');
 
     expect(component.emailControl.invalid).toBe(true);
-    expect(component.emailControl.hasError('required')).toBe(true);
+    expect(
+      component.emailControl.hasError('required'),
+    ).toBe(true);
   });
 
   it('should reject an invalid email', () => {
-    component.profileForm.controls.email.setValue('invalid-email');
+    component.profileForm.controls.email.setValue(
+      'invalid-email',
+    );
 
     expect(component.emailControl.invalid).toBe(true);
-    expect(component.emailControl.hasError('email')).toBe(true);
+    expect(
+      component.emailControl.hasError('email'),
+    ).toBe(true);
   });
 
   it('should accept a valid form', () => {
@@ -216,11 +239,17 @@ describe('Profile', () => {
   // =========================================================
 
   it('should update avatar when an image is uploaded', () => {
-    component.onAvatarUploaded('https://example.com/new-avatar.jpg');
+    component.onAvatarUploaded(
+      'https://example.com/new-avatar.jpg',
+    );
 
-    expect(component.avatar()).toBe('https://example.com/new-avatar.jpg');
+    expect(component.avatar()).toBe(
+      'https://example.com/new-avatar.jpg',
+    );
 
-    expect(component.successMessage()).toBe('Profile picture uploaded successfully.');
+    expect(component.successMessage()).toBe(
+      'Profile picture uploaded successfully.',
+    );
 
     expect(component.errorMessage()).toBe('');
   });
@@ -244,7 +273,9 @@ describe('Profile', () => {
 
     expect(profileService.updateProfile).not.toHaveBeenCalled();
 
-    expect(component.errorMessage()).toBe('No changes were made to your profile.');
+    expect(component.errorMessage()).toBe(
+      'No changes were made to your profile.',
+    );
   });
 
   // =========================================================
@@ -268,7 +299,9 @@ describe('Profile', () => {
 
     expect(profileService.updateProfile).not.toHaveBeenCalled();
 
-    expect(component.errorMessage()).toBe('Please fix the errors below.');
+    expect(component.errorMessage()).toBe(
+      'Please fix the errors below.',
+    );
 
     expect(component.nameControl.touched).toBe(true);
   });
@@ -308,7 +341,9 @@ describe('Profile', () => {
       email: 'updated@gmail.com',
     });
 
-    component.avatar.set('https://example.com/avatar.jpg');
+    component.avatar.set(
+      'https://example.com/avatar.jpg',
+    );
 
     component.saveProfile();
 
@@ -320,15 +355,23 @@ describe('Profile', () => {
       avatar: 'https://example.com/avatar.jpg',
     });
 
-    expect(component.profile()).toEqual(updatedProfile);
+    expect(component.profile()).toEqual(
+      updatedProfile,
+    );
 
-    expect(component.originalProfile()).toEqual(updatedProfile);
+    expect(component.originalProfile()).toEqual(
+      updatedProfile,
+    );
 
-    expect(component.avatar()).toBe('https://example.com/avatar.jpg');
+    expect(component.avatar()).toBe(
+      'https://example.com/avatar.jpg',
+    );
 
     expect(component.saving()).toBe(false);
 
-    expect(component.successMessage()).toBe('Your profile has been updated successfully.');
+    expect(component.successMessage()).toBe(
+      'Your profile has been updated successfully.',
+    );
   });
 
   // =========================================================
@@ -395,13 +438,17 @@ describe('Profile', () => {
 
     fixture.detectChanges();
 
-    component.profileForm.controls.name.setValue('New Name');
+    component.profileForm.controls.name.setValue(
+      'New Name',
+    );
 
     component.saveProfile();
 
     expect(component.saving()).toBe(false);
 
-    expect(component.errorMessage()).toBe('Email already exists');
+    expect(component.errorMessage()).toBe(
+      'Email already exists',
+    );
   });
 
   // =========================================================
@@ -447,7 +494,9 @@ describe('Profile', () => {
       email: 'changed@gmail.com',
     });
 
-    component.avatar.set('https://example.com/changed.jpg');
+    component.avatar.set(
+      'https://example.com/changed.jpg',
+    );
 
     expect(component.profileForm.getRawValue()).toEqual({
       name: 'Changed Name',
@@ -484,11 +533,15 @@ describe('Profile', () => {
 
     fixture.detectChanges();
 
-    component.avatar.set('https://example.com/changed.jpg');
+    component.avatar.set(
+      'https://example.com/changed.jpg',
+    );
 
     component.cancelChanges();
 
-    expect(component.avatar()).toBe('https://example.com/avatar.jpg');
+    expect(component.avatar()).toBe(
+      'https://example.com/avatar.jpg',
+    );
   });
 
   // =========================================================
@@ -511,9 +564,13 @@ describe('Profile', () => {
 
     component.cancelChanges();
 
-    expect(component.profile()).toEqual(originalProfile);
+    expect(component.profile()).toEqual(
+      originalProfile,
+    );
 
-    expect(component.avatar()).toBe(originalAvatar);
+    expect(component.avatar()).toBe(
+      originalAvatar,
+    );
 
     expect(component.errorMessage()).toBe('');
     expect(component.successMessage()).toBe('');
@@ -536,7 +593,9 @@ describe('Profile', () => {
 
     expect(component.loading()).toBe(false);
 
-    expect(component.errorMessage()).toBe('Unauthorized');
+    expect(component.errorMessage()).toBe(
+      'Unauthorized',
+    );
   });
 
   // =========================================================
@@ -544,12 +603,16 @@ describe('Profile', () => {
   // =========================================================
 
   it('should use the default message when profile loading fails without a server message', () => {
-    profileService.getProfile.mockReturnValue(throwError(() => ({})));
+    profileService.getProfile.mockReturnValue(
+      throwError(() => ({})),
+    );
 
     fixture.detectChanges();
 
     expect(component.loading()).toBe(false);
 
-    expect(component.errorMessage()).toBe('Failed to load your profile. Please try again.');
+    expect(component.errorMessage()).toBe(
+      'Failed to load your profile. Please try again.',
+    );
   });
 });
