@@ -1,9 +1,9 @@
-export type UserRole = 'CLIENT' | 'SELLER';
+export type ProfileRole = 'CLIENT' | 'SELLER';
 
 export interface ProfileResponse {
     name: string;
     email: string;
-    role: UserRole;
+    role: ProfileRole;
     avatar: string | null;
 }
 
