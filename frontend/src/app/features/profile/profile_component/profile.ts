@@ -238,7 +238,6 @@ export class Profile implements OnInit {
     }
 
     if (!this.hasChanges()) {
-      this.showErrorMessage('NO CHANGES');
       return;
     }
 
