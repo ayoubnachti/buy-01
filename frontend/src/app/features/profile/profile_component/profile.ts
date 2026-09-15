@@ -21,48 +21,27 @@ export class Profile implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly profileService = inject(ProfileService);
 
-  // ─────────────────────────────────────────────
   // FORM
-  // ─────────────────────────────────────────────
-
   readonly profileForm = this.fb.nonNullable.group({
     name: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(100)]],
-
     email: ['', [Validators.required, Validators.email]],
   });
 
-  // ─────────────────────────────────────────────
   // PROFILE STATE
-  // ─────────────────────────────────────────────
-
   readonly profile = signal<ProfileResponse | null>(null);
-
   readonly role = signal<ProfileRole>('CLIENT');
-
   readonly avatar = signal<string | null>(null);
 
-  // ─────────────────────────────────────────────
   // ORIGINAL PROFILE
-  // ─────────────────────────────────────────────
-
   readonly originalProfile = signal<ProfileResponse | null>(null);
 
-  // ─────────────────────────────────────────────
   // UI STATE
-  // ─────────────────────────────────────────────
-
   readonly loading = signal(true);
-
   readonly saving = signal(false);
-
   readonly successMessage = signal('');
-
   readonly errorMessage = signal('');
 
-  // ─────────────────────────────────────────────
   // FORM CONTROLS
-  // ─────────────────────────────────────────────
-
   get nameControl() {
     return this.profileForm.controls.name;
   }
@@ -71,18 +50,12 @@ export class Profile implements OnInit {
     return this.profileForm.controls.email;
   }
 
-  // ─────────────────────────────────────────────
   // LIFECYCLE
-  // ─────────────────────────────────────────────
-
   ngOnInit(): void {
     this.loadProfile();
   }
 
-  // ─────────────────────────────────────────────
   // LOAD PROFILE
-  // ─────────────────────────────────────────────
-
   loadProfile(): void {
     this.loading.set(true);
     this.showErrorMessage('');
@@ -94,28 +67,19 @@ export class Profile implements OnInit {
       },
 
       error: (error) => {
-        console.error('Failed to load profile:', error);
-
         this.showErrorMessage(
           error?.error?.message || 'Failed to load your profile. Please try again.',
         );
-
         this.loading.set(false);
       },
     });
   }
 
-  // ─────────────────────────────────────────────
   // APPLY PROFILE
-  // ─────────────────────────────────────────────
-
   private applyProfile(data: ProfileResponse): void {
     this.profile.set(data);
-
     this.role.set(data.role);
-
     this.avatar.set(data.avatar);
-
     this.originalProfile.set({
       ...data,
     });
@@ -129,22 +93,14 @@ export class Profile implements OnInit {
     this.profileForm.markAsUntouched();
   }
 
-  // ─────────────────────────────────────────────
   // AVATAR
-  // ─────────────────────────────────────────────
-
   onAvatarUploaded(imageUrl: string): void {
     this.avatar.set(imageUrl);
-
     this.showSuccessMessage('Profile picture uploaded successfully.');
-
     this.showErrorMessage('');
   }
 
-  // ─────────────────────────────────────────────
   // CHECK CHANGES
-  // ─────────────────────────────────────────────
-
   private hasChanges(): boolean {
     const original = this.originalProfile();
 
@@ -157,10 +113,7 @@ export class Profile implements OnInit {
     return name !== original.name || email !== original.email || this.avatar() !== original.avatar;
   }
 
-  // ─────────────────────────────────────────────
   // SAVE
-  // ─────────────────────────────────────────────
-
   saveProfile(): void {
     if (this.saving()) {
       return;
@@ -171,7 +124,7 @@ export class Profile implements OnInit {
 
     // Trim values before validation
     const name = this.nameControl.value.trim();
-    const email = this.emailControl.value.trim();
+    const email = this.emailControl.value.trim().toLowerCase();
 
     this.profileForm.controls.name.setValue(name, {
       emitEvent: false,
@@ -226,10 +179,7 @@ export class Profile implements OnInit {
     });
   }
 
-  // ─────────────────────────────────────────────
   // CANCEL
-  // ─────────────────────────────────────────────
-
   cancelChanges(): void {
     const original = this.originalProfile();
 
@@ -257,6 +207,7 @@ export class Profile implements OnInit {
     this.profileForm.markAsUntouched();
   }
 
+  // show Success Message in duration 3s
   private showSuccessMessage(message: string, duration = 3000): void {
     this.successMessage.set(message);
     setTimeout(() => {
@@ -264,6 +215,7 @@ export class Profile implements OnInit {
     }, duration);
   }
 
+  // show Error Message in duration 3s
   private showErrorMessage(message: string, duration = 3000): void {
     this.errorMessage.set(message);
     setTimeout(() => {

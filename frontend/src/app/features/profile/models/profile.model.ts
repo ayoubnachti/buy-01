@@ -12,3 +12,9 @@ export interface UpdateProfileRequest {
   email: string;
   avatar: string | null;
 }
+
+export interface ApiResponse<T> {
+  success: boolean;
+  message: string;
+  data: T;
+}
