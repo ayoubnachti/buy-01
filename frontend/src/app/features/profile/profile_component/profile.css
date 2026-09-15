@@ -52,6 +52,7 @@
   margin-bottom: 1.75rem;
 
   border: 1px solid color-mix(in srgb, var(--color-accent) 18%, var(--color-border));
+
   border-radius: 1rem;
 
   background: color-mix(in srgb, var(--color-accent) 6%, var(--color-bg));
@@ -62,20 +63,24 @@
    ========================================================= */
 
 .identity-avatar {
+  width: 88px;
+  height: 88px;
   flex-shrink: 0;
 }
 
 .avatar-img,
 .avatar-fallback {
-  width: 88px;
-  height: 88px;
+  width: 100%;
+  height: 100%;
   border-radius: 50%;
 }
 
 .avatar-img {
   display: block;
   object-fit: cover;
+
   border: 3px solid var(--color-bg);
+
   box-shadow: 0 0 0 2px var(--color-accent);
 }
 
@@ -88,9 +93,13 @@
   color: var(--color-bg);
 
   font-size: 2rem;
-  font-weight: 600;
+  font-weight: 700;
+
+  border: 3px solid var(--color-bg);
 
   box-shadow: 0 0 0 2px var(--color-accent);
+
+  user-select: none;
 }
 
 /* =========================================================
@@ -103,10 +112,12 @@
 
 .identity-name {
   margin: 0 0 0.25rem;
+
   font-size: 1.35rem;
   font-weight: 600;
   line-height: 1.3;
   letter-spacing: -0.015em;
+
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -114,8 +125,11 @@
 
 .identity-email {
   margin: 0 0 0.7rem;
+
   color: color-mix(in srgb, var(--color-text) 55%, transparent);
+
   font-size: 0.92rem;
+
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -130,6 +144,7 @@
   align-items: center;
 
   padding: 0.35rem 0.7rem;
+
   border-radius: 999px;
 
   font-size: 0.75rem;
@@ -140,7 +155,9 @@
 .role-client,
 .role-seller {
   background: color-mix(in srgb, var(--color-accent) 12%, var(--color-bg));
+
   color: var(--color-accent);
+
   border: 1px solid color-mix(in srgb, var(--color-accent) 20%, var(--color-border));
 }
 
@@ -150,7 +167,9 @@
 
 .alert {
   margin-bottom: 1.5rem;
+
   border-radius: 0.75rem;
+
   font-size: 0.9rem;
   line-height: 1.5;
 }
@@ -169,10 +188,15 @@
 
 .field-row {
   display: grid;
-  grid-template-columns: 150px minmax(0, 1fr);
+
+  grid-template-columns:
+    150px
+    minmax(0, 1fr);
+
   gap: 1.5rem;
 
   padding: 1.35rem 0;
+
   border-bottom: 1px solid var(--color-border);
 }
 
@@ -202,13 +226,14 @@
   width: 100%;
   min-height: 44px;
 
+  padding: 0.65rem 0.8rem;
+
   border: 1px solid var(--color-border);
   border-radius: 0.65rem;
 
   background: var(--color-bg);
   color: var(--color-text);
 
-  padding: 0.65rem 0.8rem;
   font-size: 0.92rem;
 
   outline: none;
@@ -225,12 +250,14 @@
 
 .form-control:focus {
   border-color: var(--color-accent);
+
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent) 12%, transparent);
 }
 
 .form-control:disabled {
   cursor: not-allowed;
   opacity: 0.65;
+
   background: color-mix(in srgb, var(--color-text) 4%, var(--color-bg));
 }
 
@@ -244,13 +271,16 @@
 
 .form-control.is-invalid:focus {
   border-color: var(--color-error);
+
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-error) 12%, transparent);
 }
 
 .field-hint {
   margin-top: 0.4rem;
+
   font-size: 0.8rem;
   line-height: 1.4;
+
   color: color-mix(in srgb, var(--color-text) 50%, transparent);
 }
 
@@ -268,10 +298,9 @@
   gap: 1rem;
 
   padding: 1rem;
+
   border: 1px dashed var(--color-border);
   border-radius: 0.8rem;
-
-  background: color-mix(in srgb, var(--color-text) 2.5%, var(--color-bg));
 
   transition:
     border-color 0.2s ease,
@@ -280,6 +309,7 @@
 
 .avatar-upload:hover {
   border-color: var(--color-accent);
+
   background: color-mix(in srgb, var(--color-accent) 3%, var(--color-bg));
 }
 
@@ -287,17 +317,26 @@
    SMALL AVATAR
    ========================================================= */
 
+.avatar-upload-preview {
+  width: 72px;
+  height: 72px;
+
+  flex-shrink: 0;
+}
+
 .avatar-upload-img,
 .avatar-upload-fallback {
-  width: 54px;
-  height: 54px;
-  flex-shrink: 0;
+  width: 100%;
+  height: 100%;
+
   border-radius: 50%;
 }
 
 .avatar-upload-img {
   display: block;
+
   object-fit: cover;
+
   border: 2px solid var(--color-border);
 }
 
@@ -306,11 +345,15 @@
   align-items: center;
   justify-content: center;
 
-  background: color-mix(in srgb, var(--color-text) 8%, var(--color-bg));
-  color: var(--color-text);
+  background: var(--color-accent);
+  color: var(--color-bg);
 
-  font-size: 1rem;
-  font-weight: 600;
+  font-size: 1.6rem;
+  font-weight: 700;
+
+  border: 2px solid var(--color-border);
+
+  user-select: none;
 }
 
 .avatar-upload-text {
@@ -319,12 +362,14 @@
 
 .avatar-upload-title {
   margin-bottom: 0.2rem;
+
   font-size: 0.9rem;
   font-weight: 500;
 }
 
 .avatar-upload-subtitle {
   color: color-mix(in srgb, var(--color-text) 50%, transparent);
+
   font-size: 0.8rem;
   line-height: 1.4;
 }
@@ -337,12 +382,15 @@
   display: flex;
   justify-content: flex-end;
   gap: 0.75rem;
+
   padding-top: 1.5rem;
 }
 
 .form-actions .btn {
   min-height: 42px;
+
   padding: 0.6rem 1.1rem;
+
   border-radius: 0.65rem;
 
   font-size: 0.9rem;
@@ -375,6 +423,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
+
   min-height: 260px;
 }
 
@@ -397,7 +446,10 @@
   }
 
   .field-row {
-    grid-template-columns: 130px minmax(0, 1fr);
+    grid-template-columns:
+      130px
+      minmax(0, 1fr);
+
     gap: 1rem;
   }
 }
@@ -427,20 +479,27 @@
 
   .identity-band {
     flex-direction: column;
+
     text-align: center;
+
     gap: 1rem;
+
     padding: 1.35rem;
+
     border-radius: 0.9rem;
   }
 
   .identity-name {
     font-size: 1.2rem;
+
     white-space: normal;
   }
 
   .identity-email {
     font-size: 0.85rem;
+
     white-space: normal;
+
     overflow-wrap: anywhere;
   }
 
@@ -448,7 +507,9 @@
 
   .field-row {
     grid-template-columns: 1fr;
+
     gap: 0.45rem;
+
     padding: 1.15rem 0;
   }
 
@@ -458,6 +519,7 @@
 
   .field-label {
     padding-top: 0;
+
     font-size: 0.85rem;
   }
 
@@ -465,7 +527,9 @@
 
   .avatar-upload {
     flex-direction: column;
+
     text-align: center;
+
     padding: 1.25rem;
   }
 
@@ -477,7 +541,9 @@
 
   .form-actions {
     flex-direction: column-reverse;
+
     gap: 0.6rem;
+
     padding-top: 1.25rem;
   }
 
@@ -499,9 +565,17 @@
     padding: 1.1rem;
   }
 
-  .avatar-img,
-  .avatar-fallback {
+  .identity-avatar {
     width: 76px;
     height: 76px;
+  }
+
+  .avatar-upload-preview {
+    width: 64px;
+    height: 64px;
+  }
+
+  .avatar-upload-fallback {
+    font-size: 1.4rem;
   }
 }
