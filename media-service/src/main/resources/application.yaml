@@ -1,3 +1,18 @@
+server:
+  port: 8083
+
 spring:
   application:
     name: media-service
+  mongodb:
+    uri: ${MONGODB_URI:mongodb://mongodb:27017/media_db}
+
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_CLIENT_SERVICEURL_DEFAULTZONE:http://discovery-server:8761/eureka}
+    fetch-registry: true
+    register-with-eureka: true
+  instance:
+    prefer-ip-address: true
