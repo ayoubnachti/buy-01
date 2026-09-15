@@ -1,203 +1,184 @@
-<div class="container py-5">
-  <!-- Page header -->
+<div class="profile-page">
+  <div class="profile-shell">
+    <div class="profile-shell-header">
+      <h1>My Profile</h1>
+      <p>Manage your personal information and profile settings.</p>
+    </div>
 
-  <div class="mb-4">
-    <h1 class="mb-1">My Profile</h1>
-    <p class="text-secondary mb-0">Manage your personal information and profile settings.</p>
-  </div>
+    @if (loading()) {
+      <div class="state-loading">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Loading…</span>
+        </div>
+      </div>
+    } @else {
+      <!-- Identity band -->
 
-  <div class="row g-4">
-    <!-- Profile overview -->
-    <div class="col-12 col-lg-4">
-      <div class="card h-100">
-        <div class="card-body text-center p-4">
-          <!-- Avatar -->
-          <div class="mb-3">
-            @if (profile.avatar) {
-              <img
-                [src]="profile.avatar"
-                [alt]="profile.name"
-                class="rounded-circle border"
-                style="width: 120px; height: 120px; object-fit: cover"
-              />
-            } @else {
-              <div
-                class="rounded-circle bg-primary text-white d-inline-flex align-items-center justify-content-center fw-bold"
-                style="width: 120px; height: 120px; font-size: 2.5rem"
-              >
-                {{ profile.name.charAt(0).toUpperCase() }}
-              </div>
-            }
-          </div>
+      <div class="identity-band">
+        <div class="identity-avatar">
+          @if (avatar()) {
+            <img [src]="avatar()" [alt]="profile()?.name" class="avatar-img" />
+          } @else {
+            <div class="avatar-fallback">
+              {{ profile()?.name?.charAt(0)?.toUpperCase() }}
+            </div>
+          }
+        </div>
 
-          <!-- Name -->
-          <h3 class="mb-1">
-            {{ profile.name }}
-          </h3>
+        <div class="identity-meta">
+          <h2 class="identity-name">
+            {{ profile()?.name }}
+          </h2>
 
-          <!-- Email -->
-          <p class="text-secondary mb-3">
-            {{ profile.email }}
+          <p class="identity-email">
+            {{ profile()?.email }}
           </p>
 
-          <!-- Role -->
-          @if (profile.role === 'CLIENT') {
+          @if (role() === 'CLIENT') {
             <span class="badge role-client"> Client </span>
           }
 
-          @if (profile.role === 'SELLER') {
+          @if (role() === 'SELLER') {
             <span class="badge role-seller"> Seller </span>
           }
         </div>
       </div>
-    </div>
 
-    <!-- Profile information -->
-    <div class="col-12 col-lg-8">
-      <div class="card">
-        <div class="card-body p-4">
-          <!-- Section header -->
-          <div class="d-flex justify-content-between align-items-center mb-4">
-            <div>
-              <h4 class="card-title mb-1">Personal Information</h4>
+      <!-- Messages -->
 
-              <p class="text-secondary mb-0">Update your account information.</p>
-            </div>
-          </div>
-
-          <!-- Success message -->
-          @if (successMessage) {
-            <div class="alert alert-success mb-4" role="alert">
-              {{ successMessage }}
-            </div>
-          }
-
-          <!-- Error message -->
-          @if (errorMessage) {
-            <div class="alert alert-danger mb-4" role="alert">
-              {{ errorMessage }}
-            </div>
-          }
-
-          <!-- Loading -->
-          @if (loading()) {
-            <div class="d-flex justify-content-center py-5">
-              <div class="spinner-border text-primary" role="status">
-                <span class="visually-hidden"> Loading... </span>
-              </div>
-            </div>
-          } @else {
-            <!-- Profile form -->
-            <form (ngSubmit)="saveProfile()">
-              <!-- Name -->
-              <div class="mb-3">
-                <label for="profileName" class="form-label"> Name </label>
-
-                <input
-                  id="profileName"
-                  type="text"
-                  name="name"
-                  class="form-control"
-                  [(ngModel)]="profile.name"
-                  placeholder="Enter your name"
-                  required
-                />
-              </div>
-
-              <!-- Email -->
-              <div class="mb-3">
-                <label for="profileEmail" class="form-label"> Email </label>
-
-                <input
-                  id="profileEmail"
-                  type="email"
-                  name="email"
-                  class="form-control"
-                  [(ngModel)]="profile.email"
-                  placeholder="name@example.com"
-                  required
-                />
-              </div>
-
-              <!-- Role -->
-              <div class="mb-4">
-                <label for="profileRole" class="form-label"> Account type </label>
-
-                <input
-                  id="profileRole"
-                  type="text"
-                  class="form-control"
-                  [value]="profile.role"
-                  disabled
-                />
-
-                <div class="form-text">Your account type cannot be changed.</div>
-              </div>
-
-              <!-- Avatar -->
-              <div class="mb-4">
-                <label class="form-label"> Profile picture </label>
-
-                <div class="border rounded p-3">
-                  <div class="d-flex align-items-center gap-3">
-                    @if (profile.avatar) {
-                      <img
-                        [src]="profile.avatar"
-                        [alt]="profile.name"
-                        class="rounded-circle"
-                        style="width: 64px; height: 64px; object-fit: cover"
-                      />
-                    } @else {
-                      <div
-                        class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center fw-medium"
-                        style="width: 64px; height: 64px"
-                      >
-                        {{ profile.name.charAt(0).toUpperCase() }}
-                      </div>
-                    }
-
-                    <div>
-                      <div class="fw-medium">Profile picture</div>
-
-                      <div class="text-secondary small">Image upload will be available soon.</div>
-                    </div>
-                  </div>
-
-                  <!-- Existing reusable upload component -->
-                  <!--
-              <div class="mt-3">
-
-                <app-image-upload
-                  (imageUploaded)="onAvatarUploaded($event)">
-                </app-image-upload>
-
-              </div>
-              -->
-                </div>
-              </div>
-
-              <!-- Actions -->
-              <div class="d-flex justify-content-end gap-2 pt-3 border-top">
-                <!-- Cancel -->
-                <button type="button" class="btn btn-outline-primary" (click)="cancelChanges()">
-                  Cancel
-                </button>
-
-                <!-- Save -->
-                <button type="submit" class="btn btn-primary" [disabled]="saving">
-                  @if (saving) {
-                    <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
-
-                    Saving...
-                  } @else {
-                    Save Changes
-                  }
-                </button>
-              </div>
-            </form>
-          }
+      @if (successMessage()) {
+        <div class="alert alert-success" role="alert">
+          {{ successMessage() }}
         </div>
-      </div>
-    </div>
+      }
+
+      @if (errorMessage()) {
+        <div class="alert alert-danger" role="alert">
+          {{ errorMessage() }}
+        </div>
+      }
+
+      <!-- Form -->
+
+      <form [formGroup]="profileForm" (ngSubmit)="saveProfile()" class="profile-form">
+        <!-- Name -->
+
+        <div class="field-row">
+          <label for="profileName" class="field-label"> Name </label>
+
+          <div class="field-control">
+            <input
+              id="profileName"
+              type="text"
+              formControlName="name"
+              class="form-control"
+              [class.is-invalid]="nameControl.invalid && nameControl.touched"
+              placeholder="Enter your name"
+            />
+
+            @if (nameControl.invalid && nameControl.touched) {
+              <div class="field-hint field-hint-error">
+                @if (nameControl.hasError('required')) {
+                  Name is required.
+                } @else if (nameControl.hasError('minlength')) {
+                  Name must contain at least 3 characters.
+                } @else if (nameControl.hasError('maxlength')) {
+                  Name cannot contain more than 100 characters.
+                }
+              </div>
+            }
+          </div>
+        </div>
+
+        <!-- Email -->
+
+        <div class="field-row">
+          <label for="profileEmail" class="field-label"> Email </label>
+
+          <div class="field-control">
+            <input
+              id="profileEmail"
+              type="email"
+              formControlName="email"
+              class="form-control"
+              [class.is-invalid]="emailControl.invalid && emailControl.touched"
+              placeholder="name@example.com"
+            />
+
+            @if (emailControl.invalid && emailControl.touched) {
+              <div class="field-hint field-hint-error">
+                @if (emailControl.hasError('required')) {
+                  Email is required.
+                } @else if (emailControl.hasError('email')) {
+                  Please enter a valid email address.
+                }
+              </div>
+            }
+          </div>
+        </div>
+
+        <!-- Role -->
+
+        <div class="field-row">
+          <label for="profileRole" class="field-label"> Account type </label>
+
+          <div class="field-control">
+            <input id="profileRole" type="text" class="form-control" [value]="role()" disabled />
+
+            <div class="field-hint">Your account type can't be changed.</div>
+          </div>
+        </div>
+
+        <!-- Avatar -->
+
+        <div class="field-row">
+          <label class="field-label"> Profile picture </label>
+
+          <div class="field-control">
+            <div class="avatar-upload">
+              <div class="avatar-upload-preview">
+                @if (avatar()) {
+                  <img [src]="avatar()" alt="" class="avatar-upload-img" />
+                } @else {
+                  <div class="avatar-upload-fallback">
+                    {{ nameControl.value.charAt(0).toUpperCase() }}
+                  </div>
+                }
+              </div>
+
+              <div class="avatar-upload-text">
+                <div class="avatar-upload-title">Profile picture</div>
+
+                <div class="avatar-upload-subtitle">Image upload will be available soon.</div>
+              </div>
+            </div>
+
+            <!--
+            <app-image-upload
+              (imageUploaded)="onAvatarUploaded($event)">
+            </app-image-upload>
+            -->
+          </div>
+        </div>
+
+        <!-- Actions -->
+
+        <div class="form-actions">
+          <button type="button" class="btn btn-outline-primary" (click)="cancelChanges()">
+            Cancel
+          </button>
+
+          <button type="submit" class="btn btn-primary" [disabled]="saving()">
+            @if (saving()) {
+              <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
+
+              Saving…
+            } @else {
+              Save changes
+            }
+          </button>
+        </div>
+      </form>
+    }
   </div>
 </div>
