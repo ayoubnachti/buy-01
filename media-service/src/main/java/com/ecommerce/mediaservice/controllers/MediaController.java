@@ -1,15 +1,26 @@
 package com.ecommerce.mediaservice.controllers;
 
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
+
+import com.ecommerce.mediaservice.common.ResponseData;
+import com.ecommerce.mediaservice.services.MediaService;
+
+import lombok.RequiredArgsConstructor;
 
 @RestController
+@RequiredArgsConstructor
+@RequestMapping("/media")
 public class MediaController {
-    // GET /api/media/product/{productId}
-    // GET /api/media/user/{userId}
-    // POST /api/media/product/{productId}
-    // POST /api/media/user/{userId}
-    // PUT /api/media/product/{productId}
-    // PUT /api/media/user/{userId}
-    // DELETE /api/media/product/{productId}
-    // DELETE /api/media/user/{userId}
+    public final MediaService mediaService;
+
+    @PostMapping(consumes = "multipart/form-data")
+    public ResponseEntity<ResponseData<String>> saveMedia(@PathVariable String productId, @RequestParam(required = false) MultipartFile[] images) {
+        return ResponseEntity.ok(mediaService.saveMedia(productId, images));
+    }
 }
