@@ -45,7 +45,9 @@ public class MediaService {
         }
 
         try {
-            return ImageIO.read(image.getInputStream()) != null;
+            if (ImageIO.read(image.getInputStream()) == null) {
+                throw new InvalidImageBodyException("The image body doesn't contain data of an image !");
+            }
         } catch (IOException e) {
             throw new InvalidImageBodyException("The image body doesn't contain data of an image !");
         }
