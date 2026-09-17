@@ -20,11 +20,11 @@ import lombok.ToString;
 @Builder
 public class Media {
     @Id
-    String id;
+    private String id;
 
     @Field(name = "image_path")
-    String imagePath;
+    private String imagePath;
 
     @Field(name = "product_id")
-    String productId;
+    private String productId;
 }
