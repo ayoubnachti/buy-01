@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import com.ecommerce.mediaservice.common.ResponseData;
 import com.ecommerce.mediaservice.exceptions.Product.ProducIdNotFoundException;
 import com.ecommerce.mediaservice.exceptions.media.ImageNotFoundException;
+import com.ecommerce.mediaservice.exceptions.media.ImageNullOrEmptyException;
 import com.ecommerce.mediaservice.exceptions.media.InvalidImageBodyException;
 import com.ecommerce.mediaservice.exceptions.media.InvalidImageTypeException;
 import com.ecommerce.mediaservice.exceptions.media.InvalidSizeLimitException;
@@ -18,29 +19,32 @@ public class GlobalExceptions {
     // route not found...
     @ExceptionHandler(ImageNotFoundException.class)
     public ResponseEntity<ResponseData<Void>> handleImageNotFoundException(Exception ex) {
-        return buildError(HttpStatus.NOT_FOUND, "Image not found !");
+        return buildError(HttpStatus.NOT_FOUND, ex.getMessage());
     }
 
     @ExceptionHandler(InvalidImageBodyException.class)
     public ResponseEntity<ResponseData<Void>> handleInvalidImageBodyException(Exception ex) {
-        return buildError(HttpStatus.BAD_REQUEST, "Invalid image body, the data of the body is not of images !");
+        return buildError(HttpStatus.BAD_REQUEST, ex.getMessage());
+    }
+
+    @ExceptionHandler(ImageNullOrEmptyException.class)
+    public ResponseEntity<ResponseData<Void>> handleImageNullOrEmptyException(Exception ex) {
+        return buildError(HttpStatus.BAD_REQUEST, ex.getMessage());
     }
 
     @ExceptionHandler(InvalidImageTypeException.class)
     public ResponseEntity<ResponseData<Void>> handleInvalidImageTypeException(Exception ex) {
-        return buildError(HttpStatus.BAD_REQUEST, "Invalid image type, we only allow images !");
+        return buildError(HttpStatus.BAD_REQUEST, ex.getMessage());
     }
 
     @ExceptionHandler(InvalidSizeLimitException.class)
     public ResponseEntity<ResponseData<Void>> handleInvalidSizeLimitException(Exception ex) {
-        return buildError(HttpStatus.BAD_REQUEST,
-                "The image has more than 2MG, please use images with less than 2MG in the size !");
+        return buildError(HttpStatus.BAD_REQUEST, ex.getMessage());
     }
 
     @ExceptionHandler(ProducIdNotFoundException.class)
     public ResponseEntity<ResponseData<Void>> handleProducIdNotFoundException(Exception ex) {
-        return buildError(HttpStatus.NOT_FOUND,
-                "The product ID, is not found !");
+        return buildError(HttpStatus.NOT_FOUND, ex.getMessage());
     }
 
     private ResponseEntity<ResponseData<Void>> buildError(HttpStatus status, String message) {
