@@ -23,7 +23,11 @@ public class MediaService {
     }
 
     private boolean isValidImage(MultipartFile image) {
-        if (image == null || image.isEmpty() || image.getSize() > MAX_IMAGE_SIZE) {
+        if (image == null || image.isEmpty()) {
+            return false;
+        }
+
+        if (image.getSize() > MAX_IMAGE_SIZE) {
             return false;
         }
 
