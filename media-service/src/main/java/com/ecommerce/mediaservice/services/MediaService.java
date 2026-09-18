@@ -40,14 +40,8 @@ public class MediaService {
         for (MultipartFile image : images) {
             validateImage(image);
             String imageUrl = uploadToCloudinary(image, request.targetId());
-
+            Media media = buildMedia(request.targetType(), request.targetId(), imageUrl);
             try {
-                Media media;
-                if (request.targetType() == "product") {
-                    media = Media.builder().imagePath(imageUrl).productId(request.targetId()).build();
-                } else {
-                    media = Media.builder().imagePath(imageUrl).userId(request.targetId()).build();
-                }
                 mediaRepository.save(media);
             } catch (Exception ex) {
                 throw new MediaPersistenceException("Failed to save media to the database !", ex);
