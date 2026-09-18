@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -53,7 +54,15 @@ public class MediaController {
 
     @PreAuthorize("hasRole('SELLER')")
     @DeleteMapping
-    public ResponseEntity<ResponseData<String>> deleteMedia(@RequestHeader("X-User-Id") String userId, @Valid @RequestBody DeleteMediaRequest request) {
+    public ResponseEntity<ResponseData<String>> deleteMedia(@RequestHeader("X-User-Id") String userId,
+            @Valid @RequestBody DeleteMediaRequest request) {
         return ResponseEntity.ok(mediaService.deleteMedias(userId, request));
+    }
+
+    @PreAuthorize("hasRole('SELLER')")
+    @PutMapping(consumes = "multipart/form-data")
+    public ResponseEntity<ResponseData<List<String>>> updateMedia(@RequestHeader("X-User-Id") String userId,
+            @Valid @RequestBody MediaRequest request, @RequestParam(required = false) MultipartFile[] images) {
+        return null;
     }
 }
