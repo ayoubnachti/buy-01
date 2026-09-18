@@ -121,6 +121,10 @@ public class MediaService {
             throw new ImageNullOrEmptyException("At least one image is required !");
         }
 
+        for (MultipartFile image : images) {
+            validateImage(image);
+        }
+
         if (request.oldImagePaths() != null) {
             for (String oldImagePath : request.oldImagePaths()) {
                 deleteFromCloudinary(oldImagePath);
@@ -137,7 +141,6 @@ public class MediaService {
 
         List<String> newImagePaths = new ArrayList<>();
         for (MultipartFile image : images) {
-            validateImage(image);
             String imageUrl = uploadToCloudinary(image, request.targetType(), request.targetId());
             newImagePaths.add(imageUrl);
             if (request.targetType().equals(TargetType.PRODUCT)) {
