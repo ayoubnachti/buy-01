@@ -134,7 +134,6 @@ describe('AuthService', () => {
 
     expect(service.user()).toEqual(mockUser);
 
-    expect(localStorage.getItem('user')).toBe(JSON.stringify(mockUser));
   });
 
   // --------------------------------------------------
@@ -153,7 +152,6 @@ describe('AuthService', () => {
 
     expect(service.user()).toEqual(mockUser);
 
-    expect(localStorage.getItem('user')).toBe(JSON.stringify(mockUser));
   });
 
   // --------------------------------------------------
@@ -197,7 +195,6 @@ describe('AuthService', () => {
 
     service.logout();
 
-    expect(localStorage.getItem('user')).toBeNull();
   });
 
   it('should clear user signal on logout', () => {

@@ -18,7 +18,7 @@ export class AuthService {
   private readonly userSignal = signal<User | null>(null);
 
   readonly user = this.userSignal.asReadonly();
-  
+
   login(request: LoginRequest) {
     return this.http.post<AuthResponse<string>>(`${this.apiUrl}/login`, request);
   }
@@ -29,7 +29,6 @@ export class AuthService {
 
   logout(): void {
     localStorage.removeItem('jwt');
-    localStorage.removeItem('user');
 
     this.userSignal.set(null);
 
@@ -43,7 +42,6 @@ export class AuthService {
 
     if (user) {
       this.userSignal.set(user);
-      localStorage.setItem('user', JSON.stringify(user));
     }
   }
 
@@ -56,9 +54,9 @@ export class AuthService {
 
     const user = this.decodeToken(token);
 
+    console.log('==> ', user);
     if (user) {
       this.userSignal.set(user);
-      localStorage.setItem('user', JSON.stringify(user));
     } else {
       this.logout();
     }
