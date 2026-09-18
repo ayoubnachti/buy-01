@@ -79,7 +79,7 @@ export class AuthService {
         name: decodedPayload.name,
         email: decodedPayload.email,
         role: decodedPayload.role,
-        avatar: decodedPayload.role,
+        avatar: decodedPayload.avatar,
       };
     } catch {
       return null;
