@@ -23,7 +23,6 @@ import com.ecommerce.mediaservice.exceptions.media.InvalidImageBodyException;
 import com.ecommerce.mediaservice.exceptions.media.InvalidImageTypeException;
 import com.ecommerce.mediaservice.exceptions.media.InvalidSizeLimitException;
 import com.ecommerce.mediaservice.exceptions.media.MediaPersistenceException;
-import com.ecommerce.mediaservice.exceptions.profile.UserIdNotFoundException;
 import com.ecommerce.mediaservice.models.Media;
 import com.ecommerce.mediaservice.repositories.MediaRepository;
 
@@ -36,23 +35,26 @@ public class MediaService {
     public final MediaRepository mediaRepository;
     private final Cloudinary cloudinary;
 
-    public ResponseData<String> saveMedia(MediaRequest request, MultipartFile[] images) {
-
+    public ResponseData<List<String>> saveMedia(MediaRequest request, MultipartFile[] images) {
+        List<String> imagesPaths = new ArrayList<>();
         if (images == null || images.length == 0) {
             throw new ImageNullOrEmptyException("At least one image is required !");
         }
         for (MultipartFile image : images) {
             validateImage(image);
             String imageUrl = uploadToCloudinary(image, request.targetId());
-            Media media = buildMedia(request.targetType(), request.targetId(), imageUrl);
-            try {
-                mediaRepository.save(media);
-            } catch (Exception ex) {
-                throw new MediaPersistenceException("Failed to save media to the database !", ex);
+            if (request.targetType().equals(TargetType.PRODUCT)) {
+                Media media = Media.builder().imagePath(imageUrl).productId(request.targetId()).build();
+                try {
+                    mediaRepository.save(media);
+                } catch (Exception ex) {
+                    throw new MediaPersistenceException("Failed to save media to the database !", ex);
+                }
             }
+            imagesPaths.add(imageUrl);
 
         }
-        return ResponseData.success("Product saved successfully !", null);
+        return ResponseData.success("Media saved successfully !", imagesPaths);
     }
 
     public ResponseData<Map<String, List<String>>> getProductsMedias() {
@@ -73,25 +75,17 @@ public class MediaService {
         return ResponseData.success("Products medias retrieved successfully !", mediasByProduct);
     }
 
-    public ResponseData<List<String>> getMedia(String target, String targetId) {
+    public ResponseData<List<String>> getMedias(String productId) {
         List<Media> medias = new ArrayList<>();
-        String successMessage = new String();
 
-        if ("product".equals(target)) {
-            medias = mediaRepository.findByProductId(targetId)
-                    .orElseThrow(() -> new ProducIdNotFoundException("Product id not valid !"));
-            successMessage = "Product medias retrieved successfully !";
-        } else if ("profile".equals(target)) {
-            medias = mediaRepository.findByUserId(targetId)
-                    .orElseThrow(() -> new UserIdNotFoundException("Product id not valid !"));
-            successMessage = "Profile image retrieved successfully !";
-        }
+        medias = mediaRepository.findByProductId(productId)
+                .orElseThrow(() -> new ProducIdNotFoundException("Product id not valid !"));
 
         List<String> imagesPaths = new ArrayList<>();
         for (Media m : medias) {
             imagesPaths.add(m.getImagePath());
         }
-        return ResponseData.success(successMessage, imagesPaths);
+        return ResponseData.success("Product medias retrieved successfully !", imagesPaths);
     }
 
     private String uploadToCloudinary(MultipartFile image, String productId) {
@@ -108,13 +102,6 @@ public class MediaService {
             throw new CloudinaryUploadException("Cloudinary did not return a valid upload result !");
         }
         return secureUrl.toString();
-    }
-
-    private Media buildMedia(TargetType targetType, String targetId, String imageUrl) {
-        return switch (targetType) {
-            case PRODUCT -> Media.builder().imagePath(imageUrl).productId(targetId).build();
-            case PROFILE -> Media.builder().imagePath(imageUrl).userId(targetId).build();
-        };
     }
 
     private void validateImage(MultipartFile image) {

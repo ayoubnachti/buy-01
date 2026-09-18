@@ -13,5 +13,4 @@ import com.ecommerce.mediaservice.models.Media;
 public interface MediaRepository extends MongoRepository<Media, String> {
     Optional<List<Media>> findByProductId(String productId);
 
-    Optional<List<Media>> findByUserId(String userId);
 }
