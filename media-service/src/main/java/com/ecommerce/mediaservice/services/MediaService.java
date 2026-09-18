@@ -1,6 +1,7 @@
 package com.ecommerce.mediaservice.services;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 
 import javax.imageio.ImageIO;
@@ -11,6 +12,8 @@ import org.springframework.web.multipart.MultipartFile;
 import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
 import com.ecommerce.mediaservice.common.ResponseData;
+import com.ecommerce.mediaservice.dtos.MediaRequest;
+import com.ecommerce.mediaservice.dtos.TargetType;
 import com.ecommerce.mediaservice.exceptions.media.CloudinaryUploadException;
 import com.ecommerce.mediaservice.exceptions.media.ImageNullOrEmptyException;
 import com.ecommerce.mediaservice.exceptions.media.InvalidImageBodyException;
@@ -29,18 +32,33 @@ public class MediaService {
     public final MediaRepository mediaRepository;
     private final Cloudinary cloudinary;
 
-    public ResponseData<String> saveMedia(String productId, MultipartFile[] images) {
+    public ResponseData<String> saveMedia(MediaRequest request, MultipartFile[] images) {
+
+        if (images == null || images.length == 0) {
+            throw new ImageNullOrEmptyException("At least one image is required !");
+        }
         for (MultipartFile image : images) {
             validateImage(image);
-            String imageUrl = uploadToCloudinary(image, productId);
+            String imageUrl = uploadToCloudinary(image, request.targetId());
+
             try {
-                Media media = Media.builder().imagePath(imageUrl).productId(productId).build();
+                Media media;
+                if (request.targetType() == "product") {
+                    media = Media.builder().imagePath(imageUrl).productId(request.targetId()).build();
+                } else {
+                    media = Media.builder().imagePath(imageUrl).userId(request.targetId()).build();
+                }
                 mediaRepository.save(media);
             } catch (Exception ex) {
                 throw new MediaPersistenceException("Failed to save media to the database !", ex);
             }
+
         }
         return ResponseData.success("Product saved successfully !", null);
+    }
+
+    public ResponseData<List<String>> getMedias(String productId) {
+        return null;
     }
 
     private String uploadToCloudinary(MultipartFile image, String productId) {
@@ -57,6 +75,13 @@ public class MediaService {
             throw new CloudinaryUploadException("Cloudinary did not return a valid upload result !");
         }
         return secureUrl.toString();
+    }
+
+    private Media buildMedia(TargetType targetType, String targetId, String imageUrl) {
+        return switch (targetType) {
+            case PRODUCT -> Media.builder().imagePath(imageUrl).productId(targetId).build();
+            case PROFILE -> Media.builder().imagePath(imageUrl).userId(targetId).build();
+        };
     }
 
     private void validateImage(MultipartFile image) {
