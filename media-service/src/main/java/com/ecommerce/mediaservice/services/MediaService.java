@@ -106,6 +106,31 @@ public class MediaService {
         return ResponseData.success("Image(s) deleted successfully !", null);
     }
 
+    public ResponseData<List<String>> updateMedias(String userId, MediaRequest request, MultipartFile[] images) {
+        checkOwnership(request.targetType(), request.targetId(), userId);
+
+        if (images == null || images.length == 0) {
+            throw new ImageNullOrEmptyException("At least one image is required !");
+        }
+
+        if (request.oldImagePaths() != null) {
+            for (String oldImagePath : request.oldImagePaths()) {
+                deleteFromCloudinary(oldImagePath);
+            }
+        }
+
+        List<String> newImagePaths = new ArrayList<>();
+        for (MultipartFile image : images) {
+            validateImage(image);
+            newImagePaths.add(uploadToCloudinary(image, request.targetType(), request.targetId()));
+        }
+
+        // here I should sync the database: remove the Media entries matching request.oldImagePaths()
+        // and save new Media entries for newImagePaths when request.targetType() is PRODUCT
+
+        return ResponseData.success("Media updated successfully !", newImagePaths);
+    }
+
     private String uploadToCloudinary(MultipartFile image, TargetType targetType, String targetId) {
         Map<?, ?> uploadResult;
         try {
