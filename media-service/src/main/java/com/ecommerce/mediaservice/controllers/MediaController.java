@@ -48,7 +48,6 @@ public class MediaController {
     @PermitAll
     @GetMapping("/{productId}")
     public ResponseEntity<ResponseData<List<String>>> getMedias(@PathVariable String productId) {
-        // check if the id is for product or user
         return ResponseEntity.ok(mediaService.getMedias(productId));
     }
 

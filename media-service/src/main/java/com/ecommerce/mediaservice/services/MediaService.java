@@ -20,6 +20,7 @@ import com.ecommerce.mediaservice.dtos.TargetType;
 import com.ecommerce.mediaservice.exceptions.Product.ProducIdNotFoundException;
 import com.ecommerce.mediaservice.exceptions.media.CloudinaryDeleteException;
 import com.ecommerce.mediaservice.exceptions.media.CloudinaryUploadException;
+import com.ecommerce.mediaservice.exceptions.media.ImageNotDeletedException;
 import com.ecommerce.mediaservice.exceptions.media.ImageNotFoundException;
 import com.ecommerce.mediaservice.exceptions.media.ImageNullOrEmptyException;
 import com.ecommerce.mediaservice.exceptions.media.InvalidImageBodyException;
@@ -94,9 +95,16 @@ public class MediaService {
 
     public ResponseData<String> deleteMedias(String userId, DeleteMediaRequest request) {
         checkOwnership(request.targetType(), request.targetId(), userId);
-        
+
         for (String imagePath : request.imagePaths()) {
             deleteFromCloudinary(imagePath);
+            Media media = mediaRepository.findByImagePath(imagePath)
+                    .orElseThrow(() -> new ImageNotFoundException("Image not found !"));
+            try {
+                mediaRepository.delete(media);
+            } catch (Exception ex) {
+                throw new ImageNotDeletedException("This image is not deleted, please try again later !");
+            }
         }
 
         String folder = request.targetType().equals(TargetType.PRODUCT)
@@ -116,6 +124,14 @@ public class MediaService {
         if (request.oldImagePaths() != null) {
             for (String oldImagePath : request.oldImagePaths()) {
                 deleteFromCloudinary(oldImagePath);
+                Media media = mediaRepository.findByImagePath(oldImagePath)
+                        .orElseThrow(() -> new ImageNotFoundException("Image not found !"));
+                try {
+                    mediaRepository.delete(media);
+                } catch (Exception ex) {
+                    throw new ImageNotDeletedException("This image is not deleted, please try again later !");
+                }
+
             }
         }
 
@@ -125,8 +141,15 @@ public class MediaService {
             newImagePaths.add(uploadToCloudinary(image, request.targetType(), request.targetId()));
         }
 
-        // here I should sync the database: remove the Media entries matching request.oldImagePaths()
-        // and save new Media entries for newImagePaths when request.targetType() is PRODUCT
+        String folder = request.targetType().equals(TargetType.PRODUCT)
+                ? "products/" + request.targetId()
+                : "profile/" + request.targetId();
+        deleteFolderIfEmpty(folder);
+
+        // here I should sync the database: remove the Media entries matching
+        // request.oldImagePaths()
+        // and save new Media entries for newImagePaths when request.targetType() is
+        // PRODUCT
 
         return ResponseData.success("Media updated successfully !", newImagePaths);
     }
@@ -159,7 +182,8 @@ public class MediaService {
                 throw new ForbiddenToChangeProfileException("You do not have access to delete this image");
             }
         } else {
-            // here I should check with the product service to see if the user wanting to delete the medias is the owner of the product
+            // here I should check with the product service to see if the user wanting to
+            // delete the medias is the owner of the product
         }
     }
 

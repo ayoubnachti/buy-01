@@ -12,5 +12,5 @@ import com.ecommerce.mediaservice.models.Media;
 @Repository
 public interface MediaRepository extends MongoRepository<Media, String> {
     Optional<List<Media>> findByProductId(String productId);
-
+    Optional<Media> findByImagePath(String imagePath);
 }
