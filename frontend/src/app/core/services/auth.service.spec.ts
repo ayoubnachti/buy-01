@@ -12,8 +12,6 @@ describe('AuthService', () => {
 
   const mockUser = {
     id: '1',
-    name: 'Ayoub',
-    email: 'ayoub@gmail.com',
     role: 'CLIENT',
   };
 
@@ -127,8 +125,6 @@ describe('AuthService', () => {
   it('should save JWT and user when setting user from token', () => {
     const token = createFakeToken({
       sub: mockUser.id,
-      name: mockUser.name,
-      email: mockUser.email,
       role: mockUser.role,
     });
 
@@ -148,8 +144,6 @@ describe('AuthService', () => {
   it('should initialize user from JWT', () => {
     const token = createFakeToken({
       sub: mockUser.id,
-      name: mockUser.name,
-      email: mockUser.email,
       role: mockUser.role,
     });
 
@@ -209,8 +203,6 @@ describe('AuthService', () => {
   it('should clear user signal on logout', () => {
     const token = createFakeToken({
       sub: mockUser.id,
-      name: mockUser.name,
-      email: mockUser.email,
       role: mockUser.role,
     });
 

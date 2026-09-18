@@ -26,16 +26,16 @@ describe('sellerGuard', () => {
     router = TestBed.inject(Router);
   });
 
-  it('should redirect unauthenticated user to login', () => {
-    const loginUrlTree = {} as any;
+  it('should redirect unauthenticated user to home', () => {
+    const homeUrlTree = {} as any;
 
-    vi.spyOn(router, 'createUrlTree').mockReturnValue(loginUrlTree);
+    vi.spyOn(router, 'createUrlTree').mockReturnValue(homeUrlTree);
 
     const result = TestBed.runInInjectionContext(() => sellerGuard({} as any, {} as any));
 
-    expect(router.createUrlTree).toHaveBeenCalledWith(['/login']);
+    expect(router.createUrlTree).toHaveBeenCalledWith(['/']);
 
-    expect(result).toBe(loginUrlTree);
+    expect(result).toBe(homeUrlTree);
   });
 
   it('should allow SELLER user', () => {
