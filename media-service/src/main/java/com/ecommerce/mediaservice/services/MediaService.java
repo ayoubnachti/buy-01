@@ -139,17 +139,19 @@ public class MediaService {
         for (MultipartFile image : images) {
             validateImage(image);
             newImagePaths.add(uploadToCloudinary(image, request.targetType(), request.targetId()));
+            if (request.targetType().equals(TargetType.PRODUCT)) {
+                Media media = Media.builder()
+                        .imagePath(uploadToCloudinary(image, request.targetType(), request.targetId()))
+                        .productId(request.targetId())
+                        .build();
+                mediaRepository.save(media);
+            } 
         }
 
         String folder = request.targetType().equals(TargetType.PRODUCT)
                 ? "products/" + request.targetId()
                 : "profile/" + request.targetId();
         deleteFolderIfEmpty(folder);
-
-        // here I should sync the database: remove the Media entries matching
-        // request.oldImagePaths()
-        // and save new Media entries for newImagePaths when request.targetType() is
-        // PRODUCT
 
         return ResponseData.success("Media updated successfully !", newImagePaths);
     }
