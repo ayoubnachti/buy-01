@@ -2,8 +2,10 @@ package com.ecommerce.mediaservice.exceptions;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import com.ecommerce.mediaservice.common.ResponseData;
 import com.ecommerce.mediaservice.exceptions.Product.ProducIdNotFoundException;
@@ -17,8 +19,6 @@ import com.ecommerce.mediaservice.exceptions.media.MediaPersistenceException;
 
 @RestControllerAdvice
 public class GlobalExceptions {
-    // need to call all the exceptions and also add the ones of method not allowed,
-    // route not found...
     @ExceptionHandler(ImageNotFoundException.class)
     public ResponseEntity<ResponseData<Void>> handleImageNotFoundException(Exception ex) {
         return buildError(HttpStatus.NOT_FOUND, ex.getMessage());
@@ -57,6 +57,16 @@ public class GlobalExceptions {
     @ExceptionHandler(MediaPersistenceException.class)
     public ResponseEntity<ResponseData<Void>> handleMediaPersistenceException(Exception ex) {
         return buildError(HttpStatus.INTERNAL_SERVER_ERROR, ex.getMessage());
+    }
+
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    public ResponseEntity<ResponseData<Void>> handleMethodNotAllowedException(Exception ex) {
+        return buildError(HttpStatus.METHOD_NOT_ALLOWED, "HTTP method not supported for this endpoint");
+    }
+
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<ResponseData<Void>> handleNoResourceFoundException(Exception ex) {
+        return buildError(HttpStatus.NOT_FOUND, "The requested endpoint does not exist");
     }
 
     private ResponseEntity<ResponseData<Void>> buildError(HttpStatus status, String message) {

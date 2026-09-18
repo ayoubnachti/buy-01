@@ -42,7 +42,7 @@ public class MediaService {
         }
         for (MultipartFile image : images) {
             validateImage(image);
-            String imageUrl = uploadToCloudinary(image, request.targetId());
+            String imageUrl = uploadToCloudinary(image, request.targetType(), request.targetId());
             if (request.targetType().equals(TargetType.PRODUCT)) {
                 Media media = Media.builder().imagePath(imageUrl).productId(request.targetId()).build();
                 try {
@@ -88,11 +88,16 @@ public class MediaService {
         return ResponseData.success("Product medias retrieved successfully !", imagesPaths);
     }
 
-    private String uploadToCloudinary(MultipartFile image, String productId) {
+    private String uploadToCloudinary(MultipartFile image, TargetType targetType, String targetId) {
         Map<?, ?> uploadResult;
         try {
-            uploadResult = cloudinary.uploader().upload(image.getBytes(),
-                    ObjectUtils.asMap("folder", "products/" + productId));
+            if (targetType.equals(TargetType.PRODUCT)) {
+                uploadResult = cloudinary.uploader().upload(image.getBytes(),
+                        ObjectUtils.asMap("folder", "products/" + targetId));
+            } else {
+                uploadResult = cloudinary.uploader().upload(image.getBytes(),
+                    ObjectUtils.asMap("folder", "profile/" + targetId));
+            }
         } catch (IOException e) {
             throw new CloudinaryUploadException("Failed to upload image to Cloudinary !", e);
         }
