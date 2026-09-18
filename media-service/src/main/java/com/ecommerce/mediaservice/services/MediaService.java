@@ -74,23 +74,24 @@ public class MediaService {
     }
 
     public ResponseData<List<String>> getMedia(String target, String targetId) {
-        if (target == "product") {
-            List<String> imagesPaths = new ArrayList<>();
-            List<Media> medias = mediaRepository.findByProductId(targetId)
+        List<Media> medias = new ArrayList<>();
+        String successMessage = new String();
+
+        if ("product".equals(target)) {
+            medias = mediaRepository.findByProductId(targetId)
                     .orElseThrow(() -> new ProducIdNotFoundException("Product id not valid !"));
-            for (Media m : medias) {
-                imagesPaths.add(m.getImagePath());
-            }
-            return ResponseData.success("Product medias retrieved successfully !", imagesPaths);
-        } else {
-            List<String> imagesPaths = new ArrayList<>();
-            List<Media> medias = mediaRepository.findByUserId(targetId)
+            successMessage = "Product medias retrieved successfully !";
+        } else if ("profile".equals(target)) {
+            medias = mediaRepository.findByUserId(targetId)
                     .orElseThrow(() -> new UserIdNotFoundException("Product id not valid !"));
-            for (Media m : medias) {
-                imagesPaths.add(m.getImagePath());
-            }
-            return ResponseData.success("Product medias retrieved successfully !", imagesPaths);
+            successMessage = "Profile image retrieved successfully !";
         }
+
+        List<String> imagesPaths = new ArrayList<>();
+        for (Media m : medias) {
+            imagesPaths.add(m.getImagePath());
+        }
+        return ResponseData.success(successMessage, imagesPaths);
     }
 
     private String uploadToCloudinary(MultipartFile image, String productId) {
