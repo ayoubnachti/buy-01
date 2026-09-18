@@ -1,6 +1,8 @@
 package com.ecommerce.mediaservice.services;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -51,8 +53,22 @@ public class MediaService {
         return ResponseData.success("Product saved successfully !", null);
     }
 
-    public ResponseData<List<String>> getMedias(String productId) {
-        return null;
+    public ResponseData<Map<String, List<String>>> getProductsMedias() {
+        Map<String, List<String>> mediasByProduct = new HashMap<>();
+
+        for (Media media : mediaRepository.findAll()) {
+            if (media.getProductId() == null) {
+                continue;
+            }
+            List<String> images = mediasByProduct.get(media.getProductId());
+            if (images == null) {
+                images = new ArrayList<>();
+                mediasByProduct.put(media.getProductId(), images);
+            }
+            images.add(media.getImagePath());
+        }
+
+        return ResponseData.success("Products medias retrieved successfully !", mediasByProduct);
     }
 
     private String uploadToCloudinary(MultipartFile image, String productId) {
