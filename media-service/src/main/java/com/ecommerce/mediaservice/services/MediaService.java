@@ -127,6 +127,7 @@ public class MediaService {
 
         if (request.oldImagePaths() != null) {
             for (String oldImagePath : request.oldImagePaths()) {
+                verifyImageBelongsToTarget(oldImagePath, request.targetType(), request.targetId());
                 if (request.targetType().equals(TargetType.PRODUCT)) {
                     Media media = mediaRepository.findByImagePath(oldImagePath)
                             .orElseThrow(() -> new ImageNotFoundException("Image not found !"));
@@ -185,6 +186,15 @@ public class MediaService {
             throw new CloudinaryUploadException("Cloudinary did not return a valid upload result !");
         }
         return secureUrl.toString();
+    }
+
+    private void verifyImageBelongsToTarget(String imagePath, TargetType targetType, String targetId) {
+        String folder = targetType.equals(TargetType.PRODUCT)
+                ? "/products/" + targetId + "/"
+                : "/profile/" + targetId + "/";
+        if (!imagePath.contains(folder)) {
+            throw new ImageNotFoundException("Image not found !");
+        }
     }
 
     private void checkOwnership(TargetType targetType, String targetId, String userId) {
