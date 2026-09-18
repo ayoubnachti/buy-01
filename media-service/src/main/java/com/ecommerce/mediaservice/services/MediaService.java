@@ -16,12 +16,14 @@ import com.cloudinary.utils.ObjectUtils;
 import com.ecommerce.mediaservice.common.ResponseData;
 import com.ecommerce.mediaservice.dtos.MediaRequest;
 import com.ecommerce.mediaservice.dtos.TargetType;
+import com.ecommerce.mediaservice.exceptions.Product.ProducIdNotFoundException;
 import com.ecommerce.mediaservice.exceptions.media.CloudinaryUploadException;
 import com.ecommerce.mediaservice.exceptions.media.ImageNullOrEmptyException;
 import com.ecommerce.mediaservice.exceptions.media.InvalidImageBodyException;
 import com.ecommerce.mediaservice.exceptions.media.InvalidImageTypeException;
 import com.ecommerce.mediaservice.exceptions.media.InvalidSizeLimitException;
 import com.ecommerce.mediaservice.exceptions.media.MediaPersistenceException;
+import com.ecommerce.mediaservice.exceptions.profile.UserIdNotFoundException;
 import com.ecommerce.mediaservice.models.Media;
 import com.ecommerce.mediaservice.repositories.MediaRepository;
 
@@ -69,6 +71,26 @@ public class MediaService {
         }
 
         return ResponseData.success("Products medias retrieved successfully !", mediasByProduct);
+    }
+
+    public ResponseData<List<String>> getMedia(String target, String targetId) {
+        if (target == "product") {
+            List<String> imagesPaths = new ArrayList<>();
+            List<Media> medias = mediaRepository.findByProductId(targetId)
+                    .orElseThrow(() -> new ProducIdNotFoundException("Product id not valid !"));
+            for (Media m : medias) {
+                imagesPaths.add(m.getImagePath());
+            }
+            return ResponseData.success("Product medias retrieved successfully !", imagesPaths);
+        } else {
+            List<String> imagesPaths = new ArrayList<>();
+            List<Media> medias = mediaRepository.findByUserId(targetId)
+                    .orElseThrow(() -> new UserIdNotFoundException("Product id not valid !"));
+            for (Media m : medias) {
+                imagesPaths.add(m.getImagePath());
+            }
+            return ResponseData.success("Product medias retrieved successfully !", imagesPaths);
+        }
     }
 
     private String uploadToCloudinary(MultipartFile image, String productId) {
