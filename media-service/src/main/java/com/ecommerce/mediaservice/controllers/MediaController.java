@@ -23,7 +23,7 @@ import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/media/images/")
+@RequestMapping("/media/images")
 public class MediaController {
     public final MediaService mediaService;
 
@@ -37,11 +37,11 @@ public class MediaController {
     @PermitAll
     @GetMapping
     public ResponseEntity<ResponseData<Map<String, List<String>>>> getProductsMedias() {
-        return null;
+        return ResponseEntity.ok(mediaService.getProductsMedias());
     }
 
     @PermitAll
-    @GetMapping("{id}")
+    @GetMapping("/{id}")
     public ResponseEntity<ResponseData<List<String>>> getMedia() {
         // check if the id is for product or user
         return null;
