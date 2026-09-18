@@ -26,6 +26,7 @@ import com.ecommerce.mediaservice.exceptions.media.InvalidImageBodyException;
 import com.ecommerce.mediaservice.exceptions.media.InvalidImageTypeException;
 import com.ecommerce.mediaservice.exceptions.media.InvalidSizeLimitException;
 import com.ecommerce.mediaservice.exceptions.media.MediaPersistenceException;
+import com.ecommerce.mediaservice.exceptions.profile.ForbiddenToChangeProfileException;
 import com.ecommerce.mediaservice.models.Media;
 import com.ecommerce.mediaservice.repositories.MediaRepository;
 
@@ -91,7 +92,9 @@ public class MediaService {
         return ResponseData.success("Product medias retrieved successfully !", imagesPaths);
     }
 
-    public ResponseData<String> deleteMedias(DeleteMediaRequest request) {
+    public ResponseData<String> deleteMedias(String userId, DeleteMediaRequest request) {
+        checkOwnership(request.targetType(), request.targetId(), userId);
+        
         for (String imagePath : request.imagePaths()) {
             deleteFromCloudinary(imagePath);
         }
@@ -122,6 +125,17 @@ public class MediaService {
             throw new CloudinaryUploadException("Cloudinary did not return a valid upload result !");
         }
         return secureUrl.toString();
+    }
+
+    private void checkOwnership(TargetType targetType, String targetId, String userId) {
+        if (targetType.equals(TargetType.PROFILE)) {
+            boolean isOwner = targetId.equals(userId);
+            if (!isOwner) {
+                throw new ForbiddenToChangeProfileException("You do not have access to delete this image");
+            }
+        } else {
+            // here I should check with the product service to see if the user wanting to delete the medias is the owner of the product
+        }
     }
 
     private void deleteFolderIfEmpty(String folder) {

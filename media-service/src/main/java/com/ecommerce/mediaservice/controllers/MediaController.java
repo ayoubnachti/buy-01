@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
@@ -52,7 +53,7 @@ public class MediaController {
 
     @PreAuthorize("hasRole('SELLER')")
     @DeleteMapping
-    public ResponseEntity<ResponseData<String>> deleteMedia(@Valid @RequestBody DeleteMediaRequest request) {
-        return ResponseEntity.ok(mediaService.deleteMedias(request));
+    public ResponseEntity<ResponseData<String>> deleteMedia(@RequestHeader("X-User-Id") String userId, @Valid @RequestBody DeleteMediaRequest request) {
+        return ResponseEntity.ok(mediaService.deleteMedias(userId, request));
     }
 }
