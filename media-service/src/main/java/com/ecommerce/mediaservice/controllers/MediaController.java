@@ -3,6 +3,7 @@ package com.ecommerce.mediaservice.controllers;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -36,7 +37,7 @@ public class MediaController {
     @PostMapping(consumes = "multipart/form-data")
     public ResponseEntity<ResponseData<List<String>>> saveMedia(@Valid @RequestPart("data") MediaRequest request,
             @RequestParam(required = false) MultipartFile[] images) {
-        return ResponseEntity.ok(mediaService.saveMedia(request, images));
+        return ResponseEntity.status(HttpStatus.CREATED).body(mediaService.saveMedia(request, images));
     }
 
     @PermitAll
@@ -62,6 +63,6 @@ public class MediaController {
     @PutMapping(consumes = "multipart/form-data")
     public ResponseEntity<ResponseData<List<String>>> updateMedia(@RequestHeader("X-User-Id") String userId,
             @Valid @RequestBody MediaRequest request, @RequestParam(required = false) MultipartFile[] images) {
-        return null;
+        return ResponseEntity.ok(mediaService.updateMedias(userId, request, images));
     }
 }
