@@ -29,8 +29,6 @@ describe('authGuard', () => {
   it('should allow authenticated user', () => {
     authService['userSignal'].set({
       id: '1',
-      name: 'Ayoub',
-      email: 'ayoub@gmail.com',
       role: 'CLIENT',
     });
 

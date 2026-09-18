@@ -1,11 +1,12 @@
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+
 import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
-import { vi } from 'vitest';
 
 import { AuthService } from '../services/auth.service';
-import { sellerGuard } from './seller.guard';
+import { guestGuard } from './guest.guard';
 
-describe('sellerGuard', () => {
+describe('guestGuard', () => {
   let authService: AuthService;
   let router: Router;
 
@@ -26,30 +27,13 @@ describe('sellerGuard', () => {
     router = TestBed.inject(Router);
   });
 
-  it('should redirect unauthenticated user to login', () => {
-    const loginUrlTree = {} as any;
-
-    vi.spyOn(router, 'createUrlTree').mockReturnValue(loginUrlTree);
-
-    const result = TestBed.runInInjectionContext(() => sellerGuard({} as any, {} as any));
-
-    expect(router.createUrlTree).toHaveBeenCalledWith(['/login']);
-
-    expect(result).toBe(loginUrlTree);
-  });
-
-  it('should allow SELLER user', () => {
-    authService['userSignal'].set({
-      id: '2',
-      role: 'SELLER',
-    });
-
-    const result = TestBed.runInInjectionContext(() => sellerGuard({} as any, {} as any));
+  it('should allow unauthenticated user', () => {
+    const result = TestBed.runInInjectionContext(() => guestGuard({} as any, {} as any));
 
     expect(result).toBe(true);
   });
 
-  it('should redirect CLIENT user to home', () => {
+  it('should redirect authenticated user to home', () => {
     const homeUrlTree = {} as any;
 
     vi.spyOn(router, 'createUrlTree').mockReturnValue(homeUrlTree);
@@ -59,7 +43,7 @@ describe('sellerGuard', () => {
       role: 'CLIENT',
     });
 
-    const result = TestBed.runInInjectionContext(() => sellerGuard({} as any, {} as any));
+    const result = TestBed.runInInjectionContext(() => guestGuard({} as any, {} as any));
 
     expect(router.createUrlTree).toHaveBeenCalledWith(['/']);
 
