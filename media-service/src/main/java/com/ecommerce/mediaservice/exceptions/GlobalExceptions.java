@@ -17,6 +17,7 @@ import com.ecommerce.mediaservice.exceptions.media.InvalidImageBodyException;
 import com.ecommerce.mediaservice.exceptions.media.InvalidImageTypeException;
 import com.ecommerce.mediaservice.exceptions.media.InvalidSizeLimitException;
 import com.ecommerce.mediaservice.exceptions.media.MediaPersistenceException;
+import com.ecommerce.mediaservice.exceptions.profile.ForbiddenToChangeProfileException;
 
 @RestControllerAdvice
 public class GlobalExceptions {
@@ -63,6 +64,11 @@ public class GlobalExceptions {
     @ExceptionHandler(MediaPersistenceException.class)
     public ResponseEntity<ResponseData<Void>> handleMediaPersistenceException(Exception ex) {
         return buildError(HttpStatus.INTERNAL_SERVER_ERROR, ex.getMessage());
+    }
+
+    @ExceptionHandler(ForbiddenToChangeProfileException.class)
+    public ResponseEntity<ResponseData<Void>> handleForbiddenToChangeProfileException(Exception ex) {
+        return buildError(HttpStatus.FORBIDDEN, ex.getMessage());
     }
 
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
