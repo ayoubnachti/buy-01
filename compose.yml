@@ -106,6 +106,8 @@ services:
     restart: unless-stopped
     ports:
       - "8083:8083"
+    env_file:
+      - ./media-service/.env
     environment:
       - MONGODB_URI=mongodb://mongodb:27017/media_db
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka
