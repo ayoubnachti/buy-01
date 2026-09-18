@@ -13,6 +13,7 @@ import com.ecommerce.mediaservice.exceptions.media.ImageNullOrEmptyException;
 import com.ecommerce.mediaservice.exceptions.media.InvalidImageBodyException;
 import com.ecommerce.mediaservice.exceptions.media.InvalidImageTypeException;
 import com.ecommerce.mediaservice.exceptions.media.InvalidSizeLimitException;
+import com.ecommerce.mediaservice.exceptions.media.MediaPersistenceException;
 
 @RestControllerAdvice
 public class GlobalExceptions {
@@ -51,6 +52,11 @@ public class GlobalExceptions {
     @ExceptionHandler(CloudinaryUploadException.class)
     public ResponseEntity<ResponseData<Void>> handleCloudinaryUploadException(Exception ex) {
         return buildError(HttpStatus.BAD_GATEWAY, ex.getMessage());
+    }
+
+    @ExceptionHandler(MediaPersistenceException.class)
+    public ResponseEntity<ResponseData<Void>> handleMediaPersistenceException(Exception ex) {
+        return buildError(HttpStatus.INTERNAL_SERVER_ERROR, ex.getMessage());
     }
 
     private ResponseEntity<ResponseData<Void>> buildError(HttpStatus status, String message) {
