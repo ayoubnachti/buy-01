@@ -138,14 +138,15 @@ public class MediaService {
         List<String> newImagePaths = new ArrayList<>();
         for (MultipartFile image : images) {
             validateImage(image);
-            newImagePaths.add(uploadToCloudinary(image, request.targetType(), request.targetId()));
+            String imageUrl = uploadToCloudinary(image, request.targetType(), request.targetId());
+            newImagePaths.add(imageUrl);
             if (request.targetType().equals(TargetType.PRODUCT)) {
                 Media media = Media.builder()
-                        .imagePath(uploadToCloudinary(image, request.targetType(), request.targetId()))
+                        .imagePath(imageUrl)
                         .productId(request.targetId())
                         .build();
                 mediaRepository.save(media);
-            } 
+            }
         }
 
         String folder = request.targetType().equals(TargetType.PRODUCT)
