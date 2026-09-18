@@ -104,7 +104,7 @@ public class MediaService {
                         ObjectUtils.asMap("folder", "products/" + targetId));
             } else {
                 uploadResult = cloudinary.uploader().upload(image.getBytes(),
-                    ObjectUtils.asMap("folder", "profile/" + targetId));
+                        ObjectUtils.asMap("folder", "profile/" + targetId));
             }
         } catch (IOException e) {
             throw new CloudinaryUploadException("Failed to upload image to Cloudinary !", e);
@@ -115,6 +115,21 @@ public class MediaService {
             throw new CloudinaryUploadException("Cloudinary did not return a valid upload result !");
         }
         return secureUrl.toString();
+    }
+
+    private void deleteFolderIfEmpty(String folder) {
+        try {
+            Map<?, ?> resourcesResult = cloudinary.api().resources(ObjectUtils.asMap(
+                    "type", "upload",
+                    "prefix", folder,
+                    "max_results", 1));
+            List<?> resources = (List<?>) resourcesResult.get("resources");
+            if (resources == null || resources.isEmpty()) {
+                cloudinary.api().deleteFolder(folder, ObjectUtils.emptyMap());
+            }
+        } catch (Exception e) {
+            throw new CloudinaryDeleteException("Failed to delete empty folder from Cloudinary !", e);
+        }
     }
 
     private void deleteFromCloudinary(String imagePath) {
@@ -131,8 +146,6 @@ public class MediaService {
             throw new ImageNotFoundException("Image not found on Cloudinary : " + publicId);
         }
     }
-
-
 
     private String extractPublicId(String imageUrl) {
         int uploadIndex = imageUrl.indexOf("/upload/");
