@@ -1,6 +1,9 @@
 server:
   port: 8083
 
+cloudinary:
+  url: ${CLOUDINARY_URL:}
+
 spring:
   application:
     name: media-service
