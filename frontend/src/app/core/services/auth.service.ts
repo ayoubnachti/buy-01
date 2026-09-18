@@ -72,8 +72,6 @@ export class AuthService {
 
       return {
         id: decodedPayload.sub,
-        name: decodedPayload.name,
-        email: decodedPayload.email,
         role: decodedPayload.role,
       };
     } catch {

@@ -8,11 +8,7 @@ export const sellerGuard: CanActivateFn = () => {
 
   const user = authService.user();
 
-  if (!user) {
-    return router.createUrlTree(['/login']);
-  }
-
-  if (user.role === 'SELLER') {
+  if (user?.role === 'SELLER') {
     return true;
   }
 

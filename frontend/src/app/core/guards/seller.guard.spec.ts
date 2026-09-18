@@ -41,8 +41,6 @@ describe('sellerGuard', () => {
   it('should allow SELLER user', () => {
     authService['userSignal'].set({
       id: '2',
-      name: 'Seller',
-      email: 'seller@gmail.com',
       role: 'SELLER',
     });
 
@@ -58,8 +56,6 @@ describe('sellerGuard', () => {
 
     authService['userSignal'].set({
       id: '1',
-      name: 'Ayoub',
-      email: 'ayoub@gmail.com',
       role: 'CLIENT',
     });
 
