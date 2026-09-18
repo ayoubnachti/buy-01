@@ -14,10 +14,13 @@ import org.springframework.web.multipart.MultipartFile;
 import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
 import com.ecommerce.mediaservice.common.ResponseData;
+import com.ecommerce.mediaservice.dtos.DeleteMediaRequest;
 import com.ecommerce.mediaservice.dtos.MediaRequest;
 import com.ecommerce.mediaservice.dtos.TargetType;
 import com.ecommerce.mediaservice.exceptions.Product.ProducIdNotFoundException;
+import com.ecommerce.mediaservice.exceptions.media.CloudinaryDeleteException;
 import com.ecommerce.mediaservice.exceptions.media.CloudinaryUploadException;
+import com.ecommerce.mediaservice.exceptions.media.ImageNotFoundException;
 import com.ecommerce.mediaservice.exceptions.media.ImageNullOrEmptyException;
 import com.ecommerce.mediaservice.exceptions.media.InvalidImageBodyException;
 import com.ecommerce.mediaservice.exceptions.media.InvalidImageTypeException;
@@ -88,6 +91,11 @@ public class MediaService {
         return ResponseData.success("Product medias retrieved successfully !", imagesPaths);
     }
 
+    public ResponseData<String> deleteMedias(DeleteMediaRequest request) {
+
+        return null;
+    }
+
     private String uploadToCloudinary(MultipartFile image, TargetType targetType, String targetId) {
         Map<?, ?> uploadResult;
         try {
@@ -107,6 +115,38 @@ public class MediaService {
             throw new CloudinaryUploadException("Cloudinary did not return a valid upload result !");
         }
         return secureUrl.toString();
+    }
+
+    private void deleteFromCloudinary(String imagePath) {
+        String publicId = extractPublicId(imagePath);
+        Map<?, ?> result;
+        try {
+            result = cloudinary.uploader().destroy(publicId, ObjectUtils.emptyMap());
+        } catch (IOException e) {
+            throw new CloudinaryDeleteException("Failed to delete image from Cloudinary !", e);
+        }
+
+        Object status = result.get("result");
+        if (status == null || !status.equals("ok")) {
+            throw new ImageNotFoundException("Image not found on Cloudinary : " + publicId);
+        }
+    }
+
+
+
+    private String extractPublicId(String imageUrl) {
+        int uploadIndex = imageUrl.indexOf("/upload/");
+        if (uploadIndex == -1) {
+            throw new CloudinaryDeleteException("Invalid Cloudinary image URL !");
+        }
+
+        String path = imageUrl.substring(uploadIndex + "/upload/".length());
+        if (path.matches("^v\\d+/.*")) { // valid: v12/anything
+            path = path.substring(path.indexOf('/') + 1);
+        }
+
+        int dotIndex = path.lastIndexOf('.');
+        return dotIndex == -1 ? path : path.substring(0, dotIndex);
     }
 
     private void validateImage(MultipartFile image) {

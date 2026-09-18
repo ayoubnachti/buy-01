@@ -9,6 +9,7 @@ import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import com.ecommerce.mediaservice.common.ResponseData;
 import com.ecommerce.mediaservice.exceptions.Product.ProducIdNotFoundException;
+import com.ecommerce.mediaservice.exceptions.media.CloudinaryDeleteException;
 import com.ecommerce.mediaservice.exceptions.media.CloudinaryUploadException;
 import com.ecommerce.mediaservice.exceptions.media.ImageNotFoundException;
 import com.ecommerce.mediaservice.exceptions.media.ImageNullOrEmptyException;
@@ -51,6 +52,11 @@ public class GlobalExceptions {
 
     @ExceptionHandler(CloudinaryUploadException.class)
     public ResponseEntity<ResponseData<Void>> handleCloudinaryUploadException(Exception ex) {
+        return buildError(HttpStatus.BAD_GATEWAY, ex.getMessage());
+    }
+
+    @ExceptionHandler(CloudinaryDeleteException.class)
+    public ResponseEntity<ResponseData<Void>> handleCloudinaryDeleteException(Exception ex) {
         return buildError(HttpStatus.BAD_GATEWAY, ex.getMessage());
     }
 

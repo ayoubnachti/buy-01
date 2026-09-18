@@ -4,9 +4,11 @@ import java.util.List;
 import java.util.Map;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
@@ -15,6 +17,7 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.security.access.prepost.PreAuthorize;
 
 import com.ecommerce.mediaservice.common.ResponseData;
+import com.ecommerce.mediaservice.dtos.DeleteMediaRequest;
 import com.ecommerce.mediaservice.dtos.MediaRequest;
 import com.ecommerce.mediaservice.services.MediaService;
 import jakarta.validation.Valid;
@@ -45,5 +48,11 @@ public class MediaController {
     public ResponseEntity<ResponseData<List<String>>> getMedias(@PathVariable String productId) {
         // check if the id is for product or user
         return ResponseEntity.ok(mediaService.getMedias(productId));
+    }
+
+    @PreAuthorize("hasRole('SELLER')")
+    @DeleteMapping
+    public ResponseEntity<ResponseData<String>> deleteMedia(@Valid @RequestBody DeleteMediaRequest request) {
+        return ResponseEntity.ok(mediaService.deleteMedias(request));
     }
 }
