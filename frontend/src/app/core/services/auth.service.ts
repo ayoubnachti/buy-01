@@ -18,11 +18,7 @@ export class AuthService {
   private readonly userSignal = signal<User | null>(null);
 
   readonly user = this.userSignal.asReadonly();
-
-  constructor() {
-    this.initializeUser();
-  }
-
+  
   login(request: LoginRequest) {
     return this.http.post<AuthResponse<string>>(`${this.apiUrl}/login`, request);
   }
@@ -79,7 +75,6 @@ export class AuthService {
         name: decodedPayload.name,
         email: decodedPayload.email,
         role: decodedPayload.role,
-        avatar: decodedPayload.avatar,
       };
     } catch {
       return null;
