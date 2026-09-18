@@ -128,14 +128,15 @@ public class MediaService {
         if (request.oldImagePaths() != null) {
             for (String oldImagePath : request.oldImagePaths()) {
                 deleteFromCloudinary(oldImagePath);
-                Media media = mediaRepository.findByImagePath(oldImagePath)
-                        .orElseThrow(() -> new ImageNotFoundException("Image not found !"));
-                try {
-                    mediaRepository.delete(media);
-                } catch (Exception ex) {
-                    throw new ImageNotDeletedException("This image is not deleted, please try again later !");
+                if (request.targetType().equals(TargetType.PRODUCT)) {
+                    Media media = mediaRepository.findByImagePath(oldImagePath)
+                            .orElseThrow(() -> new ImageNotFoundException("Image not found !"));
+                    try {
+                        mediaRepository.delete(media);
+                    } catch (Exception ex) {
+                        throw new ImageNotDeletedException("This image is not deleted, please try again later !");
+                    }
                 }
-
             }
         }
 
