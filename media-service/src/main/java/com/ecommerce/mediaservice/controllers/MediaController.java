@@ -1,6 +1,7 @@
 package com.ecommerce.mediaservice.controllers;
 
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -34,8 +35,15 @@ public class MediaController {
     }
 
     @PermitAll
-    @GetMapping("/{productId}")
-    public ResponseEntity<ResponseData<List<String>>> getMedias(@PathVariable String productId) {
+    @GetMapping
+    public ResponseEntity<ResponseData<Map<String, List<String>>>> getProductsMedias() {
+        return null;
+    }
+
+    @PermitAll
+    @GetMapping("{id}")
+    public ResponseEntity<ResponseData<List<String>>> getMedia() {
+        // check if the id is for product or user
         return null;
     }
 }
