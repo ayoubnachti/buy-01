@@ -33,7 +33,6 @@ public class AuthController {
         @PostMapping("/register")
         public ResponseEntity<ApiResponse<Void>> register(
                         @Valid @RequestBody RegisterRequest request) {
-
                 return ResponseEntity
                                 .status(HttpStatus.CREATED)
                                 .body(authService.register(request));
