@@ -11,6 +11,7 @@ import com.ecommerce.mediaservice.common.ResponseData;
 import com.ecommerce.mediaservice.exceptions.Product.ProducIdNotFoundException;
 import com.ecommerce.mediaservice.exceptions.media.CloudinaryDeleteException;
 import com.ecommerce.mediaservice.exceptions.media.CloudinaryUploadException;
+import com.ecommerce.mediaservice.exceptions.media.ImageNotDeletedException;
 import com.ecommerce.mediaservice.exceptions.media.ImageNotFoundException;
 import com.ecommerce.mediaservice.exceptions.media.ImageNullOrEmptyException;
 import com.ecommerce.mediaservice.exceptions.media.InvalidImageBodyException;
@@ -69,6 +70,11 @@ public class GlobalExceptions {
     @ExceptionHandler(ForbiddenToChangeProfileException.class)
     public ResponseEntity<ResponseData<Void>> handleForbiddenToChangeProfileException(Exception ex) {
         return buildError(HttpStatus.FORBIDDEN, ex.getMessage());
+    }
+
+    @ExceptionHandler(ImageNotDeletedException.class)
+    public ResponseEntity<ResponseData<Void>> handleImageNotDeletedException(Exception ex) {
+        return buildError(HttpStatus.INTERNAL_SERVER_ERROR, ex.getMessage());
     }
 
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
