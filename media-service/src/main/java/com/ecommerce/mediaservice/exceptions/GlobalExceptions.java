@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import com.ecommerce.mediaservice.common.ResponseData;
 import com.ecommerce.mediaservice.exceptions.Product.ProducIdNotFoundException;
+import com.ecommerce.mediaservice.exceptions.media.CloudinaryUploadException;
 import com.ecommerce.mediaservice.exceptions.media.ImageNotFoundException;
 import com.ecommerce.mediaservice.exceptions.media.ImageNullOrEmptyException;
 import com.ecommerce.mediaservice.exceptions.media.InvalidImageBodyException;
@@ -45,6 +46,11 @@ public class GlobalExceptions {
     @ExceptionHandler(ProducIdNotFoundException.class)
     public ResponseEntity<ResponseData<Void>> handleProducIdNotFoundException(Exception ex) {
         return buildError(HttpStatus.NOT_FOUND, ex.getMessage());
+    }
+
+    @ExceptionHandler(CloudinaryUploadException.class)
+    public ResponseEntity<ResponseData<Void>> handleCloudinaryUploadException(Exception ex) {
+        return buildError(HttpStatus.BAD_GATEWAY, ex.getMessage());
     }
 
     private ResponseEntity<ResponseData<Void>> buildError(HttpStatus status, String message) {

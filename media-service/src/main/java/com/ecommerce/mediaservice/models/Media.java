@@ -27,4 +27,7 @@ public class Media {
 
     @Field(name = "product_id")
     private String productId;
+
+    @Field(name = "user_id")
+    private String userId;
 }
