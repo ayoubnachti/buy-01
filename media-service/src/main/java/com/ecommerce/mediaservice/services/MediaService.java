@@ -14,11 +14,12 @@ import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
 import com.ecommerce.mediaservice.common.ResponseData;
 import com.ecommerce.mediaservice.exceptions.media.CloudinaryUploadException;
-import com.ecommerce.mediaservice.exceptions.media.ImageNotFoundException;
 import com.ecommerce.mediaservice.exceptions.media.ImageNullOrEmptyException;
 import com.ecommerce.mediaservice.exceptions.media.InvalidImageBodyException;
 import com.ecommerce.mediaservice.exceptions.media.InvalidImageTypeException;
 import com.ecommerce.mediaservice.exceptions.media.InvalidSizeLimitException;
+import com.ecommerce.mediaservice.exceptions.media.MediaPersistenceException;
+import com.ecommerce.mediaservice.models.Media;
 import com.ecommerce.mediaservice.repositories.MediaRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -31,10 +32,15 @@ public class MediaService {
     private final Cloudinary cloudinary;
 
     public ResponseData<String> saveMedia(String productId, MultipartFile[] images) {
-        List<String> uploadedUrls = new ArrayList<>();
         for (MultipartFile image : images) {
             validateImage(image);
-            uploadedUrls.add(uploadToCloudinary(image, productId));
+            String imageUrl = uploadToCloudinary(image, productId);
+            try {
+                Media media = Media.builder().imagePath(imageUrl).productId(productId).build();
+                mediaRepository.save(media);
+            } catch (Exception ex) {
+                throw new MediaPersistenceException("Failed to save media to the database !", ex);
+            }
         }
         return ResponseData.success("Product saved successfully !", null);
     }
