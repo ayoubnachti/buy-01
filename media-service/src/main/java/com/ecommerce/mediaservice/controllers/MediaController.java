@@ -62,7 +62,7 @@ public class MediaController {
     @PreAuthorize("hasRole('SELLER')")
     @PutMapping(consumes = "multipart/form-data")
     public ResponseEntity<ResponseData<List<String>>> updateMedia(@RequestHeader("X-User-Id") String userId,
-            @Valid @RequestBody MediaRequest request, @RequestParam(required = false) MultipartFile[] images) {
+            @Valid @RequestPart("data") MediaRequest request, @RequestParam(required = false) MultipartFile[] images) {
         return ResponseEntity.ok(mediaService.updateMedias(userId, request, images));
     }
 }
