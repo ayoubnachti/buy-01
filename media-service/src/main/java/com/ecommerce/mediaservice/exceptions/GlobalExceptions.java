@@ -14,7 +14,6 @@ import com.ecommerce.mediaservice.exceptions.media.InvalidImageBodyException;
 import com.ecommerce.mediaservice.exceptions.media.InvalidImageTypeException;
 import com.ecommerce.mediaservice.exceptions.media.InvalidSizeLimitException;
 import com.ecommerce.mediaservice.exceptions.media.MediaPersistenceException;
-import com.ecommerce.mediaservice.exceptions.profile.UserIdNotFoundException;
 
 @RestControllerAdvice
 public class GlobalExceptions {
@@ -47,11 +46,6 @@ public class GlobalExceptions {
 
     @ExceptionHandler(ProducIdNotFoundException.class)
     public ResponseEntity<ResponseData<Void>> handleProducIdNotFoundException(Exception ex) {
-        return buildError(HttpStatus.NOT_FOUND, ex.getMessage());
-    }
-
-    @ExceptionHandler(UserIdNotFoundException.class)
-    public ResponseEntity<ResponseData<Void>> handleUserIdNotFoundException(Exception ex) {
         return buildError(HttpStatus.NOT_FOUND, ex.getMessage());
     }
 
