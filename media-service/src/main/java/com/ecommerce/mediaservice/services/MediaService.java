@@ -92,8 +92,15 @@ public class MediaService {
     }
 
     public ResponseData<String> deleteMedias(DeleteMediaRequest request) {
+        for (String imagePath : request.imagePaths()) {
+            deleteFromCloudinary(imagePath);
+        }
 
-        return null;
+        String folder = request.targetType().equals(TargetType.PRODUCT)
+                ? "products/" + request.targetId()
+                : "profile/" + request.targetId();
+        deleteFolderIfEmpty(folder);
+        return ResponseData.success("Image(s) deleted successfully !", null);
     }
 
     private String uploadToCloudinary(MultipartFile image, TargetType targetType, String targetId) {
