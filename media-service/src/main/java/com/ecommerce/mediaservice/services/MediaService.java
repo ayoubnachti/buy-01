@@ -107,9 +107,7 @@ public class MediaService {
             }
         }
 
-        String folder = request.targetType().equals(TargetType.PRODUCT)
-                ? "products/" + request.targetId()
-                : "profile/" + request.targetId();
+        String folder = getFolder(request.targetType(), request.targetId());
         deleteFolderIfEmpty(folder);
         return ResponseData.success("Image(s) deleted successfully !", null);
     }
@@ -159,9 +157,7 @@ public class MediaService {
             }
         }
 
-        String folder = request.targetType().equals(TargetType.PRODUCT)
-                ? "products/" + request.targetId()
-                : "profile/" + request.targetId();
+        String folder = getFolder(request.targetType(), request.targetId());
         deleteFolderIfEmpty(folder);
 
         return ResponseData.success("Media updated successfully !", newImagePaths);
@@ -195,6 +191,10 @@ public class MediaService {
         if (!imagePath.contains(folder)) {
             throw new ImageNotFoundException("Image not found !");
         }
+    }
+
+    private String getFolder(TargetType targetType, String targetId) {
+        return targetType.equals(TargetType.PRODUCT) ? "/products/" + targetId + "/" : "/profile/" + targetId + "/";
     }
 
     private void checkOwnership(TargetType targetType, String targetId, String userId) {
