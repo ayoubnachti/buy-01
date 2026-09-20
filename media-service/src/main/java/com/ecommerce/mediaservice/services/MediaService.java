@@ -19,7 +19,8 @@ import com.ecommerce.mediaservice.dtos.DeleteMediaRequest;
 import com.ecommerce.mediaservice.dtos.MediaRequest;
 import com.ecommerce.mediaservice.dtos.Product;
 import com.ecommerce.mediaservice.dtos.TargetType;
-import com.ecommerce.mediaservice.exceptions.Product.ProducIdNotFoundException;
+import com.ecommerce.mediaservice.exceptions.Product.ForbiddenToChangeProductMediaException;
+import com.ecommerce.mediaservice.exceptions.Product.ProductNotFoundException;
 import com.ecommerce.mediaservice.exceptions.media.CloudinaryDeleteException;
 import com.ecommerce.mediaservice.exceptions.media.CloudinaryUploadException;
 import com.ecommerce.mediaservice.exceptions.media.ImageNotDeletedException;
@@ -33,6 +34,7 @@ import com.ecommerce.mediaservice.exceptions.profile.ForbiddenToChangeProfileExc
 import com.ecommerce.mediaservice.models.Media;
 import com.ecommerce.mediaservice.repositories.MediaRepository;
 
+import feign.FeignException;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -87,7 +89,7 @@ public class MediaService {
         List<Media> medias = new ArrayList<>();
 
         medias = mediaRepository.findByProductId(productId)
-                .orElseThrow(() -> new ProducIdNotFoundException("Product id not valid !"));
+                .orElseThrow(() -> new ProductNotFoundException("Product id not valid !"));
 
         List<String> imagesPaths = new ArrayList<>();
         for (Media m : medias) {
@@ -209,10 +211,15 @@ public class MediaService {
         } else {
             // here I should check with the product service to see if the user wanting to
             // delete the medias is the owner of the product
-            Product product = productClient.getProduct(targetId);
+            Product product = null;
+            try {
+                product = productClient.getProduct(targetId);
+            } catch (FeignException.NotFound ex) {
+                throw new ProductNotFoundException("Product not found !");
+            }
 
             if (!product.userId().equals(userId)) {
-                throw new ForbiddenToChangeProfileException()
+                throw new ForbiddenToChangeProductMediaException("You do not have access to the media of this product !");
             }
         }
     }

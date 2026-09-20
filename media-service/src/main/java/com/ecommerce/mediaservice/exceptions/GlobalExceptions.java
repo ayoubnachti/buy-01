@@ -9,7 +9,7 @@ import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import com.ecommerce.mediaservice.common.ResponseData;
 import com.ecommerce.mediaservice.exceptions.Product.ForbiddenToChangeProductMediaException;
-import com.ecommerce.mediaservice.exceptions.Product.ProducIdNotFoundException;
+import com.ecommerce.mediaservice.exceptions.Product.ProductNotFoundException;
 import com.ecommerce.mediaservice.exceptions.media.CloudinaryDeleteException;
 import com.ecommerce.mediaservice.exceptions.media.CloudinaryUploadException;
 import com.ecommerce.mediaservice.exceptions.media.ImageNotDeletedException;
@@ -48,8 +48,8 @@ public class GlobalExceptions {
         return buildError(HttpStatus.BAD_REQUEST, ex.getMessage());
     }
 
-    @ExceptionHandler(ProducIdNotFoundException.class)
-    public ResponseEntity<ResponseData<Void>> handleProducIdNotFoundException(Exception ex) {
+    @ExceptionHandler(ProductNotFoundException.class)
+    public ResponseEntity<ResponseData<Void>> handleProductNotFoundException(Exception ex) {
         return buildError(HttpStatus.NOT_FOUND, ex.getMessage());
     }
 
