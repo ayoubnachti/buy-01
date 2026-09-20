@@ -103,12 +103,14 @@ public class MediaService {
 
         for (String imagePath : request.imagePaths()) {
             deleteFromCloudinary(imagePath);
-            Media media = mediaRepository.findByImagePath(imagePath)
-                    .orElseThrow(() -> new ImageNotFoundException("Image not found !"));
-            try {
-                mediaRepository.delete(media);
-            } catch (Exception ex) {
-                throw new ImageNotDeletedException("This image is not deleted, please try again later !");
+            if (request.targetType().equals(TargetType.PRODUCT)) {
+                Media media = mediaRepository.findByImagePath(imagePath)
+                        .orElseThrow(() -> new ImageNotFoundException("Image not found !"));
+                try {
+                    mediaRepository.delete(media);
+                } catch (Exception ex) {
+                    throw new ImageNotDeletedException("This image is not deleted, please try again later !");
+                }
             }
         }
 
@@ -209,8 +211,6 @@ public class MediaService {
                 throw new ForbiddenToChangeProfileException("You do not have access to delete this image");
             }
         } else {
-            // here I should check with the product service to see if the user wanting to
-            // delete the medias is the owner of the product
             Product product = null;
             try {
                 product = productClient.getProduct(targetId);
@@ -219,7 +219,8 @@ public class MediaService {
             }
 
             if (!product.userId().equals(userId)) {
-                throw new ForbiddenToChangeProductMediaException("You do not have access to the media of this product !");
+                throw new ForbiddenToChangeProductMediaException(
+                        "You do not have access to the media of this product !");
             }
         }
     }
