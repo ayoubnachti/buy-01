@@ -3,6 +3,7 @@ package com.ecommerce.mediaservice.exceptions;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -120,6 +121,11 @@ public class GlobalExceptions {
     @ExceptionHandler(MissingRequestHeaderException.class)
     public ResponseEntity<ResponseData<Void>> handleMissingRequestHeaderException(MissingRequestHeaderException ex) {
         return buildError(HttpStatus.BAD_REQUEST, "Required header '" + ex.getHeaderName() + "' is missing !");
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ResponseData<Void>> handleAccessDeniedException(AccessDeniedException ex) {
+        return buildError(HttpStatus.FORBIDDEN, "You do not have permission to perform this action !");
     }
 
     private ResponseEntity<ResponseData<Void>> buildError(HttpStatus status, String message) {
