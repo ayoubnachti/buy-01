@@ -124,4 +124,40 @@
       <span class="badge bg-secondary">Default</span>
     </div>
   </section>
+  <section class="mb-5">
+    <h2 class="mb-3">Loading Spinner</h2>
+    <app-loading-spinner />
+  </section>
+
+  <section class="mb-5">
+    <h2 class="mb-3">Empty State</h2>
+    <app-empty-state message="No products yet." actionLabel="Create New Product"
+      (action)="toastService.info('Create clicked (test only)')" />
+  </section>
+
+  <section class="mb-5">
+    <h2 class="mb-3">Toasts</h2>
+    <div class="d-flex gap-2">
+      <button class="btn btn-outline-primary btn-sm" (click)="toastService.success('Product created.')">
+        Trigger success
+      </button>
+      <button class="btn btn-outline-primary btn-sm" (click)="toastService.error('Something went wrong.')">
+        Trigger error
+      </button>
+      <button class="btn btn-outline-primary btn-sm" (click)="toastService.info('Just so you know…')">
+        Trigger info
+      </button>
+    </div>
+  </section>
+
+  <section class="mb-5">
+    <h2 class="mb-3">Confirmation Modal</h2>
+    <button class="btn btn-outline-danger btn-sm" (click)="showConfirmationModal.set(true)">
+      Open confirmation modal
+    </button>
+    @if (showConfirmationModal()) {
+    <app-confirmation-modal title="Delete product?" message="This can't be undone." confirmLabel="Delete"
+      (confirmed)="showConfirmationModal.set(false)" (cancelled)="showConfirmationModal.set(false)" />
+    }
+  </section>
 </div>
