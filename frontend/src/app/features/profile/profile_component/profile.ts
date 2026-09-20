@@ -1,9 +1,11 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, ViewChild, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 
 import { ProfileResponse, ProfileRole, UpdateProfileRequest } from '../models/profile.model';
 
 import { ProfileService } from '../services/profile.service';
+
+import { AuthService } from '../../../core/services/auth.service';
 
 import { Upload } from '../../media/components/upload/upload.component';
 
@@ -17,6 +19,14 @@ import { Upload } from '../../media/components/upload/upload.component';
 export class Profile implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly profileService = inject(ProfileService);
+  private readonly authService = inject(AuthService);
+
+  @ViewChild(Upload) uploadComponent?: Upload;
+
+  // CURRENT USER ID (used as the media target id for the avatar upload)
+  get userId(): string {
+    return this.authService.user()?.id ?? '';
+  }
 
   // FORM
   readonly profileForm = this.fb.nonNullable.group({
@@ -90,12 +100,6 @@ export class Profile implements OnInit {
     this.profileForm.markAsUntouched();
   }
 
-  // AVATAR
-  onAvatarUploaded(images: string[]): void {
-    this.avatar.set(images[0] ?? null);
-    this.showErrorMessage('');
-  }
-
   // CHECK CHANGES
   private hasChanges(): boolean {
     const original = this.originalProfile();
@@ -105,8 +109,9 @@ export class Profile implements OnInit {
     }
 
     const { name, email } = this.profileForm.getRawValue();
+    const avatarChanged = this.uploadComponent?.hasPendingChanges() ?? false;
 
-    return name !== original.name || email !== original.email || this.avatar() !== original.avatar;
+    return name !== original.name || email !== original.email || avatarChanged;
   }
 
   // SAVE
@@ -148,10 +153,36 @@ export class Profile implements OnInit {
 
     this.saving.set(true);
 
+    if (!this.uploadComponent) {
+      this.submitProfile(name, email, this.avatar());
+
+      return;
+    }
+
+    // Upload the picture first: only proceed to the user service once the
+    // media service has confirmed it.
+    this.uploadComponent.commit().subscribe({
+      next: (images) => {
+        this.submitProfile(name, email, images[0] ?? this.avatar());
+      },
+
+      error: (error) => {
+        console.error('Failed to upload the profile picture:', error);
+
+        this.showErrorMessage(
+          error?.error?.message || 'Failed to upload the profile picture. Please try again.',
+        );
+
+        this.saving.set(false);
+      },
+    });
+  }
+
+  private submitProfile(name: string, email: string, avatar: string | null): void {
     const data: UpdateProfileRequest = {
       name,
       email,
-      avatar: this.avatar(),
+      avatar,
     };
 
     this.profileService.updateProfile(data).subscribe({
@@ -198,6 +229,8 @@ export class Profile implements OnInit {
     this.avatar.set(original.avatar);
 
     this.role.set(original.role);
+
+    this.uploadComponent?.resetPending();
 
     this.profileForm.markAsPristine();
     this.profileForm.markAsUntouched();

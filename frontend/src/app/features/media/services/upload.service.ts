@@ -12,7 +12,6 @@ export class UploadService {
 
   private readonly apiUrl = 'http://localhost:8080';
 
-  // Replace the target's (profile or product) images with the newly picked ones.
   updateMedia(request: MediaRequest, images: File[]): Observable<ApiResponse<string[]>> {
     const formData = new FormData();
 
