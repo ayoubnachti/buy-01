@@ -102,10 +102,20 @@ public class MediaService {
         checkOwnership(request.targetType(), request.targetId(), userId);
 
         for (String imagePath : request.imagePaths()) {
-            deleteFromCloudinary(imagePath);
+            Media media = null;
             if (request.targetType().equals(TargetType.PRODUCT)) {
-                Media media = mediaRepository.findByImagePath(imagePath)
+                media = mediaRepository.findByImagePath(imagePath)
                         .orElseThrow(() -> new ImageNotFoundException("Image not found !"));
+                if (!media.getProductId().equals(request.targetId())) {
+                    throw new ImageNotFoundException("Image not found !");
+                }
+            } else {
+                verifyImageBelongsToTarget(imagePath, request.targetType(), request.targetId());
+            }
+
+            deleteFromCloudinary(imagePath);
+
+            if (media != null) {
                 try {
                     mediaRepository.delete(media);
                 } catch (Exception ex) {
