@@ -1,1 +1,33 @@
-<p>upload works!</p>
+<div
+  class="avatar-upload"
+  role="button"
+  tabindex="0"
+  (click)="fileInput.click()"
+  (keydown.enter)="fileInput.click()"
+  (keydown.space)="fileInput.click()"
+>
+  <div class="avatar-upload-preview">
+    @if (displayUrl) {
+      <img [src]="displayUrl" [alt]="name || 'Profile picture'" class="avatar-upload-img" />
+    } @else {
+      <div class="avatar-upload-fallback" aria-label="Profile initials">
+        {{ name ? name.charAt(0).toUpperCase() : '?' }}
+      </div>
+    }
+  </div>
+
+  <div class="avatar-upload-text">
+    <div class="avatar-upload-title">Profile picture</div>
+
+    <div class="avatar-upload-subtitle">Click to choose an image from your computer.</div>
+  </div>
+
+  <input
+    #fileInput
+    type="file"
+    accept="image/*"
+    class="avatar-upload-input"
+    (click)="$event.stopPropagation()"
+    (change)="onFileSelected($event)"
+  />
+</div>

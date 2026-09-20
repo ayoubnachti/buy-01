@@ -5,15 +5,12 @@ import { ProfileResponse, ProfileRole, UpdateProfileRequest } from '../models/pr
 
 import { ProfileService } from '../services/profile.service';
 
-// import { ImageUploadComponent } from '../../../shared/components/image-upload/image-upload.component';
+import { Upload } from '../../media/components/upload/upload';
 
 @Component({
   selector: 'app-profile',
   standalone: true,
-  imports: [
-    ReactiveFormsModule,
-    // ImageUploadComponent
-  ],
+  imports: [ReactiveFormsModule, Upload],
   templateUrl: './profile.html',
   styleUrl: './profile.css',
 })
@@ -96,7 +93,6 @@ export class Profile implements OnInit {
   // AVATAR
   onAvatarUploaded(imageUrl: string): void {
     this.avatar.set(imageUrl);
-    this.showSuccessMessage('Profile picture uploaded successfully.');
     this.showErrorMessage('');
   }
 

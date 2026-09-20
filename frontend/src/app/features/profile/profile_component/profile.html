@@ -135,34 +135,11 @@
           <label class="field-label"> Profile picture </label>
 
           <div class="field-control">
-            <div class="avatar-upload">
-              <div class="avatar-upload-preview">
-                @if (avatar()) {
-                  <img
-                    [src]="avatar()"
-                    [alt]="profile()?.name || 'Profile picture'"
-                    class="avatar-upload-img"
-                  />
-                } @else {
-                  <div class="avatar-upload-fallback" aria-label="Profile initials">
-                    {{ nameControl.value.charAt(0).toUpperCase() || '?' }}
-                  </div>
-                }
-              </div>
-
-              <div class="avatar-upload-text">
-                <div class="avatar-upload-title">Profile picture</div>
-
-                <div class="avatar-upload-subtitle">Image upload will be available soon.</div>
-              </div>
-            </div>
-
-            <!-- IMAGE UPLOAD — ENABLE WHEN COMPONENT IS READY -->
-            <!--
-            <app-image-upload
-              (imageUploaded)="onAvatarUploaded($event)">
-            </app-image-upload>
-            -->
+            <app-upload
+              [avatarUrl]="avatar()"
+              [name]="profile()?.name ?? null"
+              (imageUploaded)="onAvatarUploaded($event)"
+            ></app-upload>
           </div>
         </div>
 
