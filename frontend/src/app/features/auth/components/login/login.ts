@@ -86,7 +86,7 @@ export class Login implements OnInit {
 
         next: (response) => {
 
-          localStorage.setItem('jwt', response.data);
+          this.authService.setUserFromToken(response.data);
 
           this.isLoading.set(false);
 
