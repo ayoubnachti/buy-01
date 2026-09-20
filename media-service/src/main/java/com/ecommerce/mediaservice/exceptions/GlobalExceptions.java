@@ -16,6 +16,7 @@ import org.springframework.web.servlet.resource.NoResourceFoundException;
 import com.ecommerce.mediaservice.common.ResponseData;
 import com.ecommerce.mediaservice.exceptions.Product.ForbiddenToChangeProductMediaException;
 import com.ecommerce.mediaservice.exceptions.Product.ProductNotFoundException;
+import com.ecommerce.mediaservice.exceptions.Product.ProductServiceUnavailableException;
 import com.ecommerce.mediaservice.exceptions.media.CloudinaryDeleteException;
 import com.ecommerce.mediaservice.exceptions.media.CloudinaryUploadException;
 import com.ecommerce.mediaservice.exceptions.media.ImageNotDeletedException;
@@ -57,6 +58,11 @@ public class GlobalExceptions {
     @ExceptionHandler(ProductNotFoundException.class)
     public ResponseEntity<ResponseData<Void>> handleProductNotFoundException(Exception ex) {
         return buildError(HttpStatus.NOT_FOUND, ex.getMessage());
+    }
+
+    @ExceptionHandler(ProductServiceUnavailableException.class)
+    public ResponseEntity<ResponseData<Void>> handleProductServiceUnavailableException(Exception ex) {
+        return buildError(HttpStatus.BAD_GATEWAY, ex.getMessage());
     }
 
     @ExceptionHandler(CloudinaryUploadException.class)

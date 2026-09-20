@@ -21,6 +21,7 @@ import com.ecommerce.mediaservice.dtos.Product;
 import com.ecommerce.mediaservice.dtos.TargetType;
 import com.ecommerce.mediaservice.exceptions.Product.ForbiddenToChangeProductMediaException;
 import com.ecommerce.mediaservice.exceptions.Product.ProductNotFoundException;
+import com.ecommerce.mediaservice.exceptions.Product.ProductServiceUnavailableException;
 import com.ecommerce.mediaservice.exceptions.media.CloudinaryDeleteException;
 import com.ecommerce.mediaservice.exceptions.media.CloudinaryUploadException;
 import com.ecommerce.mediaservice.exceptions.media.ImageNotDeletedException;
@@ -90,6 +91,8 @@ public class MediaService {
             productClient.getProduct(productId);
         } catch (FeignException.NotFound ex) {
             throw new ProductNotFoundException("Product id not valid !");
+        } catch (Exception ex) {
+            throw new ProductServiceUnavailableException("Unable to reach the product service, please try again later !", ex);
         }
 
         List<Media> medias = mediaRepository.findByProductId(productId).orElse(new ArrayList<>());
@@ -229,6 +232,8 @@ public class MediaService {
                 product = productClient.getProduct(targetId);
             } catch (FeignException.NotFound ex) {
                 throw new ProductNotFoundException("Product not found !");
+            } catch (Exception ex) {
+                throw new ProductServiceUnavailableException("Unable to reach the product service, please try again later !", ex);
             }
 
             if (!product.userId().equals(userId)) {
