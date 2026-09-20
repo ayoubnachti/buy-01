@@ -1,0 +1,12 @@
+<td>{{ product.id }}</td>
+<td class="fw-semibold">{{ product.name }}</td>
+<td>{{ product.price }} DH</td>
+<td>{{ product.quantity }}</td>
+<td>
+  <button type="button" class="btn btn-link btn-sm p-0 me-3" (click)="edit.emit(product)">
+    <i class="bi bi-pencil me-1"></i>edit
+  </button>
+  <button type="button" class="btn btn-link btn-sm p-0 text-danger" (click)="delete.emit(product)">
+    <i class="bi bi-trash me-1"></i>delete
+  </button>
+</td>
