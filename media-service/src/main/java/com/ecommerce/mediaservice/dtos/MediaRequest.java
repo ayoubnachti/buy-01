@@ -5,7 +5,7 @@ import java.util.List;
 import jakarta.validation.constraints.NotNull;
 
 public record MediaRequest(
-        TargetType targetType,
+        @NotNull(message = "Target type is required !") TargetType targetType,
         @NotNull(message = "Invalid target Id !") String targetId,
         List<String> oldImagePaths) {
 
