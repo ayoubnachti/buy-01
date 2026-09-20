@@ -13,11 +13,15 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
+import com.ecommerce.mediaservice.clients.ProductClient;
 import com.ecommerce.mediaservice.common.ResponseData;
 import com.ecommerce.mediaservice.dtos.DeleteMediaRequest;
 import com.ecommerce.mediaservice.dtos.MediaRequest;
+import com.ecommerce.mediaservice.dtos.Product;
 import com.ecommerce.mediaservice.dtos.TargetType;
-import com.ecommerce.mediaservice.exceptions.Product.ProducIdNotFoundException;
+import com.ecommerce.mediaservice.exceptions.Product.ForbiddenToChangeProductMediaException;
+import com.ecommerce.mediaservice.exceptions.Product.ProductNotFoundException;
+import com.ecommerce.mediaservice.exceptions.Product.ProductServiceUnavailableException;
 import com.ecommerce.mediaservice.exceptions.media.CloudinaryDeleteException;
 import com.ecommerce.mediaservice.exceptions.media.CloudinaryUploadException;
 import com.ecommerce.mediaservice.exceptions.media.ImageNotDeletedException;
@@ -31,14 +35,16 @@ import com.ecommerce.mediaservice.exceptions.profile.ForbiddenToChangeProfileExc
 import com.ecommerce.mediaservice.models.Media;
 import com.ecommerce.mediaservice.repositories.MediaRepository;
 
+import feign.FeignException;
 import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
 public class MediaService {
     private static final long MAX_IMAGE_SIZE = 2 * 1024 * 1024;
-    public final MediaRepository mediaRepository;
+    private final MediaRepository mediaRepository;
     private final Cloudinary cloudinary;
+    private final ProductClient productClient;
 
     public ResponseData<List<String>> saveMedia(MediaRequest request, MultipartFile[] images) {
         List<String> imagesPaths = new ArrayList<>();
@@ -81,10 +87,15 @@ public class MediaService {
     }
 
     public ResponseData<List<String>> getMedias(String productId) {
-        List<Media> medias = new ArrayList<>();
+        try {
+            productClient.getProduct(productId);
+        } catch (FeignException.NotFound ex) {
+            throw new ProductNotFoundException("Product id not valid !");
+        } catch (Exception ex) {
+            throw new ProductServiceUnavailableException("Unable to reach the product service, please try again later !", ex);
+        }
 
-        medias = mediaRepository.findByProductId(productId)
-                .orElseThrow(() -> new ProducIdNotFoundException("Product id not valid !"));
+        List<Media> medias = mediaRepository.findByProductId(productId).orElse(new ArrayList<>());
 
         List<String> imagesPaths = new ArrayList<>();
         for (Media m : medias) {
@@ -97,13 +108,25 @@ public class MediaService {
         checkOwnership(request.targetType(), request.targetId(), userId);
 
         for (String imagePath : request.imagePaths()) {
+            Media media = null;
+            if (request.targetType().equals(TargetType.PRODUCT)) {
+                media = mediaRepository.findByImagePath(imagePath)
+                        .orElseThrow(() -> new ImageNotFoundException("Image not found !"));
+                if (!media.getProductId().equals(request.targetId())) {
+                    throw new ImageNotFoundException("Image not found !");
+                }
+            } else {
+                verifyImageBelongsToTarget(imagePath, request.targetType(), request.targetId());
+            }
+
             deleteFromCloudinary(imagePath);
-            Media media = mediaRepository.findByImagePath(imagePath)
-                    .orElseThrow(() -> new ImageNotFoundException("Image not found !"));
-            try {
-                mediaRepository.delete(media);
-            } catch (Exception ex) {
-                throw new ImageNotDeletedException("This image is not deleted, please try again later !");
+
+            if (media != null) {
+                try {
+                    mediaRepository.delete(media);
+                } catch (Exception ex) {
+                    throw new ImageNotDeletedException("This image is not deleted, please try again later !");
+                }
             }
         }
 
@@ -194,7 +217,7 @@ public class MediaService {
     }
 
     private String getFolder(TargetType targetType, String targetId) {
-        return targetType.equals(TargetType.PRODUCT) ? "/products/" + targetId + "/" : "/profile/" + targetId + "/";
+        return targetType.equals(TargetType.PRODUCT) ? "products/" + targetId + "/" : "profile/" + targetId + "/";
     }
 
     private void checkOwnership(TargetType targetType, String targetId, String userId) {
@@ -204,8 +227,19 @@ public class MediaService {
                 throw new ForbiddenToChangeProfileException("You do not have access to delete this image");
             }
         } else {
-            // here I should check with the product service to see if the user wanting to
-            // delete the medias is the owner of the product
+            Product product = null;
+            try {
+                product = productClient.getProduct(targetId);
+            } catch (FeignException.NotFound ex) {
+                throw new ProductNotFoundException("Product not found !");
+            } catch (Exception ex) {
+                throw new ProductServiceUnavailableException("Unable to reach the product service, please try again later !", ex);
+            }
+
+            if (!product.userId().equals(userId)) {
+                throw new ForbiddenToChangeProductMediaException(
+                        "You do not have access to the media of this product !");
+            }
         }
     }
 
