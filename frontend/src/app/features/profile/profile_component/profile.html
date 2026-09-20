@@ -136,9 +136,10 @@
 
           <div class="field-control">
             <app-upload
-              [avatarUrl]="avatar()"
+              [maxFiles]="1"
+              [initialImages]="avatar()"
               [name]="profile()?.name ?? null"
-              (imageUploaded)="onAvatarUploaded($event)"
+              (imagesSelected)="onAvatarUploaded($event)"
             ></app-upload>
           </div>
         </div>

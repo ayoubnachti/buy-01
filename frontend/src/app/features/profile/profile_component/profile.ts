@@ -91,8 +91,8 @@ export class Profile implements OnInit {
   }
 
   // AVATAR
-  onAvatarUploaded(imageUrl: string): void {
-    this.avatar.set(imageUrl);
+  onAvatarUploaded(images: string[]): void {
+    this.avatar.set(images[0] ?? null);
     this.showErrorMessage('');
   }
 
