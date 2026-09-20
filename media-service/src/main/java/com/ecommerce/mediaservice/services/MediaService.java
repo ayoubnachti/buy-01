@@ -211,7 +211,7 @@ public class MediaService {
     }
 
     private String getFolder(TargetType targetType, String targetId) {
-        return targetType.equals(TargetType.PRODUCT) ? "/products/" + targetId + "/" : "/profile/" + targetId + "/";
+        return targetType.equals(TargetType.PRODUCT) ? "products/" + targetId + "/" : "profile/" + targetId + "/";
     }
 
     private void checkOwnership(TargetType targetType, String targetId, String userId) {
