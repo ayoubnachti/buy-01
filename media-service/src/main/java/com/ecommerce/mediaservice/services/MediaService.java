@@ -13,9 +13,11 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
+import com.ecommerce.mediaservice.clients.ProductClient;
 import com.ecommerce.mediaservice.common.ResponseData;
 import com.ecommerce.mediaservice.dtos.DeleteMediaRequest;
 import com.ecommerce.mediaservice.dtos.MediaRequest;
+import com.ecommerce.mediaservice.dtos.Product;
 import com.ecommerce.mediaservice.dtos.TargetType;
 import com.ecommerce.mediaservice.exceptions.Product.ProducIdNotFoundException;
 import com.ecommerce.mediaservice.exceptions.media.CloudinaryDeleteException;
@@ -37,8 +39,9 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class MediaService {
     private static final long MAX_IMAGE_SIZE = 2 * 1024 * 1024;
-    public final MediaRepository mediaRepository;
+    private final MediaRepository mediaRepository;
     private final Cloudinary cloudinary;
+    private final ProductClient productClient;
 
     public ResponseData<List<String>> saveMedia(MediaRequest request, MultipartFile[] images) {
         List<String> imagesPaths = new ArrayList<>();
@@ -206,6 +209,11 @@ public class MediaService {
         } else {
             // here I should check with the product service to see if the user wanting to
             // delete the medias is the owner of the product
+            Product product = productClient.getProduct(targetId);
+
+            if (!product.userId().equals(userId)) {
+                throw new ForbiddenToChangeProfileException()
+            }
         }
     }
 

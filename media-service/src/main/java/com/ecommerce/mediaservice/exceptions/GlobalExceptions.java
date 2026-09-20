@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import com.ecommerce.mediaservice.common.ResponseData;
+import com.ecommerce.mediaservice.exceptions.Product.ForbiddenToChangeProductMediaException;
 import com.ecommerce.mediaservice.exceptions.Product.ProducIdNotFoundException;
 import com.ecommerce.mediaservice.exceptions.media.CloudinaryDeleteException;
 import com.ecommerce.mediaservice.exceptions.media.CloudinaryUploadException;
@@ -69,6 +70,11 @@ public class GlobalExceptions {
 
     @ExceptionHandler(ForbiddenToChangeProfileException.class)
     public ResponseEntity<ResponseData<Void>> handleForbiddenToChangeProfileException(Exception ex) {
+        return buildError(HttpStatus.FORBIDDEN, ex.getMessage());
+    }
+
+    @ExceptionHandler(ForbiddenToChangeProductMediaException.class)
+    public ResponseEntity<ResponseData<Void>> handleForbiddenToChangeProductMediaException(Exception ex) {
         return buildError(HttpStatus.FORBIDDEN, ex.getMessage());
     }
 
