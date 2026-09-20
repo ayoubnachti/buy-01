@@ -5,7 +5,7 @@ import { ProfileResponse, ProfileRole, UpdateProfileRequest } from '../models/pr
 
 import { ProfileService } from '../services/profile.service';
 
-import { Upload } from '../../media/components/upload/upload';
+import { Upload } from '../../media/components/upload/upload.component';
 
 @Component({
   selector: 'app-profile',

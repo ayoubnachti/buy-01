@@ -6,8 +6,8 @@ import { ImagePreview } from '../../models/image-preview.model';
   selector: 'app-upload',
   standalone: true,
   imports: [],
-  templateUrl: './upload.html',
-  styleUrl: './upload.css',
+  templateUrl: './upload.component.html',
+  styleUrl: './upload.component.css',
 })
 export class Upload {
   // How many images are allowed in total (1 = single avatar-style picker, >1 = gallery picker)
