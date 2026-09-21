@@ -9,10 +9,13 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 class GlobalExceptionHandlerTest {
 
@@ -55,6 +58,26 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
+    void shouldReturn400WhenRequestBodyIsInvalid() {
+
+        HttpMessageNotReadableException exception =
+                Mockito.mock(HttpMessageNotReadableException.class);
+
+        ResponseEntity<ErrorResponse> response =
+                handler.handleMessageNotReadableException(exception);
+
+        assertEquals(
+                HttpStatus.BAD_REQUEST.value(),
+                response.getBody().status()
+        );
+
+        assertEquals(
+                "Invalid request body",
+                response.getBody().message()
+        );
+    }
+
+    @Test
     void shouldReturn404WhenResourceIsNotFound() {
 
         ResourceNotFoundException exception =
@@ -70,6 +93,26 @@ class GlobalExceptionHandlerTest {
 
         assertEquals(
                 "User not found",
+                response.getBody().message()
+        );
+    }
+
+    @Test
+    void shouldReturn404WhenEndpointIsNotFound() {
+
+        NoResourceFoundException exception =
+                Mockito.mock(NoResourceFoundException.class);
+
+        ResponseEntity<ErrorResponse> response =
+                handler.handleNoResourceFoundException(exception);
+
+        assertEquals(
+                HttpStatus.NOT_FOUND.value(),
+                response.getBody().status()
+        );
+
+        assertEquals(
+                "Endpoint not found",
                 response.getBody().message()
         );
     }
@@ -110,6 +153,26 @@ class GlobalExceptionHandlerTest {
 
         assertEquals(
                 "Email already exists",
+                response.getBody().message()
+        );
+    }
+
+    @Test
+    void shouldReturn405WhenMethodIsNotAllowed() {
+
+        HttpRequestMethodNotSupportedException exception =
+                new HttpRequestMethodNotSupportedException("POST");
+
+        ResponseEntity<ErrorResponse> response =
+                handler.handleMethodNotAllowedException(exception);
+
+        assertEquals(
+                HttpStatus.METHOD_NOT_ALLOWED.value(),
+                response.getBody().status()
+        );
+
+        assertEquals(
+                "Method POST is not allowed for this endpoint",
                 response.getBody().message()
         );
     }
