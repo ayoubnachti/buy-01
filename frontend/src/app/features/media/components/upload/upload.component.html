@@ -1,30 +1,5 @@
 <div class="upload-root">
-  @if (isSingle()) {
-  <div class="avatar-upload" role="button" tabindex="0" (click)="fileInput.click()" (keydown.enter)="fileInput.click()"
-    (keydown.space)="fileInput.click()">
-    <div class="avatar-upload-preview">
-      @if (avatarUrl) {
-      <img [src]="avatarUrl" [alt]="name || 'Profile picture'" class="avatar-upload-img" />
-      } @else {
-      <div class="avatar-upload-fallback" aria-label="Profile initials">
-        {{ name ? name.charAt(0).toUpperCase() : '?' }}
-      </div>
-      }
-    </div>
-
-    <div class="avatar-upload-text">
-      <div class="avatar-upload-title">Profile picture</div>
-
-      <div class="avatar-upload-subtitle">
-        @if (uploading()) {
-          Uploading…
-        } @else {
-          Click to choose an image from your computer.
-        }
-      </div>
-    </div>
-  </div>
-  } @else {
+  @if (!isSingle() && previews().length) {
   <div class="gallery-upload">
     @for (preview of previews(); track preview.url; let i = $index) {
     <div class="gallery-item">
@@ -35,18 +10,33 @@
       </button>
     </div>
     }
+  </div>
+  }
 
-    @if (canAddMore()) {
-    <div class="gallery-add" role="button" tabindex="0" (click)="fileInput.click()" (keydown.enter)="fileInput.click()"
-      (keydown.space)="fileInput.click()">
-      @if (uploading()) {
-        <span class="gallery-add-text">Uploading…</span>
+  @if (isSingle() || canAddMore()) {
+  <div class="avatar-upload" role="button" tabindex="0" (click)="fileInput.click()" (keydown.enter)="fileInput.click()"
+    (keydown.space)="fileInput.click()">
+    <div class="avatar-upload-preview">
+      @if (isSingle() && avatarUrl) {
+      <img [src]="avatarUrl" [alt]="name || label" class="avatar-upload-img" />
       } @else {
-        <span class="gallery-add-icon">+</span>
-        <span class="gallery-add-text">Add image</span>
+      <div class="avatar-upload-fallback" aria-label="Upload">
+        {{ isSingle() ? (name ? name.charAt(0).toUpperCase() : '?') : '+' }}
+      </div>
       }
     </div>
-    }
+
+    <div class="avatar-upload-text">
+      <div class="avatar-upload-title">{{ label }}</div>
+
+      <div class="avatar-upload-subtitle">
+        @if (uploading()) {
+          Uploading…
+        } @else {
+          Click to choose an image from your computer.
+        }
+      </div>
+    </div>
   </div>
   }
 

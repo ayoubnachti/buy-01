@@ -2,7 +2,7 @@ import { Component, EventEmitter, Input, Output, computed, inject, signal } from
 import { Observable, catchError, map, of, throwError } from 'rxjs';
 
 import { ImagePreview } from '../../models/image-preview.model';
-import { MediaRequest, TargetType } from '../../models/media.model';
+import { ApiResponse, MediaRequest, SaveMediaRequest, TargetType } from '../../models/media.model';
 import { UploadService } from '../../services/upload.service';
 
 @Component({
@@ -22,6 +22,9 @@ export class Upload {
 
   // Only used by the single-image (avatar) variant, for the fallback initials
   @Input() name: string | null = null;
+
+  // Title text shown next to the picker, e.g. "Profile picture" or "Product pictures"
+  @Input() label = 'Profile picture';
 
   @Input()
   set initialImages(value: string | string[] | null) {
@@ -102,13 +105,12 @@ export class Upload {
     });
   }
 
-  // Uploads any newly picked files to the media service. The caller (e.g. a
-  // profile/product form on submit) should subscribe to this before saving
-  // the rest of its data, and must not proceed on error.
+  // Uploads any newly picked files to the media service, replacing whatever
+  // was there before. The caller (e.g. a profile/product form on submit)
+  // should subscribe to this before saving the rest of its data, and must
+  // not proceed on error.
   commit(): Observable<string[]> {
-    const pendingFiles = this.previews()
-      .filter((preview) => preview.file)
-      .map((preview) => preview.file as File);
+    const pendingFiles = this.pendingFiles();
 
     if (!pendingFiles.length) {
       return of(this.previews().map((preview) => preview.url));
@@ -122,10 +124,41 @@ export class Upload {
       oldImagePaths,
     };
 
+    return this.runUpload(this.uploadService.updateMedia(request, pendingFiles));
+  }
+
+  // For a target that doesn't exist until the caller creates it as part of
+  // the same submit (e.g. a brand-new product): the caller creates it first,
+  // then passes back the resulting id so any picked images can be attached
+  // to it. Resolves with an empty list (no request made) if nothing was picked.
+  commitNew(targetId: string): Observable<string[]> {
+    this.targetId = targetId;
+
+    const pendingFiles = this.pendingFiles();
+
+    if (!pendingFiles.length) {
+      return of([]);
+    }
+
+    const request: SaveMediaRequest = {
+      targetType: this.targetType,
+      targetId,
+    };
+
+    return this.runUpload(this.uploadService.saveMedia(request, pendingFiles));
+  }
+
+  private pendingFiles(): File[] {
+    return this.previews()
+      .filter((preview) => preview.file)
+      .map((preview) => preview.file as File);
+  }
+
+  private runUpload(upload$: Observable<ApiResponse<string[]>>): Observable<string[]> {
     this.uploading.set(true);
     this.errorMessage.set('');
 
-    return this.uploadService.updateMedia(request, pendingFiles).pipe(
+    return upload$.pipe(
       map((res) => {
         const confirmed: ImagePreview[] = res.data.map((url) => ({ url, file: null }));
 
@@ -175,6 +208,16 @@ export class Upload {
         : this.previews().filter((preview) => !preview.file),
     );
 
+    this.errorMessage.set('');
+  }
+
+  // Wipes everything — pending and already-confirmed images alike. Used when
+  // the parent form resets entirely, e.g. right after a successful save.
+  clear(): void {
+    this.previews().forEach((preview) => this.revokeIfLocal(preview));
+
+    this.previews.set([]);
+    this.originalAvatarUrl = null;
     this.errorMessage.set('');
   }
 
