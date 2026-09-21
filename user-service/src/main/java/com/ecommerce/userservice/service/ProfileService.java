@@ -47,6 +47,10 @@ public class ProfileService {
 
         user.setName(request.getName());
 
+        if (request.getAvatar() != "" && request.getAvatar() != null) {
+            user.setAvatar(request.getAvatar());
+        }
+
         // Password is optional
         if (request.getNewPassword() != null
                 && !request.getNewPassword().isBlank()) {

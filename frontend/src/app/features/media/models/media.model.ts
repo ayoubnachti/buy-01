@@ -6,6 +6,12 @@ export interface MediaRequest {
   oldImagePaths: string[] | null;
 }
 
+export interface DeleteMediaRequest {
+  targetType: TargetType;
+  targetId: string;
+  imagesPaths: string[] | null;
+}
+
 // Creating media has nothing to replace yet, so there's no oldImagePaths to send.
 export type SaveMediaRequest = Omit<MediaRequest, 'oldImagePaths'>;
 
