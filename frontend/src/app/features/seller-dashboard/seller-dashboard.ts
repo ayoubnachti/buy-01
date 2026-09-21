@@ -11,6 +11,7 @@ import { EmptyState } from '../../shared/components/empty-state/empty-state';
 import { ConfirmationModal } from '../../shared/components/confirmation-modal/confirmation-modal';
 import { ProductService } from '../../core/services/product.service';
 import { ToastService } from '../../core/services/toast.service';
+import { UploadService } from '../media/services/upload.service';
 
 @Component({
   selector: 'app-seller-dashboard',
@@ -20,6 +21,7 @@ import { ToastService } from '../../core/services/toast.service';
 })
 export class SellerDashboard {
   private readonly productService = inject(ProductService);
+  private readonly uploadService = inject(UploadService);
   private readonly toastService = inject(ToastService);
   private readonly destroyRef = inject(DestroyRef);
 
@@ -149,10 +151,35 @@ export class SellerDashboard {
         next: (products) => {
           this.products.set(products);
           this.loading.set(false);
+          this.loadProductImages();
         },
         error: () => {
           this.toastService.error('Could not load your products. Try refreshing.');
           this.loading.set(false);
+        },
+      });
+  }
+
+  // product-service doesn't track image URLs itself, so they're fetched
+  // separately from the media service and merged in. Best-effort: if this
+  // fails, the product list itself has already loaded successfully.
+  private loadProductImages(): void {
+    this.uploadService
+      .getProductsMedias()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (res) => {
+          const mediasByProduct = res.data;
+
+          this.products.update((list) =>
+            list.map((product) => ({
+              ...product,
+              imageUrls: mediasByProduct[product.id] ?? product.imageUrls ?? [],
+            })),
+          );
+        },
+        error: () => {
+          // Image lookup is best-effort; leave whatever imageUrls the products came with.
         },
       });
   }

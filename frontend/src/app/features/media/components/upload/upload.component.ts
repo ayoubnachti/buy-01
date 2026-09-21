@@ -2,7 +2,7 @@ import { Component, EventEmitter, Input, Output, computed, inject, signal } from
 import { Observable, catchError, map, of, throwError } from 'rxjs';
 
 import { ImagePreview } from '../../models/image-preview.model';
-import { ApiResponse, MediaRequest, SaveMediaRequest, TargetType } from '../../models/media.model';
+import { ApiResponse, DeleteMediaRequest, MediaRequest, SaveMediaRequest, TargetType } from '../../models/media.model';
 import { UploadService } from '../../services/upload.service';
 
 @Component({
@@ -93,15 +93,33 @@ export class Upload {
   }
 
   removeImage(index: number): void {
-    this.previews.update((list) => {
-      const next = [...list];
-      const [removed] = next.splice(index, 1);
+    const preview = this.previews()[index];
 
-      if (removed) {
-        this.revokeIfLocal(removed);
-      }
+    if (!preview) {
+      return;
+    }
 
-      return next;
+    // Not yet uploaded — just drop it locally, nothing to delete on the backend.
+    if (preview.file) {
+      this.previews.update((list) => list.filter((p) => p !== preview));
+      this.revokeIfLocal(preview);
+      return;
+    }
+
+    // Already-persisted image — delete it from the backend before dropping it from the UI.
+    this.errorMessage.set('');
+
+    const request: DeleteMediaRequest = {
+      targetType: this.targetType,
+      targetId: this.targetId,
+      imagePaths: [preview.url],
+    };
+
+    this.uploadService.deleteMedia(request).subscribe({
+      next: () => this.previews.update((list) => list.filter((p) => p !== preview)),
+      error: (error) => {
+        this.errorMessage.set(error?.error?.message || 'Failed to delete image. Please try again.');
+      },
     });
   }
 
