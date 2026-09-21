@@ -230,7 +230,7 @@ public class MediaService {
         } else {
             Product product = null;
             try {
-                product = productClient.getProduct(targetId);
+                product = productClient.getProduct(targetId).getData();
             } catch (FeignException.NotFound ex) {
                 throw new ProductNotFoundException("Product not found !");
             } catch (Exception ex) {
