@@ -24,14 +24,9 @@
       @for (product of products(); track product.id) {
         <div class="col">
           <div class="card h-100">
-            @if (product.imageUrls && product.imageUrls.length > 0) {
-              <img
-                [src]="product.imageUrls[0]"
-                [alt]="product.name"
-                class="card-img-top"
-                style="height: 180px; object-fit: cover;"
-              />
-            }
+            <!-- TODO(teammate): bind [images]="product.imageUrls" once the real product image lookup is wired up -->
+            <app-carousel [alt]="product.name" />
+
             <div class="card-body">
               <h5 class="card-title">{{ product.name }}</h5>
               <p class="card-text text-secondary">{{ product.description }}</p>

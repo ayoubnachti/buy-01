@@ -1,0 +1,37 @@
+<div class="app-carousel" [style.height]="height()">
+  @if (activeImage(); as image) {
+    <img [src]="image" [alt]="alt()" class="app-carousel-image" />
+  }
+
+  @if (hasMultiple()) {
+    <button
+      type="button"
+      class="app-carousel-arrow app-carousel-arrow-prev"
+      (click)="prev()"
+      aria-label="Previous image"
+    >
+      <span aria-hidden="true">&larr;</span>
+    </button>
+
+    <button
+      type="button"
+      class="app-carousel-arrow app-carousel-arrow-next"
+      (click)="next()"
+      aria-label="Next image"
+    >
+      <span aria-hidden="true">&rarr;</span>
+    </button>
+
+    <div class="app-carousel-dots">
+      @for (slide of slides(); track $index; let i = $index) {
+        <button
+          type="button"
+          class="app-carousel-dot"
+          [class.active]="i === currentIndex()"
+          (click)="goTo(i)"
+          [attr.aria-label]="'Go to image ' + (i + 1)"
+        ></button>
+      }
+    </div>
+  }
+</div>
