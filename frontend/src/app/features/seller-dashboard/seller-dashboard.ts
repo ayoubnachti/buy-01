@@ -1,6 +1,5 @@
-import { DestroyRef, Component, ViewChild, inject, signal } from '@angular/core';
+import { DestroyRef, Component, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { of } from 'rxjs';
 
 import { Product } from '../../shared/models/product.model';
 import { CreateProductRequest } from '../../shared/models/create-product-request';
@@ -11,6 +10,9 @@ import { EmptyState } from '../../shared/components/empty-state/empty-state';
 import { ConfirmationModal } from '../../shared/components/confirmation-modal/confirmation-modal';
 import { ProductService } from '../../core/services/product.service';
 import { ToastService } from '../../core/services/toast.service';
+import { AuthService } from '../../core/services/auth.service';
+
+const PAGE_SIZE = 20;
 
 @Component({
   selector: 'app-seller-dashboard',
@@ -21,17 +23,19 @@ import { ToastService } from '../../core/services/toast.service';
 export class SellerDashboard {
   private readonly productService = inject(ProductService);
   private readonly toastService = inject(ToastService);
+  private readonly authService = inject(AuthService);
   private readonly destroyRef = inject(DestroyRef);
-
-  @ViewChild(ProductForm) private productFormRef?: ProductForm;
 
   products = signal<Product[]>([]);
   loading = signal(true);
-  saving = signal(false);
   editingProduct = signal<Product | null>(null);
   focusTrigger = signal(0);
-
   productPendingDelete = signal<Product | null>(null);
+
+  currentPage = signal(0);
+  hasNext = signal(false);
+  hasPrevious = signal(false);
+  totalElements = signal(0);
 
   constructor() {
     this.fetchProducts();
@@ -66,9 +70,16 @@ export class SellerDashboard {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {
-          this.products.update((list) => list.filter((p) => p.id !== product.id));
           this.toastService.success('Product deleted.');
           this.productPendingDelete.set(null);
+
+          // Deleting the only item on a page beyond the first should step
+          // back a page, not leave an empty page with a stale "Previous".
+          if (this.products().length === 1 && this.currentPage() > 0) {
+            this.currentPage.update((p) => p - 1);
+          }
+
+          this.fetchProducts();
         },
         error: () => {
           this.toastService.error('Could not delete this product. Try again.');
@@ -78,24 +89,27 @@ export class SellerDashboard {
   }
 
   onFormSave(request: CreateProductRequest): void {
-    if (this.saving()) {
-      return;
-    }
-
     const editing = this.editingProduct();
     const save$ = editing
       ? this.productService.update(editing.id, request)
       : this.productService.create(request);
 
-    this.saving.set(true);
-
-    // Product first: only attempt the media upload once the product itself
-    // is confirmed saved (and we have a real product id to attach images to).
     save$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: (savedProduct) => this.uploadPendingImages(savedProduct, editing),
+      next: () => {
+        this.toastService.success(editing ? 'Product updated.' : 'Product created.');
 
+        // Reset the form (same mechanism as Create/Edit clicks) so a
+        // second, accidental Submit can't re-post the same data.
+        this.editingProduct.set(null);
+        this.focusTrigger.update((n) => n + 1);
+
+        // Refetch rather than patch products() locally — pagination is
+        // server-driven now, so this component's local array is only ever
+        // one page's worth of data; patching it in place would drift from
+        // the server's actual page boundaries and totals.
+        this.fetchProducts();
+      },
       error: () => {
-        this.saving.set(false);
         this.toastService.error(
           editing ? 'Could not update this product.' : 'Could not create this product.',
         );
@@ -103,51 +117,40 @@ export class SellerDashboard {
     });
   }
 
-  private uploadPendingImages(savedProduct: Product, editing: Product | null): void {
-    const commitImages$ = this.productFormRef?.commitImages(savedProduct.id) ?? of([]);
-
-    commitImages$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: (imageUrls) => {
-        const finalProduct = imageUrls.length ? { ...savedProduct, imageUrls } : savedProduct;
-
-        this.saving.set(false);
-        this.applySavedProduct(finalProduct, editing);
-        this.toastService.success(editing ? 'Product updated.' : 'Product created.');
-      },
-
-      error: () => {
-        // The product itself is already saved at this point; only the
-        // image attachment failed, so keep the product and let the user
-        // retry the images from the edit form instead of losing the save.
-        this.saving.set(false);
-        this.applySavedProduct(savedProduct, editing);
-        this.toastService.error(
-          'Product saved, but the image(s) failed to upload. You can retry from the edit form.',
-        );
-      },
-    });
+  onNextPage(): void {
+    if (!this.hasNext()) {
+      return;
+    }
+    this.currentPage.update((p) => p + 1);
+    this.fetchProducts();
   }
 
-  private applySavedProduct(savedProduct: Product, editing: Product | null): void {
-    this.products.update((list) =>
-      editing ? list.map((p) => (p.id === editing.id ? savedProduct : p)) : [...list, savedProduct],
-    );
-
-    // Reset the form (same mechanism as Create/Edit clicks) so a
-    // second, accidental Submit can't re-post the same data and
-    // create a duplicate.
-    this.editingProduct.set(null);
-    this.focusTrigger.update((n) => n + 1);
+  onPreviousPage(): void {
+    if (!this.hasPrevious()) {
+      return;
+    }
+    this.currentPage.update((p) => p - 1);
+    this.fetchProducts();
   }
 
   private fetchProducts(): void {
+    const sellerId = this.authService.user()?.id;
+    if (!sellerId) {
+      this.toastService.error('Not signed in as a seller — try logging in again.');
+      this.loading.set(false);
+      return;
+    }
+
     this.loading.set(true);
     this.productService
-      .getAll()
+      .getAll(sellerId, this.currentPage(), PAGE_SIZE)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: (products) => {
-          this.products.set(products);
+        next: (response) => {
+          this.products.set(response.items);
+          this.hasNext.set(response.hasNext);
+          this.hasPrevious.set(response.hasPrevious);
+          this.totalElements.set(response.totalElements);
           this.loading.set(false);
         },
         error: () => {

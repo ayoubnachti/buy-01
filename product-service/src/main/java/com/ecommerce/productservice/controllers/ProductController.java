@@ -28,36 +28,40 @@ import org.springframework.web.bind.annotation.PutMapping;
 public class ProductController {
   private final ProductService productService;
 
+  // No @PreAuthorize — stays public. `owner` is an explicit userId the
+  // caller already has, not a token-resolved "me"; no auth model change.
   @GetMapping
-  public ProductPageResponse getProducts(
+  public ResponseData<ProductPageResponse> getAllProducts(
       @RequestParam(required = false) String owner,
       @RequestParam(required = false) Integer page,
       @RequestParam(required = false) Integer limit) {
-    return productService.getProducts(owner, page, limit);
+    ProductPageResponse result = productService.getProducts(owner, page, limit);
+    return ResponseData.success("Products retrieved successfully", result);
   }
 
   @GetMapping("/{id}")
-  public ProductResponse getProduct(@PathVariable String id) {
-    return productService.getProductById(id);
+  public ResponseData<ProductResponse> getProduct(@PathVariable String id) {
+    return ResponseData.success("Product retrieved successfully", productService.getProductById(id));
   }
 
   @PreAuthorize("hasRole('SELLER')")
   @PostMapping
-  public ResponseEntity<ProductResponse> createProduct(
+  public ResponseEntity<ResponseData<ProductResponse>> createProduct(
       @Valid @RequestBody ProductRequest request,
       @RequestHeader("X-User-Id") String userId) {
     ProductResponse product = productService.create(request, userId);
-    return ResponseEntity.status(HttpStatus.CREATED).body(product);
+    return ResponseEntity.status(HttpStatus.CREATED)
+        .body(ResponseData.success("Product created successfully", product));
   }
 
   @PreAuthorize("hasRole('SELLER')")
   @PutMapping("/{id}")
-  public ResponseEntity<ProductResponse> updateProduct(
+  public ResponseEntity<ResponseData<ProductResponse>> updateProduct(
       @PathVariable String id,
       @Valid @RequestBody ProductRequest request,
       @RequestHeader("X-User-Id") String userId) {
     ProductResponse product = productService.updateProduct(request, id, userId);
-    return ResponseEntity.ok(product);
+    return ResponseEntity.ok(ResponseData.success("Product updated successfully", product));
   }
 
   @PreAuthorize("hasRole('SELLER')")

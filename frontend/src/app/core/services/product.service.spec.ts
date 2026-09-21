@@ -4,6 +4,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { ProductService } from './product.service';
 import { Product } from '../../shared/models/product.model';
+import { ProductPageResponse } from '../../shared/models/product-page-response'; // adjust path
 import { environment } from '../../../environments/environment';
 
 describe('ProductService', () => {
@@ -22,7 +23,7 @@ describe('ProductService', () => {
     httpMock.verify();
   });
 
-  it('fetches products from the correct endpoint', () => {
+  it('fetches products from the correct endpoint and unwraps the ResponseData/data envelope', () => {
     const mockProducts: Product[] = [
       {
         id: '1',
@@ -37,13 +38,27 @@ describe('ProductService', () => {
       },
     ];
 
-    service.getAll().subscribe((products) => {
-      expect(products).toEqual(mockProducts);
+    const mockPageResponse: ProductPageResponse = {
+      items: mockProducts,
+      currentPage: 0,
+      pageSize: 20,
+      totalElements: 1,
+      totalPages: 1,
+      hasNext: false,
+      hasPrevious: false,
+    };
+
+    service.getAll().subscribe((response) => {
+      expect(response).toEqual(mockPageResponse);
     });
 
     const req = httpMock.expectOne(`${environment.apiUrl}/products`);
     expect(req.request.method).toBe('GET');
-    req.flush(mockProducts);
+    req.flush({
+      success: true,
+      message: 'Products retrieved successfully',
+      data: mockPageResponse,
+    });
   });
 
   it('propagates an error when the request fails', () => {

@@ -2,7 +2,7 @@
   <div class="row g-5">
     <div class="col-lg-7">
       <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-3">
-        <h2 class="mb-0 text-secondary">Listings ({{ products().length }})</h2>
+        <h2 class="mb-0 text-secondary">Listings ({{ totalElements() }})</h2>
         <button
           type="button"
           class="btn btn-primary rounded-pill px-4 d-inline-flex align-items-center gap-2"
@@ -43,6 +43,26 @@
             }
           </tbody>
         </table>
+
+        <nav class="d-flex justify-content-between align-items-center mt-3" aria-label="Product pages">
+          <button
+            type="button"
+            class="btn btn-outline-primary btn-sm"
+            [disabled]="!hasPrevious()"
+            (click)="onPreviousPage()"
+          >
+            Previous
+          </button>
+          <span class="text-secondary small">Page {{ currentPage() + 1 }}</span>
+          <button
+            type="button"
+            class="btn btn-outline-primary btn-sm"
+            [disabled]="!hasNext()"
+            (click)="onNextPage()"
+          >
+            Next
+          </button>
+        </nav>
       }
     </div>
 
@@ -51,7 +71,6 @@
         <app-product-form
           [editingProduct]="editingProduct()"
           [focusTrigger]="focusTrigger()"
-          [saving]="saving()"
           (save)="onFormSave($event)"
         />
       </div>
@@ -63,7 +82,7 @@
       title="Delete product?"
       [message]="'Delete \'' + product.name + '\'? This can\'t be undone.'"
       confirmLabel="Delete"
-      (confirmed)="onConfirmDelete()"
+      (confirmed)="onConfirmDelete()"docker 
       (cancelled)="onCancelDelete()"
     />
   }

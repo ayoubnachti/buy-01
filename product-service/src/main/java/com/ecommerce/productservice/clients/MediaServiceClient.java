@@ -7,6 +7,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 @FeignClient(name = "media-service")
 public interface MediaServiceClient {
 
-  @GetMapping("/media/{productId}")
+  @GetMapping("/media/images/{productId}")
   MediaImagesResponse getMedias(@PathVariable("productId") String productId);
 }
