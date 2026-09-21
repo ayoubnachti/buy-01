@@ -59,9 +59,11 @@ describe('ProductList', () => {
     const cardTitle = fixture.nativeElement.querySelector('.card-title');
     expect(cardTitle?.textContent).toContain('chair');
 
-    // imageUrls: null must not render a broken <img>, and must not throw
-    const img = fixture.nativeElement.querySelector('img');
-    expect(img).toBeNull();
+    // imageUrls: null must not throw, and falls back to the carousel's
+    // static placeholder image until the real lookup is wired up.
+    const img: HTMLImageElement = fixture.nativeElement.querySelector('img');
+    expect(img).not.toBeNull();
+    expect(img.alt).toBe('chair');
   });
 
   it('shows an error message when the request fails', async () => {

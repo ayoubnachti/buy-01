@@ -2,10 +2,11 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { CurrencyPipe } from '@angular/common';
 import { Product } from '../../../shared/models/product.model';
 import { ProductService } from '../../../core/services/product.service';
+import { Carousel } from '../../../shared/components/carousel/carousel';
 
 @Component({
   selector: 'app-product-list',
-  imports: [CurrencyPipe],
+  imports: [CurrencyPipe, Carousel],
   templateUrl: './product-list.html',
 })
 export class ProductList implements OnInit {
