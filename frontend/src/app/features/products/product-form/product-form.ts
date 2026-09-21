@@ -1,14 +1,6 @@
-import {
-  Component,
-  ElementRef,
-  EventEmitter,
-  Output,
-  ViewChild,
-  effect,
-  input,
-  signal,
-} from '@angular/core';
+import { Component, ElementRef, EventEmitter, Output, ViewChild, effect, input, signal } from '@angular/core';
 import { FormField, form, required, submit, validate } from '@angular/forms/signals';
+
 import { Product } from '../../../shared/models/product.model';
 import { CreateProductRequest } from '../../../shared/models/create-product-request';
 
@@ -39,14 +31,23 @@ export class ProductForm {
 
   readonly productForm = form(this.model, (schemaPath) => {
     required(schemaPath.name, { message: 'Name is required.' });
+    validate(schemaPath.name, (ctx) =>
+      ctx.value().length <= 100 ? null : { kind: 'name', message: 'Name must be at most 100 characters.' },
+    );
+
     required(schemaPath.description, { message: 'Description is required.' });
+    validate(schemaPath.description, (ctx) =>
+      ctx.value().length <= 1000
+        ? null
+        : { kind: 'description', message: 'Description must be at most 1000 characters.' },
+    );
 
     validate(schemaPath.price, (ctx) =>
-      ctx.value() > 0 ? null : { kind: 'price', message: 'Price must be greater than 0.' }
+      ctx.value() > 0 ? null : { kind: 'price', message: 'Price must be greater than 0.' },
     );
 
     validate(schemaPath.quantity, (ctx) =>
-      ctx.value() >= 0 ? null : { kind: 'quantity', message: "Quantity can't be negative." }
+      ctx.value() > 0 ? null : { kind: 'quantity', message: 'Quantity must be greater than 0.' },
     );
   });
 
@@ -55,7 +56,7 @@ export class ProductForm {
   constructor() {
     effect(() => {
       const editing = this.editingProduct();
-      this.focusTrigger();
+      this.focusTrigger(); 
 
       this.model.set(
         editing
@@ -65,7 +66,7 @@ export class ProductForm {
               price: editing.price,
               quantity: editing.quantity,
             }
-          : { ...EMPTY_MODEL }
+          : { ...EMPTY_MODEL },
       );
 
       this.productForm().reset();

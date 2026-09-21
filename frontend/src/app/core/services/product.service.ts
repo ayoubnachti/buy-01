@@ -1,15 +1,28 @@
-import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Injectable, inject } from '@angular/core';
+import { CreateProductRequest } from '../../shared/models/create-product-request';
 import { Product } from '../../shared/models/product.model';
-import { environment } from '../../../environments/environment';
+
 
 @Injectable({ providedIn: 'root' })
 export class ProductService {
   private readonly http = inject(HttpClient);
-  private readonly baseUrl = `${environment.apiUrl}/products`;
 
-  getAll(): Observable<Product[]> {
-    return this.http.get<Product[]>(this.baseUrl);
+  private readonly apiUrl = 'http://localhost:8080/products';
+
+  getAll() {
+    return this.http.get<Product[]>(this.apiUrl);
+  }
+
+  create(request: CreateProductRequest) {
+    return this.http.post<Product>(this.apiUrl, request);
+  }
+
+  update(id: string, request: CreateProductRequest) {
+    return this.http.put<Product>(`${this.apiUrl}/${id}`, request);
+  }
+
+  delete(id: string) {
+    return this.http.delete<void>(`${this.apiUrl}/${id}`);
   }
 }

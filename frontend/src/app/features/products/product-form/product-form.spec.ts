@@ -62,14 +62,14 @@ describe('ProductForm', () => {
     expect(fixture.nativeElement.textContent).toContain('Price must be greater than 0.');
   });
 
-  it('should show a validation error for a negative quantity once touched', () => {
+  it('should show a validation error for a non-positive quantity once touched', () => {
     const quantityInput: HTMLInputElement = fixture.nativeElement.querySelector('#pfQuantity');
-    quantityInput.value = '-1';
+    quantityInput.value = '0';
     quantityInput.dispatchEvent(new Event('input'));
     quantityInput.dispatchEvent(new Event('blur'));
     fixture.detectChanges();
 
-    expect(fixture.nativeElement.textContent).toContain("Quantity can't be negative.");
+    expect(fixture.nativeElement.textContent).toContain('Quantity must be greater than 0.');
   });
 
   it('should emit save with the form value when valid', async () => {
