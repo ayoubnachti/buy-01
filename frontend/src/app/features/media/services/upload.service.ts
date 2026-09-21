@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
-import { ApiResponse, MediaRequest, SaveMediaRequest } from '../models/media.model';
+import { ApiResponse, DeleteMediaRequest, MediaRequest, SaveMediaRequest } from '../models/media.model';
 
 @Injectable({
   providedIn: 'root',
@@ -33,4 +33,8 @@ export class UploadService {
 
     return this.http.put<ApiResponse<string[]>>(`${this.apiUrl}/media/images`, formData);
   }
+
+  // deleteMedia(request: DeleteMediaRequest): Observable<ApiResponse<string>> {
+  //   return this.http.delete<ApiResponse<string>>(`{this.apiUrl}/media/images`, request);
+  // }
 }
