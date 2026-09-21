@@ -211,6 +211,16 @@ export class Upload {
     this.errorMessage.set('');
   }
 
+  // Wipes everything — pending and already-confirmed images alike. Used when
+  // the parent form resets entirely, e.g. right after a successful save.
+  clear(): void {
+    this.previews().forEach((preview) => this.revokeIfLocal(preview));
+
+    this.previews.set([]);
+    this.originalAvatarUrl = null;
+    this.errorMessage.set('');
+  }
+
   private revokeIfLocal(preview: ImagePreview): void {
     if (preview.file) {
       URL.revokeObjectURL(preview.url);

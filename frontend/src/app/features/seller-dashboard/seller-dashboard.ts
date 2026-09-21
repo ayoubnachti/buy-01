@@ -27,6 +27,7 @@ export class SellerDashboard {
 
   products = signal<Product[]>([]);
   loading = signal(true);
+  saving = signal(false);
   editingProduct = signal<Product | null>(null);
   focusTrigger = signal(0);
 
@@ -77,10 +78,16 @@ export class SellerDashboard {
   }
 
   onFormSave(request: CreateProductRequest): void {
+    if (this.saving()) {
+      return;
+    }
+
     const editing = this.editingProduct();
     const save$ = editing
       ? this.productService.update(editing.id, request)
       : this.productService.create(request);
+
+    this.saving.set(true);
 
     // Product first: only attempt the media upload once the product itself
     // is confirmed saved (and we have a real product id to attach images to).
@@ -88,6 +95,7 @@ export class SellerDashboard {
       next: (savedProduct) => this.uploadPendingImages(savedProduct, editing),
 
       error: () => {
+        this.saving.set(false);
         this.toastService.error(
           editing ? 'Could not update this product.' : 'Could not create this product.',
         );
@@ -102,6 +110,7 @@ export class SellerDashboard {
       next: (imageUrls) => {
         const finalProduct = imageUrls.length ? { ...savedProduct, imageUrls } : savedProduct;
 
+        this.saving.set(false);
         this.applySavedProduct(finalProduct, editing);
         this.toastService.success(editing ? 'Product updated.' : 'Product created.');
       },
@@ -110,6 +119,7 @@ export class SellerDashboard {
         // The product itself is already saved at this point; only the
         // image attachment failed, so keep the product and let the user
         // retry the images from the edit form instead of losing the save.
+        this.saving.set(false);
         this.applySavedProduct(savedProduct, editing);
         this.toastService.error(
           'Product saved, but the image(s) failed to upload. You can retry from the edit form.',
