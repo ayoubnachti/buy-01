@@ -3,9 +3,14 @@ package com.ecommerce.productservice.services;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 
+import com.ecommerce.productservice.clients.MediaServiceGateway;
 import com.ecommerce.productservice.dtos.request.ProductRequest;
 import com.ecommerce.productservice.dtos.response.*;
 import com.ecommerce.productservice.exceptions.custom.ForbiddenException;
@@ -19,16 +24,39 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class ProductService {
   private final ProductRepository productRepository;
+  private final MediaServiceGateway mediaServiceGateway;
 
-  public List<ProductResponse> getAllProducts() {
-    return productRepository.findAll()
-        .stream()
-        .map(product -> ProductResponse.from(product))
+  private static final int DEFAULT_LIMIT = 20;
+  private static final int MAX_LIMIT = 100;
+
+  public ProductPageResponse getProducts(String owner, Integer page, Integer limit) {
+    Pageable pageable = PageRequest.of(
+        resolvePage(page),
+        resolveLimit(limit),
+        Sort.by(Sort.Direction.DESC, "createdAt"));
+
+    Page<Product> result = (owner != null && !owner.isBlank())
+        ? productRepository.findByUserId(owner, pageable)
+        : productRepository.findAll(pageable);
+
+    List<ProductResponse> items = result.getContent().stream()
+        .map(this::withLiveImages)
+        .map(ProductResponse::from)
         .toList();
+
+    return new ProductPageResponse(
+        items,
+        result.getNumber(),
+        result.getSize(),
+        result.getTotalElements(),
+        result.getTotalPages(),
+        result.hasNext(),
+        result.hasPrevious());
   }
 
   public ProductResponse getProductById(String id) {
-    return ProductResponse.from(findProductById(id));
+    Product product = withLiveImages(findProductById(id));
+    return ProductResponse.from(product);
   }
 
   public ProductResponse create(ProductRequest request, String sellerId) {
@@ -79,5 +107,21 @@ public class ProductService {
   private Product findProductById(String id) {
     return productRepository.findById(id).orElseThrow(
         () -> new ResourceNotFoundException("Product", id));
+  }
+
+  private Product withLiveImages(Product product) {
+    product.setImageUrls(mediaServiceGateway.getImages(product.getId()));
+    return product;
+  }
+
+  private int resolvePage(Integer requested) {
+    return (requested == null || requested < 0) ? 0 : requested;
+  }
+
+  private int resolveLimit(Integer requested) {
+    if (requested == null) {
+      return DEFAULT_LIMIT;
+    }
+    return Math.max(1, Math.min(requested, MAX_LIMIT));
   }
 }

@@ -28,13 +28,9 @@ eureka:
 
 resilience4j:
   circuitbreaker:
-    configs:
-      default:
-        sliding-window-size: 10
-        permitted-number-of-calls-in-half-open-state: 3
-        wait-duration-in-open-state: 10000
-        failure-rate-threshold: 80
     instances:
-      userService:
-        base-config: default
-        failure-rate-threshold: 50
+      mediaService:
+        slidingWindowSize: 10
+        failureRateThreshold: 50
+        waitDurationInOpenState: 5s
+        permittedNumberOfCallsInHalfOpenState: 3
