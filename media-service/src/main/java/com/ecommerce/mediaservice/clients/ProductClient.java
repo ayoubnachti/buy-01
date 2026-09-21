@@ -7,6 +7,6 @@ import com.ecommerce.mediaservice.dtos.Product;
 
 @FeignClient(name = "product-service")
 public interface ProductClient {
-    @GetMapping("/product/{id}")
+    @GetMapping("/products/{id}")
     public Product getProduct(@PathVariable("id") String id);
 }
