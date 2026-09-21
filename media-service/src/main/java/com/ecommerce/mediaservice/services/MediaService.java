@@ -220,6 +220,7 @@ public class MediaService {
         return targetType.equals(TargetType.PRODUCT) ? "products/" + targetId + "/" : "profile/" + targetId + "/";
     }
 
+    // this method checks ownership
     private void checkOwnership(TargetType targetType, String targetId, String userId) {
         if (targetType.equals(TargetType.PROFILE)) {
             boolean isOwner = targetId.equals(userId);
