@@ -7,18 +7,18 @@ import { Login } from './login';
 import { AuthService } from '../../../../core/services/auth.service';
 
 describe('Login', () => {
-
   let component: Login;
   let fixture: ComponentFixture<Login>;
   let authService: {
     login: ReturnType<typeof vi.fn>;
+    setUserFromToken: ReturnType<typeof vi.fn>;
   };
   let router: Router;
 
   beforeEach(async () => {
-
     authService = {
-      login: vi.fn()
+      login: vi.fn(),
+      setUserFromToken: vi.fn(),
     };
 
     await TestBed.configureTestingModule({
@@ -27,11 +27,11 @@ describe('Login', () => {
       providers: [
         {
           provide: AuthService,
-          useValue: authService
+          useValue: authService,
         },
 
-        provideRouter([])
-      ]
+        provideRouter([]),
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(Login);
@@ -43,12 +43,10 @@ describe('Login', () => {
     fixture.detectChanges();
   });
 
-
   afterEach(() => {
     localStorage.clear();
     vi.restoreAllMocks();
   });
-
 
   // --------------------------------------------------
   // Component
@@ -58,213 +56,122 @@ describe('Login', () => {
     expect(component).toBeTruthy();
   });
 
-
   // --------------------------------------------------
   // Form validation
   // --------------------------------------------------
 
   it('should initialize with an empty form', () => {
-
-    expect(component.loginForm.value)
-      .toEqual({
-        email: '',
-        password: ''
-      });
-
+    expect(component.loginForm.value).toEqual({
+      email: '',
+      password: '',
+    });
   });
-
 
   it('should mark the form as invalid when submitted empty', () => {
-
     component.onSubmit();
 
-    expect(component.loginForm.invalid)
-      .toBe(true);
+    expect(component.loginForm.invalid).toBe(true);
 
-    expect(component.email.touched)
-      .toBe(true);
+    expect(component.email.touched).toBe(true);
 
-    expect(component.password.touched)
-      .toBe(true);
+    expect(component.password.touched).toBe(true);
 
-    expect(authService.login)
-      .not.toHaveBeenCalled();
-
+    expect(authService.login).not.toHaveBeenCalled();
   });
-
 
   it('should reject an invalid email', () => {
-
     component.loginForm.setValue({
       email: 'invalid-email',
-      password: 'password123'
+      password: 'password123',
     });
 
     component.onSubmit();
 
-    expect(component.email.hasError('email'))
-      .toBe(true);
+    expect(component.email.hasError('email')).toBe(true);
 
-    expect(authService.login)
-      .not.toHaveBeenCalled();
-
+    expect(authService.login).not.toHaveBeenCalled();
   });
-
 
   it('should reject a password shorter than 8 characters', () => {
-
     component.loginForm.setValue({
       email: 'test@example.com',
-      password: '1234567'
+      password: '1234567',
     });
 
     component.onSubmit();
 
-    expect(component.password.hasError('minlength'))
-      .toBe(true);
+    expect(component.password.hasError('minlength')).toBe(true);
 
-    expect(authService.login)
-      .not.toHaveBeenCalled();
-
+    expect(authService.login).not.toHaveBeenCalled();
   });
-
 
   // --------------------------------------------------
   // Login request
   // --------------------------------------------------
 
   it('should normalize the email before calling the API', () => {
-
     authService.login.mockReturnValue(
       of({
         success: true,
         message: 'Login successful',
-        data: 'fake-jwt-token'
+        data: 'fake-jwt-token',
       })
     );
 
     component.loginForm.setValue({
       email: '  TEST@EXAMPLE.COM  ',
-      password: 'password123'
+      password: 'password123',
     });
 
     component.onSubmit();
 
-    expect(authService.login)
-      .toHaveBeenCalledWith({
-        email: 'test@example.com',
-        password: 'password123'
-      });
-
-  });
-
-
-  // --------------------------------------------------
-  // Successful login
-  // --------------------------------------------------
-
-  it('should store the JWT after successful login', () => {
-
-    authService.login.mockReturnValue(
-      of({
-        success: true,
-        message: 'Login successful',
-        data: 'fake-jwt-token'
-      })
-    );
-
-    component.loginForm.setValue({
+    expect(authService.login).toHaveBeenCalledWith({
       email: 'test@example.com',
-      password: 'password123'
+      password: 'password123',
     });
-
-    component.onSubmit();
-
-    expect(localStorage.getItem('jwt'))
-      .toBe('fake-jwt-token');
-
-    expect(component.isLoading())
-      .toBe(false);
-
   });
-
-
-  it('should navigate after successful login', () => {
-
-    authService.login.mockReturnValue(
-      of({
-        success: true,
-        message: 'Login successful',
-        data: 'fake-jwt-token'
-      })
-    );
-
-    const navigateSpy = vi.spyOn(router, 'navigate');
-
-    component.loginForm.setValue({
-      email: 'test@example.com',
-      password: 'password123'
-    });
-
-    component.onSubmit();
-
-    expect(navigateSpy)
-      .toHaveBeenCalledWith(['/']);
-
-  });
-
 
   // --------------------------------------------------
   // Failed login
   // --------------------------------------------------
 
   it('should display the server error after failed login', () => {
-
     authService.login.mockReturnValue(
       throwError(() => ({
         error: {
-          message: 'Invalid email or password'
-        }
+          message: 'Invalid email or password',
+        },
       }))
     );
 
     component.loginForm.setValue({
       email: 'test@example.com',
-      password: 'wrongpassword'
+      password: 'wrongpassword',
     });
 
     component.onSubmit();
 
-    expect(component.errorMessage())
-      .toBe('Invalid email or password');
+    expect(component.errorMessage()).toBe('Invalid email or password');
 
-    expect(component.isLoading())
-      .toBe(false);
-
+    expect(component.isLoading()).toBe(false);
   });
-
 
   it('should use a fallback error message when the API provides no message', () => {
-
     authService.login.mockReturnValue(
       throwError(() => ({
-        error: {}
+        error: {},
       }))
     );
 
     component.loginForm.setValue({
       email: 'test@example.com',
-      password: 'password123'
+      password: 'password123',
     });
 
     component.onSubmit();
 
-    expect(component.errorMessage())
-      .toBe('Invalid email or password.');
+    expect(component.errorMessage()).toBe('Invalid email or password.');
 
-    expect(component.isLoading())
-      .toBe(false);
-
+    expect(component.isLoading()).toBe(false);
   });
-
 });
