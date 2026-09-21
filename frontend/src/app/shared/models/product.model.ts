@@ -4,8 +4,8 @@ export interface Product {
   description: string;
   price: number;
   quantity: number;
-  userId: string;
-  imageUrls: string[] | null;
-  createdAt: string;
-  updatedAt: string;
+  userId?: string;
+  imageUrls?: string[] | null;
+  createdAt?: string;
+  updatedAt?: string;
 }
