@@ -4,8 +4,12 @@ import { Subject, of, throwError } from 'rxjs';
 
 import { SellerDashboard } from './seller-dashboard';
 import { Product } from '../../shared/models/product.model';
-import { ProductService } from '../../core/services/product.service';
+import { ProductPageResponse } from '../../shared/models/product-page-response';
+import { ProductService } from '../../core/services/product.service'; 
 import { ToastService } from '../../core/services/toast.service';
+import { AuthService } from '../../core/services/auth.service';
+
+const SELLER_ID = 'seller-123';
 
 const mockProduct: Product = {
   id: '1212',
@@ -14,6 +18,19 @@ const mockProduct: Product = {
   price: 21,
   quantity: 20,
 };
+
+function pageResponse(items: Product[], overrides: Partial<ProductPageResponse> = {}): ProductPageResponse {
+  return {
+    items,
+    currentPage: 0,
+    pageSize: 20,
+    totalElements: items.length,
+    totalPages: 1,
+    hasNext: false,
+    hasPrevious: false,
+    ...overrides,
+  };
+}
 
 describe('SellerDashboard', () => {
   let productService: {
@@ -25,6 +42,9 @@ describe('SellerDashboard', () => {
   let toastService: {
     success: ReturnType<typeof vi.fn>;
     error: ReturnType<typeof vi.fn>;
+  };
+  let authService: {
+    user: ReturnType<typeof vi.fn>;
   };
 
   beforeEach(async () => {
@@ -40,15 +60,25 @@ describe('SellerDashboard', () => {
       error: vi.fn(),
     };
 
+    authService = {
+      user: vi.fn().mockReturnValue({ id: SELLER_ID, role: 'SELLER' }),
+    };
+
     await TestBed.configureTestingModule({
       imports: [SellerDashboard],
       providers: [
         { provide: ProductService, useValue: productService },
         { provide: ToastService, useValue: toastService },
+        { provide: AuthService, useValue: authService },
       ],
     }).compileComponents();
 
-    productService.getAll.mockReturnValue(of([mockProduct]));
+    // Default: getAll resolves immediately with one product. Individual
+    // tests override productService.getAll BEFORE calling createFixture()
+    // if they need different timing/behavior — the constructor calls
+    // fetchProducts() synchronously on creation, so the mock has to
+    // already be in place before TestBed.createComponent runs.
+    productService.getAll.mockReturnValue(of(pageResponse([mockProduct])));
   });
 
   function createFixture(): ComponentFixture<SellerDashboard> {
@@ -65,24 +95,24 @@ describe('SellerDashboard', () => {
   // Fetching on init
   // --------------------------------------------------
 
-  it('should fetch products on construction and turn off loading', () => {
+  it('should fetch products on construction, passing the seller id, and turn off loading', () => {
     const fixture = createFixture();
     fixture.detectChanges();
 
-    expect(productService.getAll).toHaveBeenCalledOnce();
+    expect(productService.getAll).toHaveBeenCalledWith(SELLER_ID, 0, 20);
     expect(fixture.componentInstance.products()).toEqual([mockProduct]);
     expect(fixture.componentInstance.loading()).toBe(false);
   });
 
   it('should be loading before the fetch resolves', () => {
-    const subject = new Subject<Product[]>();
+    const subject = new Subject<ProductPageResponse>();
     productService.getAll.mockReturnValue(subject.asObservable());
 
     const fixture = createFixture();
 
     expect(fixture.componentInstance.loading()).toBe(true);
 
-    subject.next([mockProduct]);
+    subject.next(pageResponse([mockProduct]));
     expect(fixture.componentInstance.loading()).toBe(false);
   });
 
@@ -96,6 +126,17 @@ describe('SellerDashboard', () => {
     expect(fixture.componentInstance.loading()).toBe(false);
   });
 
+  it('should show an error toast and never call getAll when no seller id is available', () => {
+    authService.user.mockReturnValue(null);
+
+    const fixture = createFixture();
+    fixture.detectChanges();
+
+    expect(productService.getAll).not.toHaveBeenCalled();
+    expect(toastService.error).toHaveBeenCalledWith('Not signed in as a seller — try logging in again.');
+    expect(fixture.componentInstance.loading()).toBe(false);
+  });
+
   // --------------------------------------------------
   // Create / edit focus state
   // --------------------------------------------------
@@ -105,7 +146,7 @@ describe('SellerDashboard', () => {
     fixture.detectChanges();
     const component = fixture.componentInstance;
 
-    component.onEditClick(mockProduct); 
+    component.onEditClick(mockProduct); // set some editing state first
     const before = component.focusTrigger();
 
     component.onCreateClick();
@@ -152,22 +193,44 @@ describe('SellerDashboard', () => {
     expect(productService.delete).not.toHaveBeenCalled();
   });
 
-  it('should remove the product, show a success toast, and clear productPendingDelete when confirmed delete succeeds', () => {
+  it('should delete, show a success toast, clear productPendingDelete, and refetch when confirmed delete succeeds', () => {
     const fixture = createFixture();
     fixture.detectChanges();
     const component = fixture.componentInstance;
     productService.delete.mockReturnValue(of(undefined));
+    productService.getAll.mockReturnValue(of(pageResponse([]))); // the refetch
 
     component.onDeleteClick(mockProduct);
     component.onConfirmDelete();
 
     expect(productService.delete).toHaveBeenCalledWith(mockProduct.id);
-    expect(component.products()).toEqual([]);
     expect(toastService.success).toHaveBeenCalledWith('Product deleted.');
     expect(component.productPendingDelete()).toBeNull();
+    // Refetch, not a local splice — getAll called again beyond the
+    // initial construction-time fetch.
+    expect(productService.getAll).toHaveBeenCalledTimes(2);
   });
 
-  it('should show an error toast, keep the product, and clear productPendingDelete when confirmed delete fails', () => {
+  it('should step back a page when deleting the only item on a page beyond the first', () => {
+    productService.getAll.mockReturnValue(
+      of(pageResponse([mockProduct], { currentPage: 1, hasPrevious: true })),
+    );
+
+    const fixture = createFixture();
+    fixture.detectChanges();
+    const component = fixture.componentInstance;
+    component.currentPage.set(1);
+
+    productService.delete.mockReturnValue(of(undefined));
+    productService.getAll.mockReturnValue(of(pageResponse([])));
+
+    component.onDeleteClick(mockProduct);
+    component.onConfirmDelete();
+
+    expect(component.currentPage()).toBe(0);
+  });
+
+  it('should show an error toast, clear productPendingDelete, and not refetch when confirmed delete fails', () => {
     const fixture = createFixture();
     fixture.detectChanges();
     const component = fixture.componentInstance;
@@ -176,9 +239,10 @@ describe('SellerDashboard', () => {
     component.onDeleteClick(mockProduct);
     component.onConfirmDelete();
 
-    expect(component.products()).toEqual([mockProduct]);
     expect(toastService.error).toHaveBeenCalledWith('Could not delete this product. Try again.');
     expect(component.productPendingDelete()).toBeNull();
+    // Failure path doesn't refetch — only the one call from construction.
+    expect(productService.getAll).toHaveBeenCalledTimes(1);
   });
 
   it('should do nothing if onConfirmDelete is somehow called with no product pending', () => {
@@ -194,26 +258,16 @@ describe('SellerDashboard', () => {
   // Save (create / update)
   // --------------------------------------------------
 
-  it('should call create and append the returned product when not editing', () => {
+  it('should call create, show a success toast, reset the form, and refetch when not editing', () => {
     const fixture = createFixture();
     fixture.detectChanges();
     const component = fixture.componentInstance;
     const before = component.focusTrigger();
-    const newProduct: Product = {
-      id: '3',
-      name: 'table',
-      description: 'desc',
-      price: 50,
-      quantity: 5,
-    };
+    const newProduct: Product = { id: '3', name: 'table', description: 'desc', price: 50, quantity: 5 };
     productService.create.mockReturnValue(of(newProduct));
+    productService.getAll.mockReturnValue(of(pageResponse([mockProduct, newProduct])));
 
-    component.onFormSave({
-      name: 'table',
-      description: 'desc',
-      price: 50,
-      quantity: 5,
-    });
+    component.onFormSave({ name: 'table', description: 'desc', price: 50, quantity: 5 });
 
     expect(productService.create).toHaveBeenCalledWith({
       name: 'table',
@@ -221,19 +275,20 @@ describe('SellerDashboard', () => {
       price: 50,
       quantity: 5,
     });
-    expect(component.products()).toEqual([mockProduct, newProduct]);
     expect(toastService.success).toHaveBeenCalledWith('Product created.');
-    // Form should reset after a successful save so a duplicate accidental
-    // submit can't re-post the same data.
     expect(component.focusTrigger()).toBeGreaterThan(before);
+    // Refetch, not a local append.
+    expect(productService.getAll).toHaveBeenCalledTimes(2);
+    expect(component.products()).toEqual([mockProduct, newProduct]);
   });
 
-  it('should call update and replace the edited product when editing, then clear editingProduct and reset focusTrigger', () => {
+  it('should call update, clear editingProduct, reset focusTrigger, and refetch when editing', () => {
     const fixture = createFixture();
     fixture.detectChanges();
     const component = fixture.componentInstance;
     const updated: Product = { ...mockProduct, name: 'renamed chair', price: 99 };
     productService.update.mockReturnValue(of(updated));
+    productService.getAll.mockReturnValue(of(pageResponse([updated])));
 
     component.onEditClick(mockProduct);
     const before = component.focusTrigger();
@@ -251,29 +306,24 @@ describe('SellerDashboard', () => {
       price: 99,
       quantity: mockProduct.quantity,
     });
-    expect(component.products()).toEqual([updated]);
+    expect(toastService.success).toHaveBeenCalledWith('Product updated.');
     expect(component.editingProduct()).toBeNull();
     expect(component.focusTrigger()).toBeGreaterThan(before);
-    expect(toastService.success).toHaveBeenCalledWith('Product updated.');
+    expect(component.products()).toEqual([updated]);
   });
 
-  it('should show an error toast when create fails, without touching the product list', () => {
+  it('should show an error toast and not refetch when create fails', () => {
     const fixture = createFixture();
     fixture.detectChanges();
     productService.create.mockReturnValue(throwError(() => new Error('network error')));
 
-    fixture.componentInstance.onFormSave({
-      name: 'table',
-      description: 'desc',
-      price: 50,
-      quantity: 5,
-    });
+    fixture.componentInstance.onFormSave({ name: 'table', description: 'desc', price: 50, quantity: 5 });
 
-    expect(fixture.componentInstance.products()).toEqual([mockProduct]);
     expect(toastService.error).toHaveBeenCalledWith('Could not create this product.');
+    expect(productService.getAll).toHaveBeenCalledTimes(1);
   });
 
-  it('should show an error toast when update fails, without clearing editingProduct', () => {
+  it('should show an error toast, keep editingProduct set, and not refetch when update fails', () => {
     const fixture = createFixture();
     fixture.detectChanges();
     const component = fixture.componentInstance;
@@ -289,5 +339,6 @@ describe('SellerDashboard', () => {
 
     expect(component.editingProduct()).toEqual(mockProduct);
     expect(toastService.error).toHaveBeenCalledWith('Could not update this product.');
+    expect(productService.getAll).toHaveBeenCalledTimes(1);
   });
 });

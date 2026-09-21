@@ -24,6 +24,24 @@ describe('ProductList', () => {
     },
   ];
 
+  const requestUrl = `${environment.apiUrl}/products?page=0&limit=100`;
+
+  function wrapped(items: Product[]) {
+    return {
+      success: true,
+      message: 'Products retrieved successfully',
+      data: {
+        items,
+        currentPage: 0,
+        pageSize: 100,
+        totalElements: items.length,
+        totalPages: 1,
+        hasNext: false,
+        hasPrevious: false,
+      },
+    };
+  }
+
   beforeEach(() => {
     TestBed.configureTestingModule({
       imports: [ProductList],
@@ -42,14 +60,14 @@ describe('ProductList', () => {
 
     expect(fixture.componentInstance.loading()).toBe(true);
 
-    httpMock.expectOne(`${environment.apiUrl}/products`).flush(mockProducts);
+    httpMock.expectOne(requestUrl).flush(wrapped(mockProducts));
   });
 
   it('renders products once loaded, including a null imageUrls entry', async () => {
     const fixture = TestBed.createComponent(ProductList);
     fixture.detectChanges();
 
-    httpMock.expectOne(`${environment.apiUrl}/products`).flush(mockProducts);
+    httpMock.expectOne(requestUrl).flush(wrapped(mockProducts));
     await fixture.whenStable();
     fixture.detectChanges();
 
@@ -59,8 +77,6 @@ describe('ProductList', () => {
     const cardTitle = fixture.nativeElement.querySelector('.card-title');
     expect(cardTitle?.textContent).toContain('chair');
 
-    // imageUrls: null must not throw, and falls back to the carousel's
-    // static placeholder image until the real lookup is wired up.
     const img: HTMLImageElement = fixture.nativeElement.querySelector('img');
     expect(img).not.toBeNull();
     expect(img.alt).toBe('chair');
@@ -71,7 +87,7 @@ describe('ProductList', () => {
     fixture.detectChanges();
 
     httpMock
-      .expectOne(`${environment.apiUrl}/products`)
+      .expectOne(requestUrl)
       .flush('Server error', { status: 500, statusText: 'Internal Server Error' });
     await fixture.whenStable();
     fixture.detectChanges();

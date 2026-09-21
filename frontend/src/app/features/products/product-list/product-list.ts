@@ -17,9 +17,9 @@ export class ProductList implements OnInit {
   error = signal(false);
 
   ngOnInit(): void {
-    this.productService.getAll().subscribe({
-      next: (products) => {
-        this.products.set(products);
+    this.productService.getAll(undefined, 0, 100).subscribe({
+      next: (response) => {
+        this.products.set(response.items);
         this.loading.set(false);
       },
       error: () => {
