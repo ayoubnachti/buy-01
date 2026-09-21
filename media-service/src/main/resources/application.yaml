@@ -1,5 +1,8 @@
 server:
   port: 8083
+  tomcat:
+    max-swallow-size: 15MB
+    max-http-form-post-size: 15MB
 
 cloudinary:
   url: ${CLOUDINARY_URL:}
@@ -7,6 +10,10 @@ cloudinary:
 spring:
   application:
     name: media-service
+  servlet:
+    multipart:
+      max-file-size: 15MB
+      max-request-size: 15MB
   mongodb:
     uri: ${MONGODB_URI:mongodb://mongodb:27017/media_db}
   kafka:
