@@ -22,7 +22,7 @@ describe('Carousel', () => {
     fixture.detectChanges();
 
     const img: HTMLImageElement = fixture.nativeElement.querySelector('.app-carousel-image');
-    expect(img.src).toContain('placehold.co');
+    expect(img.src).toContain('cloudinary.com');
   });
 
   it('should show the first provided image initially', () => {
