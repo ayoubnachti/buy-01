@@ -23,6 +23,9 @@ export class Upload {
   // Only used by the single-image (avatar) variant, for the fallback initials
   @Input() name: string | null = null;
 
+  // Title text shown next to the picker, e.g. "Profile picture" or "Product pictures"
+  @Input() label = 'Profile picture';
+
   @Input()
   set initialImages(value: string | string[] | null) {
     const urls = value == null ? [] : Array.isArray(value) ? value : [value];

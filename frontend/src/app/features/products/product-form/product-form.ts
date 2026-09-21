@@ -4,6 +4,8 @@ import { FormField, form, required, submit, validate } from '@angular/forms/sign
 import { Product } from '../../../shared/models/product.model';
 import { CreateProductRequest } from '../../../shared/models/create-product-request';
 
+import { Upload } from '../../media/components/upload/upload.component';
+
 interface ProductFormModel {
   name: string;
   description: string;
@@ -16,7 +18,7 @@ const EMPTY_MODEL: ProductFormModel = { name: '', description: '', price: 0, qua
 @Component({
   selector: 'app-product-form',
   standalone: true,
-  imports: [FormField],
+  imports: [FormField, Upload],
   templateUrl: './product-form.html',
 })
 export class ProductForm {
