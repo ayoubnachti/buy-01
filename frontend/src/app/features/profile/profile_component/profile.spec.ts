@@ -1,16 +1,19 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { of, throwError } from 'rxjs';
 
 import { Profile } from './profile';
 import { ProfileService } from '../services/profile.service';
-import {
-  ProfileResponse,
-  ProfileRole,
-} from '../models/profile.model';
+import { ProfileResponse } from '../models/profile.model';
+
+import { AuthService } from '../../../core/services/auth.service';
+import { Upload } from '../../media/components/upload/upload.component';
 
 describe('Profile', () => {
   let component: Profile;
   let fixture: ComponentFixture<Profile>;
+  let httpMock: HttpTestingController;
   let profileService: {
     getProfile: ReturnType<typeof vi.fn>;
     updateProfile: ReturnType<typeof vi.fn>;
@@ -30,6 +33,21 @@ describe('Profile', () => {
     avatar: 'https://example.com/avatar.jpg',
   };
 
+  // Replaces the real (rendered) Upload child with a controllable fake, so
+  // tests can dictate what the "media upload" step returns/throws without
+  // going through a real HTTP call.
+  function stubUploadComponent(overrides: {
+    commit?: ReturnType<typeof vi.fn>;
+    resetPending?: ReturnType<typeof vi.fn>;
+    hasPendingChanges?: () => boolean;
+  }): void {
+    component.uploadComponent = {
+      commit: overrides.commit ?? vi.fn().mockReturnValue(of([])),
+      resetPending: overrides.resetPending ?? vi.fn(),
+      hasPendingChanges: overrides.hasPendingChanges ?? (() => false),
+    } as unknown as Upload;
+  }
+
   beforeEach(async () => {
     profileService = {
       getProfile: vi.fn(),
@@ -39,15 +57,28 @@ describe('Profile', () => {
     await TestBed.configureTestingModule({
       imports: [Profile],
       providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
         {
           provide: ProfileService,
           useValue: profileService,
+        },
+        {
+          provide: AuthService,
+          useValue: {
+            user: () => ({ id: 'user-1', role: 'CLIENT' }),
+          },
         },
       ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(Profile);
     component = fixture.componentInstance;
+    httpMock = TestBed.inject(HttpTestingController);
+  });
+
+  afterEach(() => {
+    httpMock.verify();
   });
 
   // =========================================================
@@ -120,9 +151,7 @@ describe('Profile', () => {
 
     fixture.detectChanges();
 
-    expect(component.avatar()).toBe(
-      'https://example.com/avatar.jpg',
-    );
+    expect(component.avatar()).toBe('https://example.com/avatar.jpg');
   });
 
   // =========================================================
@@ -163,13 +192,9 @@ describe('Profile', () => {
 
     fixture.detectChanges();
 
-    expect(component.nameControl.value).toBe(
-      'Ayoub Nachti',
-    );
+    expect(component.nameControl.value).toBe('Ayoub Nachti');
 
-    expect(component.emailControl.value).toBe(
-      'ayoub@gmail.com',
-    );
+    expect(component.emailControl.value).toBe('ayoub@gmail.com');
   });
 
   // =========================================================
@@ -180,49 +205,35 @@ describe('Profile', () => {
     component.profileForm.controls.name.setValue('');
 
     expect(component.nameControl.invalid).toBe(true);
-    expect(
-      component.nameControl.hasError('required'),
-    ).toBe(true);
+    expect(component.nameControl.hasError('required')).toBe(true);
   });
 
   it('should reject a name shorter than 3 characters', () => {
     component.profileForm.controls.name.setValue('Ab');
 
     expect(component.nameControl.invalid).toBe(true);
-    expect(
-      component.nameControl.hasError('minlength'),
-    ).toBe(true);
+    expect(component.nameControl.hasError('minlength')).toBe(true);
   });
 
   it('should reject a name longer than 100 characters', () => {
-    component.profileForm.controls.name.setValue(
-      'A'.repeat(101),
-    );
+    component.profileForm.controls.name.setValue('A'.repeat(101));
 
     expect(component.nameControl.invalid).toBe(true);
-    expect(
-      component.nameControl.hasError('maxlength'),
-    ).toBe(true);
+    expect(component.nameControl.hasError('maxlength')).toBe(true);
   });
 
   it('should require an email', () => {
     component.profileForm.controls.email.setValue('');
 
     expect(component.emailControl.invalid).toBe(true);
-    expect(
-      component.emailControl.hasError('required'),
-    ).toBe(true);
+    expect(component.emailControl.hasError('required')).toBe(true);
   });
 
   it('should reject an invalid email', () => {
-    component.profileForm.controls.email.setValue(
-      'invalid-email',
-    );
+    component.profileForm.controls.email.setValue('invalid-email');
 
     expect(component.emailControl.invalid).toBe(true);
-    expect(
-      component.emailControl.hasError('email'),
-    ).toBe(true);
+    expect(component.emailControl.hasError('email')).toBe(true);
   });
 
   it('should accept a valid form', () => {
@@ -232,26 +243,6 @@ describe('Profile', () => {
     });
 
     expect(component.profileForm.valid).toBe(true);
-  });
-
-  // =========================================================
-  // AVATAR UPLOAD
-  // =========================================================
-
-  it('should update avatar when an image is uploaded', () => {
-    component.onAvatarUploaded(
-      'https://example.com/new-avatar.jpg',
-    );
-
-    expect(component.avatar()).toBe(
-      'https://example.com/new-avatar.jpg',
-    );
-
-    expect(component.successMessage()).toBe(
-      'Profile picture uploaded successfully.',
-    );
-
-    expect(component.errorMessage()).toBe('');
   });
 
   // =========================================================
@@ -273,9 +264,7 @@ describe('Profile', () => {
 
     expect(profileService.updateProfile).not.toHaveBeenCalled();
 
-    expect(component.errorMessage()).toBe(
-      'No changes were made to your profile.',
-    );
+    expect(component.errorMessage()).toBe('No changes were made to your profile.');
   });
 
   // =========================================================
@@ -299,15 +288,13 @@ describe('Profile', () => {
 
     expect(profileService.updateProfile).not.toHaveBeenCalled();
 
-    expect(component.errorMessage()).toBe(
-      'Please fix the errors below.',
-    );
+    expect(component.errorMessage()).toBe('Please fix the errors below.');
 
     expect(component.nameControl.touched).toBe(true);
   });
 
   // =========================================================
-  // SAVE - SUCCESS
+  // SAVE - SUCCESS (NAME/EMAIL ONLY, NO AVATAR CHANGE)
   // =========================================================
 
   it('should update the profile successfully', () => {
@@ -315,7 +302,7 @@ describe('Profile', () => {
       of({
         success: true,
         message: 'Profile retrieved successfully',
-        data: mockProfile,
+        data: mockProfileWithAvatar,
       }),
     );
 
@@ -341,10 +328,6 @@ describe('Profile', () => {
       email: 'updated@gmail.com',
     });
 
-    component.avatar.set(
-      'https://example.com/avatar.jpg',
-    );
-
     component.saveProfile();
 
     expect(profileService.updateProfile).toHaveBeenCalledTimes(1);
@@ -355,23 +338,85 @@ describe('Profile', () => {
       avatar: 'https://example.com/avatar.jpg',
     });
 
-    expect(component.profile()).toEqual(
-      updatedProfile,
-    );
+    expect(component.profile()).toEqual(updatedProfile);
 
-    expect(component.originalProfile()).toEqual(
-      updatedProfile,
-    );
+    expect(component.originalProfile()).toEqual(updatedProfile);
 
-    expect(component.avatar()).toBe(
-      'https://example.com/avatar.jpg',
-    );
+    expect(component.avatar()).toBe('https://example.com/avatar.jpg');
 
     expect(component.saving()).toBe(false);
 
-    expect(component.successMessage()).toBe(
-      'Your profile has been updated successfully.',
+    expect(component.successMessage()).toBe('Your profile has been updated successfully.');
+  });
+
+  // =========================================================
+  // SAVE - AVATAR UPLOAD RUNS BEFORE THE PROFILE UPDATE
+  // =========================================================
+
+  it('should upload the pending avatar first and send the returned url to the profile service', () => {
+    profileService.getProfile.mockReturnValue(
+      of({
+        success: true,
+        message: 'Profile retrieved successfully',
+        data: mockProfile,
+      }),
     );
+
+    profileService.updateProfile.mockReturnValue(
+      of({
+        success: true,
+        message: 'Profile updated successfully',
+        data: { ...mockProfile, avatar: 'https://example.com/new-avatar.jpg' },
+      }),
+    );
+
+    fixture.detectChanges();
+
+    const commit = vi.fn().mockReturnValue(of(['https://example.com/new-avatar.jpg']));
+    stubUploadComponent({ commit, hasPendingChanges: () => true });
+
+    component.saveProfile();
+
+    expect(commit).toHaveBeenCalledTimes(1);
+
+    expect(profileService.updateProfile).toHaveBeenCalledWith({
+      name: 'Ayoub Nachti',
+      email: 'ayoub@gmail.com',
+      avatar: 'https://example.com/new-avatar.jpg',
+    });
+  });
+
+  // =========================================================
+  // SAVE - AVATAR UPLOAD FAILS
+  // =========================================================
+
+  it('should not call the profile service when the avatar upload fails', () => {
+    profileService.getProfile.mockReturnValue(
+      of({
+        success: true,
+        message: 'Profile retrieved successfully',
+        data: mockProfile,
+      }),
+    );
+
+    fixture.detectChanges();
+
+    const commit = vi.fn().mockReturnValue(
+      throwError(() => ({
+        error: { message: 'The image has more than 2MB !' },
+      })),
+    );
+    stubUploadComponent({ commit, hasPendingChanges: () => true });
+
+    component.saveProfile();
+
+    expect(commit).toHaveBeenCalledTimes(1);
+
+    expect(profileService.updateProfile).not.toHaveBeenCalled();
+
+    expect(component.errorMessage()).toBe('The image has more than 2MB !');
+
+    expect(component.saving()).toBe(false);
   });
 
   // =========================================================
@@ -438,17 +483,13 @@ describe('Profile', () => {
 
     fixture.detectChanges();
 
-    component.profileForm.controls.name.setValue(
-      'New Name',
-    );
+    component.profileForm.controls.name.setValue('New Name');
 
     component.saveProfile();
 
     expect(component.saving()).toBe(false);
 
-    expect(component.errorMessage()).toBe(
-      'Email already exists',
-    );
+    expect(component.errorMessage()).toBe('Email already exists');
   });
 
   // =========================================================
@@ -494,10 +535,6 @@ describe('Profile', () => {
       email: 'changed@gmail.com',
     });
 
-    component.avatar.set(
-      'https://example.com/changed.jpg',
-    );
-
     expect(component.profileForm.getRawValue()).toEqual({
       name: 'Changed Name',
       email: 'changed@gmail.com',
@@ -522,7 +559,7 @@ describe('Profile', () => {
   // CANCEL - AVATAR
   // =========================================================
 
-  it('should restore the original avatar when cancel is clicked', () => {
+  it('should discard a pending avatar change and restore the original avatar when cancel is clicked', () => {
     profileService.getProfile.mockReturnValue(
       of({
         success: true,
@@ -533,15 +570,14 @@ describe('Profile', () => {
 
     fixture.detectChanges();
 
-    component.avatar.set(
-      'https://example.com/changed.jpg',
-    );
+    const resetPending = vi.fn();
+    stubUploadComponent({ resetPending, hasPendingChanges: () => true });
 
     component.cancelChanges();
 
-    expect(component.avatar()).toBe(
-      'https://example.com/avatar.jpg',
-    );
+    expect(resetPending).toHaveBeenCalledTimes(1);
+
+    expect(component.avatar()).toBe('https://example.com/avatar.jpg');
   });
 
   // =========================================================
@@ -564,13 +600,9 @@ describe('Profile', () => {
 
     component.cancelChanges();
 
-    expect(component.profile()).toEqual(
-      originalProfile,
-    );
+    expect(component.profile()).toEqual(originalProfile);
 
-    expect(component.avatar()).toBe(
-      originalAvatar,
-    );
+    expect(component.avatar()).toBe(originalAvatar);
 
     expect(component.errorMessage()).toBe('');
     expect(component.successMessage()).toBe('');
@@ -593,9 +625,7 @@ describe('Profile', () => {
 
     expect(component.loading()).toBe(false);
 
-    expect(component.errorMessage()).toBe(
-      'Unauthorized',
-    );
+    expect(component.errorMessage()).toBe('Unauthorized');
   });
 
   // =========================================================
@@ -603,16 +633,12 @@ describe('Profile', () => {
   // =========================================================
 
   it('should use the default message when profile loading fails without a server message', () => {
-    profileService.getProfile.mockReturnValue(
-      throwError(() => ({})),
-    );
+    profileService.getProfile.mockReturnValue(throwError(() => ({})));
 
     fixture.detectChanges();
 
     expect(component.loading()).toBe(false);
 
-    expect(component.errorMessage()).toBe(
-      'Failed to load your profile. Please try again.',
-    );
+    expect(component.errorMessage()).toBe('Failed to load your profile. Please try again.');
   });
 });
