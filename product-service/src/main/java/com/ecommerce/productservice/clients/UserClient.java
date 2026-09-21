@@ -1,4 +1,4 @@
-package com.ecommerce.productservice.client;
+package com.ecommerce.productservice.clients;
 
 import org.springframework.cloud.client.circuitbreaker.CircuitBreaker;
 import org.springframework.cloud.client.circuitbreaker.CircuitBreakerFactory;

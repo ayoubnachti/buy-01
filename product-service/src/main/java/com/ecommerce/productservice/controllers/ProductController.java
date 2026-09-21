@@ -9,8 +9,6 @@ import com.ecommerce.productservice.services.ProductService;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 
-import java.util.List;
-
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -21,6 +19,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.PutMapping;
 
 @RestController
@@ -29,9 +28,12 @@ import org.springframework.web.bind.annotation.PutMapping;
 public class ProductController {
   private final ProductService productService;
 
-  @GetMapping()
-  public List<ProductResponse> getAllProducts() {
-    return this.productService.getAllProducts();
+  @GetMapping
+  public ProductPageResponse getProducts(
+      @RequestParam(required = false) String owner,
+      @RequestParam(required = false) Integer page,
+      @RequestParam(required = false) Integer limit) {
+    return productService.getProducts(owner, page, limit);
   }
 
   @GetMapping("/{id}")

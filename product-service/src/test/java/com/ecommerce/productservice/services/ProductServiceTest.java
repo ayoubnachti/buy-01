@@ -3,6 +3,7 @@ package com.ecommerce.productservice.services;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 import java.math.BigDecimal;
@@ -15,7 +16,12 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
+import com.ecommerce.productservice.clients.MediaServiceGateway;
 import com.ecommerce.productservice.dtos.request.ProductRequest;
 import com.ecommerce.productservice.exceptions.custom.ForbiddenException;
 import com.ecommerce.productservice.exceptions.custom.ResourceNotFoundException;
@@ -28,6 +34,9 @@ class ProductServiceTest {
   @Mock
   private ProductRepository productRepository;
 
+  @Mock
+  private MediaServiceGateway mediaServiceGateway;
+
   private ProductService productService;
 
   private static final String SELLER_ID = "seller-123";
@@ -36,7 +45,7 @@ class ProductServiceTest {
 
   @BeforeEach
   void setUp() {
-    productService = new ProductService(productRepository);
+    productService = new ProductService(productRepository, mediaServiceGateway);
   }
 
   // --- create ---
@@ -188,5 +197,118 @@ class ProductServiceTest {
         .isInstanceOf(ResourceNotFoundException.class);
 
     verify(productRepository, never()).delete(any());
+  }
+
+  // --- getProductById: live image enrichment ---
+
+  @Test
+  void getProductById_enrichesWithLiveImagesFromMediaService_overwritingStoredValue() {
+    Product existing = Product.builder()
+        .id(PRODUCT_ID)
+        .name("Chair")
+        .userId(SELLER_ID)
+        // Stale/stored value — should be overwritten by the live fetch,
+        // not returned as-is. Product.imageUrls is vestigial now that
+        // Media Service owns the relationship.
+        .imageUrls(List.of("stale-url"))
+        .build();
+
+    when(productRepository.findById(PRODUCT_ID)).thenReturn(Optional.of(existing));
+    when(mediaServiceGateway.getImages(PRODUCT_ID)).thenReturn(List.of("live-1", "live-2"));
+
+    var result = productService.getProductById(PRODUCT_ID);
+
+    assertThat(result.imageUrls()).containsExactly("live-1", "live-2");
+  }
+
+  @Test
+  void getProductById_productDoesNotExist_throwsNotFoundAndNeverCallsMediaService() {
+    when(productRepository.findById(PRODUCT_ID)).thenReturn(Optional.empty());
+
+    assertThatThrownBy(() -> productService.getProductById(PRODUCT_ID))
+        .isInstanceOf(ResourceNotFoundException.class);
+
+    verifyNoInteractions(mediaServiceGateway);
+  }
+
+  // --- getProducts: owner filter, pagination metadata, image enrichment ---
+
+  @Test
+  void getProducts_noOwner_callsFindAll_notFindByUserId() {
+    Page<Product> page = new PageImpl<>(List.of(), PageRequest.of(0, 20), 0);
+    when(productRepository.findAll(any(Pageable.class))).thenReturn(page);
+
+    productService.getProducts(null, 0, 20);
+
+    verify(productRepository).findAll(any(Pageable.class));
+    verify(productRepository, never()).findByUserId(any(), any());
+  }
+
+  @Test
+  void getProducts_withOwner_callsFindByUserId_notFindAll() {
+    Page<Product> page = new PageImpl<>(List.of(), PageRequest.of(0, 20), 0);
+    when(productRepository.findByUserId(eq(SELLER_ID), any(Pageable.class))).thenReturn(page);
+
+    productService.getProducts(SELLER_ID, 0, 20);
+
+    verify(productRepository).findByUserId(eq(SELLER_ID), any(Pageable.class));
+    verify(productRepository, never()).findAll(any(Pageable.class));
+  }
+
+  @Test
+  void getProducts_enrichesEachResultWithItsOwnImagesFromMediaService() {
+    Product p1 = Product.builder().id("p1").userId(SELLER_ID).imageUrls(List.of()).build();
+    Product p2 = Product.builder().id("p2").userId(SELLER_ID).imageUrls(List.of()).build();
+    Page<Product> page = new PageImpl<>(List.of(p1, p2), PageRequest.of(0, 20), 2);
+
+    when(productRepository.findAll(any(Pageable.class))).thenReturn(page);
+    when(mediaServiceGateway.getImages("p1")).thenReturn(List.of("img-1"));
+    when(mediaServiceGateway.getImages("p2")).thenReturn(List.of("img-2"));
+
+    var result = productService.getProducts(null, 0, 20);
+
+    assertThat(result.items()).hasSize(2);
+    assertThat(result.items().get(0).imageUrls()).containsExactly("img-1");
+    assertThat(result.items().get(1).imageUrls()).containsExactly("img-2");
+  }
+
+  @Test
+  void getProducts_populatesPaginationMetadataFromPage() {
+    Page<Product> page = new PageImpl<>(List.of(), PageRequest.of(2, 10), 45);
+    when(productRepository.findAll(any(Pageable.class))).thenReturn(page);
+
+    var result = productService.getProducts(null, 2, 10);
+
+    assertThat(result.currentPage()).isEqualTo(2);
+    assertThat(result.pageSize()).isEqualTo(10);
+    assertThat(result.totalElements()).isEqualTo(45);
+    assertThat(result.totalPages()).isEqualTo(5);
+    assertThat(result.hasNext()).isTrue();
+    assertThat(result.hasPrevious()).isTrue();
+  }
+
+  @Test
+  void getProducts_limitAboveMax_isCappedAtMaxLimit() {
+    Page<Product> page = new PageImpl<>(List.of(), PageRequest.of(0, 100), 0);
+    when(productRepository.findAll(any(Pageable.class))).thenReturn(page);
+
+    productService.getProducts(null, 0, 500);
+
+    ArgumentCaptor<Pageable> captor = ArgumentCaptor.forClass(Pageable.class);
+    verify(productRepository).findAll(captor.capture());
+    assertThat(captor.getValue().getPageSize()).isEqualTo(100); // MAX_LIMIT
+  }
+
+  @Test
+  void getProducts_nullPageAndLimit_defaultToZeroAndDefaultLimit() {
+    Page<Product> page = new PageImpl<>(List.of(), PageRequest.of(0, 20), 0);
+    when(productRepository.findAll(any(Pageable.class))).thenReturn(page);
+
+    productService.getProducts(null, null, null);
+
+    ArgumentCaptor<Pageable> captor = ArgumentCaptor.forClass(Pageable.class);
+    verify(productRepository).findAll(captor.capture());
+    assertThat(captor.getValue().getPageNumber()).isEqualTo(0);
+    assertThat(captor.getValue().getPageSize()).isEqualTo(20); // DEFAULT_LIMIT
   }
 }
