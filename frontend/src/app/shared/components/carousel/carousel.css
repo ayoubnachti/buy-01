@@ -18,7 +18,9 @@
   width: 100%;
   height: 100%;
 
-  object-fit: cover;
+  /* Show the whole image (e.g. tall 9:16 shots) letterboxed on the sides,
+     instead of cover's crop-to-fill zoom. */
+  object-fit: contain;
 }
 
 .app-carousel-arrow {
