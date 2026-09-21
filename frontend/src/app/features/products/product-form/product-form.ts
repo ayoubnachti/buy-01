@@ -1,5 +1,6 @@
 import { Component, ElementRef, EventEmitter, Output, ViewChild, effect, input, signal } from '@angular/core';
 import { FormField, form, required, submit, validate } from '@angular/forms/signals';
+import { Observable, of } from 'rxjs';
 
 import { Product } from '../../../shared/models/product.model';
 import { CreateProductRequest } from '../../../shared/models/create-product-request';
@@ -28,6 +29,7 @@ export class ProductForm {
   @Output() save = new EventEmitter<CreateProductRequest>();
 
   @ViewChild('nameInput') private nameInputRef?: ElementRef<HTMLInputElement>;
+  @ViewChild(Upload) private uploadComponent?: Upload;
 
   private readonly model = signal<ProductFormModel>({ ...EMPTY_MODEL });
 
@@ -86,5 +88,17 @@ export class ProductForm {
       this.save.emit(f().value());
       return null;
     });
+  }
+
+  // Uploads whatever images the user picked, now that the product exists
+  // (either just created with `targetId`, or already existing when editing).
+  // Resolves with an empty list if nothing was picked, or if there's no
+  // upload picker mounted (e.g. mid form-reset).
+  commitImages(targetId: string): Observable<string[]> {
+    if (!this.uploadComponent) {
+      return of([]);
+    }
+
+    return this.editingProduct() ? this.uploadComponent.commit() : this.uploadComponent.commitNew(targetId);
   }
 }

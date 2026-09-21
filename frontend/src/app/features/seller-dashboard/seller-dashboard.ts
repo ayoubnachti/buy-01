@@ -1,5 +1,6 @@
-import { DestroyRef, Component, inject, signal } from '@angular/core';
+import { DestroyRef, Component, ViewChild, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { of } from 'rxjs';
 
 import { Product } from '../../shared/models/product.model';
 import { CreateProductRequest } from '../../shared/models/create-product-request';
@@ -21,6 +22,8 @@ export class SellerDashboard {
   private readonly productService = inject(ProductService);
   private readonly toastService = inject(ToastService);
   private readonly destroyRef = inject(DestroyRef);
+
+  @ViewChild(ProductForm) private productFormRef?: ProductForm;
 
   products = signal<Product[]>([]);
   loading = signal(true);
@@ -79,25 +82,52 @@ export class SellerDashboard {
       ? this.productService.update(editing.id, request)
       : this.productService.create(request);
 
+    // Product first: only attempt the media upload once the product itself
+    // is confirmed saved (and we have a real product id to attach images to).
     save$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: (savedProduct) => {
-        this.products.update((list) =>
-          editing ? list.map((p) => (p.id === editing.id ? savedProduct : p)) : [...list, savedProduct],
-        );
-        this.toastService.success(editing ? 'Product updated.' : 'Product created.');
+      next: (savedProduct) => this.uploadPendingImages(savedProduct, editing),
 
-        // Reset the form (same mechanism as Create/Edit clicks) so a
-        // second, accidental Submit can't re-post the same data and
-        // create a duplicate.
-        this.editingProduct.set(null);
-        this.focusTrigger.update((n) => n + 1);
-      },
       error: () => {
         this.toastService.error(
           editing ? 'Could not update this product.' : 'Could not create this product.',
         );
       },
     });
+  }
+
+  private uploadPendingImages(savedProduct: Product, editing: Product | null): void {
+    const commitImages$ = this.productFormRef?.commitImages(savedProduct.id) ?? of([]);
+
+    commitImages$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (imageUrls) => {
+        const finalProduct = imageUrls.length ? { ...savedProduct, imageUrls } : savedProduct;
+
+        this.applySavedProduct(finalProduct, editing);
+        this.toastService.success(editing ? 'Product updated.' : 'Product created.');
+      },
+
+      error: () => {
+        // The product itself is already saved at this point; only the
+        // image attachment failed, so keep the product and let the user
+        // retry the images from the edit form instead of losing the save.
+        this.applySavedProduct(savedProduct, editing);
+        this.toastService.error(
+          'Product saved, but the image(s) failed to upload. You can retry from the edit form.',
+        );
+      },
+    });
+  }
+
+  private applySavedProduct(savedProduct: Product, editing: Product | null): void {
+    this.products.update((list) =>
+      editing ? list.map((p) => (p.id === editing.id ? savedProduct : p)) : [...list, savedProduct],
+    );
+
+    // Reset the form (same mechanism as Create/Edit clicks) so a
+    // second, accidental Submit can't re-post the same data and
+    // create a duplicate.
+    this.editingProduct.set(null);
+    this.focusTrigger.update((n) => n + 1);
   }
 
   private fetchProducts(): void {
