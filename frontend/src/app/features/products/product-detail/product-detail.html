@@ -11,7 +11,9 @@
 
   @if (!loading() && !error() && product(); as p) {
     <div class="mx-auto" style="max-width: 720px;">
-      <app-carousel [images]="p.imageUrls ?? []" [alt]="p.name" />
+      @if (p.imageUrls?.length) {
+        <app-carousel [images]="p.imageUrls!" [alt]="p.name" />
+      }
 
       <div class="bg-white border rounded-4 shadow-sm p-4 p-lg-5 mt-4">
         <div class="d-flex justify-content-between align-items-start gap-3 mb-3">

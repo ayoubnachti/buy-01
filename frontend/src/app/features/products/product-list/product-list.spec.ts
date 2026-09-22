@@ -65,7 +65,7 @@ describe('ProductList', () => {
     httpMock.expectOne(requestUrl).flush(wrapped(mockProducts));
   });
 
-  it('renders products once loaded, including a null imageUrls entry', async () => {
+  it('renders a product with no images as text only, without the carousel', async () => {
     const fixture = TestBed.createComponent(ProductList);
     fixture.detectChanges();
 
@@ -80,8 +80,25 @@ describe('ProductList', () => {
     expect(cardTitle?.textContent).toContain('chair');
 
     const img: HTMLImageElement = fixture.nativeElement.querySelector('img');
+    expect(img).toBeNull();
+  });
+
+  it('renders the carousel when a product has images', async () => {
+    const productWithImages: Product[] = [
+      { ...mockProducts[0], id: '2', name: 'lamp', imageUrls: ['https://example.com/lamp.jpg'] },
+    ];
+
+    const fixture = TestBed.createComponent(ProductList);
+    fixture.detectChanges();
+
+    httpMock.expectOne(requestUrl).flush(wrapped(productWithImages));
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const img: HTMLImageElement = fixture.nativeElement.querySelector('img');
     expect(img).not.toBeNull();
-    expect(img.alt).toBe('chair');
+    expect(img.src).toContain('lamp.jpg');
+    expect(img.alt).toBe('lamp');
   });
 
   it('shows an error message when the request fails', async () => {
