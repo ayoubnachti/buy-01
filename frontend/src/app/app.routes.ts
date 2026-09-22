@@ -18,6 +18,10 @@ export const routes: Routes = [
       import('./features/system-design/system-design').then((m) => m.SystemDesign),
   },
   {
+    path: 'products/:id',
+    loadComponent: () => import('./features/products/product-detail/product-detail').then((m) => m.ProductDetail),
+  },
+  {
     path: 'dashboard',
     canActivate: [sellerGuard],
     loadComponent: () =>

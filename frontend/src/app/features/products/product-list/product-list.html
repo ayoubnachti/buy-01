@@ -2,9 +2,7 @@
   <h1 class="mb-4">Products</h1>
 
   @if (loading()) {
-    <div class="text-center text-secondary py-5">
-      Loading products…
-    </div>
+    <app-loading-spinner label="Loading products…" />
   }
 
   @if (error()) {
@@ -14,25 +12,28 @@
   }
 
   @if (!loading() && !error() && products().length === 0) {
-    <div class="text-secondary py-5">
-      No products yet.
-    </div>
+    <app-empty-state message="No products yet." />
   }
 
   @if (!loading() && !error() && products().length > 0) {
     <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4">
       @for (product of products(); track product.id) {
         <div class="col">
-          <div class="card h-100">
-            <!-- TODO(teammate): bind [images]="product.imageUrls" once the real product image lookup is wired up -->
-            <app-carousel [alt]="product.name" />
+          <a
+            [routerLink]="['/products', product.id]"
+            [state]="{ product: product }"
+            class="text-decoration-none text-reset d-block h-100"
+          >
+            <div class="card h-100">
+              <app-carousel [images]="product.imageUrls ?? []" [alt]="product.name" />
 
-            <div class="card-body">
-              <h5 class="card-title">{{ product.name }}</h5>
-              <p class="card-text text-secondary">{{ product.description }}</p>
-              <p class="fw-semibold">{{ product.price | currency }}</p>
+              <div class="card-body">
+                <h5 class="card-title">{{ product.name }}</h5>
+                <p class="card-text text-secondary">{{ product.description }}</p>
+                <p class="fw-semibold">{{ product.price | currency }}</p>
+              </div>
             </div>
-          </div>
+          </a>
         </div>
       }
     </div>

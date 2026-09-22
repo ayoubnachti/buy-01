@@ -28,6 +28,12 @@ export class ProductService {
       .pipe(map((response) => response.data));
   }
 
+  getById(id: string) {
+    return this.http
+      .get<ResponseData<Product>>(`${this.apiUrl}/${id}`)
+      .pipe(map((response) => response.data));
+  }
+
   create(request: CreateProductRequest) {
     return this.http
       .post<ResponseData<Product>>(this.apiUrl, request)
@@ -39,7 +45,6 @@ export class ProductService {
       .put<ResponseData<Product>>(`${this.apiUrl}/${id}`, request)
       .pipe(map((response) => response.data));
   }
-
 
   delete(id: string) {
     return this.http.delete<void>(`${this.apiUrl}/${id}`);

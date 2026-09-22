@@ -5,7 +5,7 @@ export interface Product {
   price: number;
   quantity: number;
   userId?: string;
-  imageUrls?: string[] | null;
+  imageUrls?: string[];
   createdAt?: string;
   updatedAt?: string;
 }

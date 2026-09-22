@@ -28,8 +28,6 @@ import org.springframework.web.bind.annotation.PutMapping;
 public class ProductController {
   private final ProductService productService;
 
-  // No @PreAuthorize — stays public. `owner` is an explicit userId the
-  // caller already has, not a token-resolved "me"; no auth model change.
   @GetMapping
   public ResponseData<ProductPageResponse> getAllProducts(
       @RequestParam(required = false) String owner,

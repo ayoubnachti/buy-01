@@ -4,7 +4,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { ProductService } from './product.service';
 import { Product } from '../../shared/models/product.model';
-import { ProductPageResponse } from '../../shared/models/product-page-response'; // adjust path
+import { ProductPageResponse } from '../../shared/models/product-page-response';
 import { environment } from '../../../environments/environment';
 
 describe('ProductService', () => {
