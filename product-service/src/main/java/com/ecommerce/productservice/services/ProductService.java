@@ -1,6 +1,5 @@
 package com.ecommerce.productservice.services;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.data.domain.Page;
@@ -40,8 +39,7 @@ public class ProductService {
         : productRepository.findAll(pageable);
 
     List<ProductResponse> items = result.getContent().stream()
-        .map(this::withLiveImages)
-        .map(ProductResponse::from)
+        .map(p -> ProductResponse.from(p, mediaServiceGateway.getImages(p.getId())))
         .toList();
 
     return new ProductPageResponse(
@@ -55,8 +53,8 @@ public class ProductService {
   }
 
   public ProductResponse getProductById(String id) {
-    Product product = withLiveImages(findProductById(id));
-    return ProductResponse.from(product);
+    Product product = findProductById(id);
+    return ProductResponse.from(product, mediaServiceGateway.getImages(id));
   }
 
   public ProductResponse create(ProductRequest request, String sellerId) {
@@ -66,10 +64,10 @@ public class ProductService {
         .price(request.price())
         .quantity(request.quantity())
         .userId(sellerId)
-        .imageUrls(request.imageUrls() != null ? request.imageUrls() : new ArrayList<>())
         .build();
 
-    return ProductResponse.from(productRepository.save(product));
+    Product saved = productRepository.save(product);
+    return ProductResponse.from(saved, List.of());
   }
 
   public ProductResponse updateProduct(ProductRequest req, String id, String userId) {
@@ -83,10 +81,9 @@ public class ProductService {
     existingProduct.setDescription(req.description());
     existingProduct.setPrice(req.price());
     existingProduct.setQuantity(req.quantity());
-    existingProduct.setImageUrls(req.imageUrls());
 
     Product saved = productRepository.save(existingProduct);
-    return ProductResponse.from(saved);
+    return ProductResponse.from(saved, mediaServiceGateway.getImages(id));
   }
 
   public void deleteProduct(String id, String userId) {
@@ -107,11 +104,6 @@ public class ProductService {
   private Product findProductById(String id) {
     return productRepository.findById(id).orElseThrow(
         () -> new ResourceNotFoundException("Product", id));
-  }
-
-  private Product withLiveImages(Product product) {
-    product.setImageUrls(mediaServiceGateway.getImages(product.getId()));
-    return product;
   }
 
   private int resolvePage(Integer requested) {
