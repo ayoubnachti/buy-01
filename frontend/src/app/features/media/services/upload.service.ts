@@ -34,7 +34,14 @@ export class UploadService {
     return this.http.put<ApiResponse<string[]>>(`${this.apiUrl}/media/images`, formData);
   }
 
-  // deleteMedia(request: DeleteMediaRequest): Observable<ApiResponse<string>> {
-  //   return this.http.delete<ApiResponse<string>>(`{this.apiUrl}/media/images`, request);
-  // }
+  deleteMedia(request: DeleteMediaRequest): Observable<ApiResponse<string>> {
+    return this.http.delete<ApiResponse<string>>(`${this.apiUrl}/media/images`, { body: request });
+  }
+
+  // Bulk lookup: every product's images, keyed by product id. Used to
+  // populate `imageUrls` for a product list, since product-service itself
+  // doesn't track them.
+  getProductsMedias(): Observable<ApiResponse<Record<string, string[]>>> {
+    return this.http.get<ApiResponse<Record<string, string[]>>>(`${this.apiUrl}/media/images`);
+  }
 }

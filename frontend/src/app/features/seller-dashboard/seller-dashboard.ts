@@ -1,5 +1,6 @@
-import { DestroyRef, Component, inject, signal } from '@angular/core';
+import { DestroyRef, Component, ViewChild, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { of } from 'rxjs';
 
 import { Product } from '../../shared/models/product.model';
 import { CreateProductRequest } from '../../shared/models/create-product-request';
@@ -9,6 +10,7 @@ import { LoadingSpinner } from '../../shared/components/loading-spinner/loading-
 import { EmptyState } from '../../shared/components/empty-state/empty-state';
 import { ConfirmationModal } from '../../shared/components/confirmation-modal/confirmation-modal';
 import { ProductService } from '../../core/services/product.service';
+import { UploadService } from '../media/services/upload.service';
 import { ToastService } from '../../core/services/toast.service';
 import { AuthService } from '../../core/services/auth.service';
 
@@ -22,9 +24,12 @@ const PAGE_SIZE = 20;
 })
 export class SellerDashboard {
   private readonly productService = inject(ProductService);
+  private readonly uploadService = inject(UploadService);
   private readonly toastService = inject(ToastService);
   private readonly authService = inject(AuthService);
   private readonly destroyRef = inject(DestroyRef);
+
+  @ViewChild(ProductForm) private productFormRef?: ProductForm;
 
   products = signal<Product[]>([]);
   loading = signal(true);
@@ -94,27 +99,51 @@ export class SellerDashboard {
       ? this.productService.update(editing.id, request)
       : this.productService.create(request);
 
+    // Product first: only attempt the media upload once the product itself
+    // is confirmed saved (and we have a real product id to attach images to).
     save$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: () => {
-        this.toastService.success(editing ? 'Product updated.' : 'Product created.');
-
-        // Reset the form (same mechanism as Create/Edit clicks) so a
-        // second, accidental Submit can't re-post the same data.
-        this.editingProduct.set(null);
-        this.focusTrigger.update((n) => n + 1);
-
-        // Refetch rather than patch products() locally — pagination is
-        // server-driven now, so this component's local array is only ever
-        // one page's worth of data; patching it in place would drift from
-        // the server's actual page boundaries and totals.
-        this.fetchProducts();
-      },
+      next: (savedProduct) => this.uploadPendingImages(savedProduct, editing),
       error: () => {
         this.toastService.error(
           editing ? 'Could not update this product.' : 'Could not create this product.',
         );
       },
     });
+  }
+
+  private uploadPendingImages(savedProduct: Product, editing: Product | null): void {
+    // commitImages() branches on editingProduct() (commit vs commitNew), so it
+    // must run before the form resets and editingProduct is cleared below.
+    const commitImages$ = this.productFormRef?.commitImages(savedProduct.id) ?? of([]);
+
+    commitImages$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: () => {
+        this.toastService.success(editing ? 'Product updated.' : 'Product created.');
+        this.finishSave();
+      },
+      error: () => {
+        // The product itself is already saved at this point; only the
+        // image attachment failed, so keep the product and let the user
+        // retry the images from the edit form instead of losing the save.
+        this.toastService.error(
+          'Product saved, but the image(s) failed to upload. You can retry from the edit form.',
+        );
+        this.finishSave();
+      },
+    });
+  }
+
+  private finishSave(): void {
+    // Reset the form (same mechanism as Create/Edit clicks) so a
+    // second, accidental Submit can't re-post the same data.
+    this.editingProduct.set(null);
+    this.focusTrigger.update((n) => n + 1);
+
+    // Refetch rather than patch products() locally — pagination is
+    // server-driven now, so this component's local array is only ever
+    // one page's worth of data; patching it in place would drift from
+    // the server's actual page boundaries and totals.
+    this.fetchProducts();
   }
 
   onNextPage(): void {
@@ -152,10 +181,32 @@ export class SellerDashboard {
           this.hasPrevious.set(response.hasPrevious);
           this.totalElements.set(response.totalElements);
           this.loading.set(false);
+          this.loadProductImages();
         },
         error: () => {
           this.toastService.error('Could not load your products. Try refreshing.');
           this.loading.set(false);
+        },
+      });
+  }
+
+  private loadProductImages(): void {
+    this.uploadService
+      .getProductsMedias()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (res) => {
+          const mediasByProduct = res.data;
+
+          this.products.update((list) =>
+            list.map((product) => ({
+              ...product,
+              imageUrls: mediasByProduct[product.id] ?? product.imageUrls ?? [],
+            })),
+          );
+        },
+        error: () => {
+          // Image lookup is best-effort; leave whatever imageUrls the products came with.
         },
       });
   }
