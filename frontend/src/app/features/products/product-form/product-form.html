@@ -1,3 +1,13 @@
+<div class="d-flex align-items-center gap-2 mb-4 pb-3 border-bottom">
+  <img src="assets/vendify-mark.png" width="56" height="44" alt="" class="d-none d-sm-block" />
+  <div>
+    <h2 class="h5 fw-bold mb-0">{{ editingProduct() ? 'Edit product' : 'New product' }}</h2>
+    <p class="text-body-secondary small mb-0">
+      {{ editingProduct() ? 'Update the details below.' : 'Fill in the details to list a new product.' }}
+    </p>
+  </div>
+</div>
+
 <form novalidate (submit)="onSubmit($event)">
   <div class="mb-3">
     <label for="pfName" class="form-label">Name:</label>
@@ -65,9 +75,7 @@
     ></app-upload>
   </div>
 
-  <hr />
-
-  <button type="submit" class="btn btn-primary w-100" [disabled]="saving()">
+  <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold" [disabled]="saving()">
     @if (saving()) {
       <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
 
