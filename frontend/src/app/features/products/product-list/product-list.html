@@ -25,7 +25,9 @@
             class="text-decoration-none text-reset d-block h-100"
           >
             <div class="card h-100">
-              <app-carousel [images]="product.imageUrls ?? []" [alt]="product.name" />
+              @if (product.imageUrls?.length) {
+                <app-carousel [images]="product.imageUrls!" [alt]="product.name" />
+              }
 
               <div class="card-body">
                 <h5 class="card-title">{{ product.name }}</h5>

@@ -18,11 +18,11 @@ describe('Carousel', () => {
     expect(fixture.componentInstance).toBeTruthy();
   });
 
-  it('should show the default placeholder images when none are provided', () => {
+  it('should render no image when none are provided', () => {
     fixture.detectChanges();
 
     const img: HTMLImageElement = fixture.nativeElement.querySelector('.app-carousel-image');
-    expect(img.src).toContain('cloudinary.com');
+    expect(img).toBeNull();
   });
 
   it('should show the first provided image initially', () => {
