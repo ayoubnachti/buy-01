@@ -87,14 +87,7 @@ public class MediaService {
     }
 
     public ResponseData<List<String>> getMedias(String productId) {
-        try {
-            productClient.getProduct(productId);
-        } catch (FeignException.NotFound ex) {
-            throw new ProductNotFoundException("Product id not valid !");
-        } catch (Exception ex) {
-            throw new ProductServiceUnavailableException("Unable to reach the product service, please try again later !", ex);
-        }
-
+       
         List<Media> medias = mediaRepository.findByProductId(productId).orElse(new ArrayList<>());
 
         List<String> imagesPaths = new ArrayList<>();
