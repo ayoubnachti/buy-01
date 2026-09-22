@@ -66,33 +66,17 @@ class ProductServiceTest {
   }
 
   @Test
-  void create_withNullImageUrls_defaultsToEmptyList() {
-    ProductRequest request = new ProductRequest(
-        "Mouse", "Wireless", BigDecimal.ONE, 10, null);
-
-    when(productRepository.save(any(Product.class)))
-        .thenAnswer(invocation -> invocation.getArgument(0));
-
-    productService.create(request, SELLER_ID);
-
-    ArgumentCaptor<Product> captor = ArgumentCaptor.forClass(Product.class);
-    verify(productRepository).save(captor.capture());
-    assertThat(captor.getValue().getImageUrls()).isEmpty();
-  }
-
-  @Test
-  void create_withImageUrls_persistsThemAsProvided() {
+  void create_ignoresRequestImageUrls_responseHasNoImages() {
     List<String> urls = List.of("http://img/1.png", "http://img/2.png");
     ProductRequest request = new ProductRequest("Monitor", "27in", BigDecimal.TEN, 2, urls);
 
     when(productRepository.save(any(Product.class)))
         .thenAnswer(invocation -> invocation.getArgument(0));
 
-    productService.create(request, SELLER_ID);
+    var result = productService.create(request, SELLER_ID);
 
-    ArgumentCaptor<Product> captor = ArgumentCaptor.forClass(Product.class);
-    verify(productRepository).save(captor.capture());
-    assertThat(captor.getValue().getImageUrls()).containsExactlyElementsOf(urls);
+    assertThat(result.imageUrls()).isEmpty();
+    verifyNoInteractions(mediaServiceGateway);
   }
 
   // --- updateProduct: ownership (the bug we just fixed — this is the important
@@ -107,7 +91,6 @@ class ProductServiceTest {
         .price(BigDecimal.ONE)
         .quantity(1)
         .userId(SELLER_ID)
-        .imageUrls(List.of())
         .build();
 
     ProductRequest request = new ProductRequest(
@@ -116,12 +99,13 @@ class ProductServiceTest {
     when(productRepository.findById(PRODUCT_ID)).thenReturn(Optional.of(existing));
     when(productRepository.save(any(Product.class)))
         .thenAnswer(invocation -> invocation.getArgument(0));
+    when(mediaServiceGateway.getImages(PRODUCT_ID)).thenReturn(List.of("http://img/live.png"));
 
     var result = productService.updateProduct(request, PRODUCT_ID, SELLER_ID);
 
     verify(productRepository).save(existing); // fails if the save() call is missing again
     assertThat(result.name()).isEqualTo("New name");
-    assertThat(result.imageUrls()).containsExactly("http://img/new.png");
+    assertThat(result.imageUrls()).containsExactly("http://img/live.png");
   }
 
   @Test
@@ -133,7 +117,6 @@ class ProductServiceTest {
         .price(BigDecimal.ONE)
         .quantity(1)
         .userId(SELLER_ID)
-        .imageUrls(List.of())
         .build();
 
     ProductRequest request = new ProductRequest("Hacked", "Desc", BigDecimal.ONE, 1, null);
@@ -163,7 +146,6 @@ class ProductServiceTest {
     Product existing = Product.builder()
         .id(PRODUCT_ID)
         .userId(SELLER_ID)
-        .imageUrls(List.of())
         .build();
 
     when(productRepository.findById(PRODUCT_ID)).thenReturn(Optional.of(existing));
@@ -178,7 +160,6 @@ class ProductServiceTest {
     Product existing = Product.builder()
         .id(PRODUCT_ID)
         .userId(SELLER_ID)
-        .imageUrls(List.of())
         .build();
 
     when(productRepository.findById(PRODUCT_ID)).thenReturn(Optional.of(existing));
@@ -202,15 +183,11 @@ class ProductServiceTest {
   // --- getProductById: live image enrichment ---
 
   @Test
-  void getProductById_enrichesWithLiveImagesFromMediaService_overwritingStoredValue() {
+  void getProductById_enrichesWithLiveImagesFromMediaService() {
     Product existing = Product.builder()
         .id(PRODUCT_ID)
         .name("Chair")
         .userId(SELLER_ID)
-        // Stale/stored value — should be overwritten by the live fetch,
-        // not returned as-is. Product.imageUrls is vestigial now that
-        // Media Service owns the relationship.
-        .imageUrls(List.of("stale-url"))
         .build();
 
     when(productRepository.findById(PRODUCT_ID)).thenReturn(Optional.of(existing));
@@ -257,8 +234,8 @@ class ProductServiceTest {
 
   @Test
   void getProducts_enrichesEachResultWithItsOwnImagesFromMediaService() {
-    Product p1 = Product.builder().id("p1").userId(SELLER_ID).imageUrls(List.of()).build();
-    Product p2 = Product.builder().id("p2").userId(SELLER_ID).imageUrls(List.of()).build();
+    Product p1 = Product.builder().id("p1").userId(SELLER_ID).build();
+    Product p2 = Product.builder().id("p2").userId(SELLER_ID).build();
     Page<Product> page = new PageImpl<>(List.of(p1, p2), PageRequest.of(0, 20), 2);
 
     when(productRepository.findAll(any(Pageable.class))).thenReturn(page);

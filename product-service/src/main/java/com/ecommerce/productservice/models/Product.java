@@ -2,7 +2,6 @@ package com.ecommerce.productservice.models;
 
 import java.math.BigDecimal;
 import java.time.Instant;
-import java.util.List;
 
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
@@ -51,6 +50,4 @@ public class Product {
 
   @LastModifiedDate
   private Instant updatedAt;
-
-  private List<String> imageUrls;
 }

@@ -14,10 +14,10 @@ public record ProductResponse(
     String userId,
     List<String> imageUrls
 ) {
-    public static ProductResponse from(Product p) {
+    public static ProductResponse from(Product p, List<String> images) {
         return new ProductResponse(
             p.getId(), p.getName(), p.getDescription(),
-            p.getPrice(), p.getQuantity(), p.getUserId(), p.getImageUrls()
+            p.getPrice(), p.getQuantity(), p.getUserId(), images
         );
     }
 }
