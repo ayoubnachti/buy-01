@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { provideRouter } from '@angular/router';
 import { provideZonelessChangeDetection } from '@angular/core';
 import { describe, it, expect, beforeEach } from 'vitest';
 import { ProductList } from './product-list';
@@ -18,7 +19,7 @@ describe('ProductList', () => {
       price: 122.21,
       quantity: 12,
       userId: 'u1',
-      imageUrls: null,
+      imageUrls: [],
       createdAt: '2026-01-01T00:00:00Z',
       updatedAt: '2026-01-01T00:00:00Z',
     },
@@ -49,6 +50,7 @@ describe('ProductList', () => {
         provideZonelessChangeDetection(),
         provideHttpClient(),
         provideHttpClientTesting(),
+        provideRouter([]),
       ],
     });
     httpMock = TestBed.inject(HttpTestingController);
