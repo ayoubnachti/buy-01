@@ -11,7 +11,7 @@ import lombok.Setter;
 public class UpdateProfileRequest {
 
     @NotBlank(message = "Name is required")
-    @Size(min = 3, max = 30, message = "Name must be between 3 and 100 characters")
+    @Size(min = 3, max = 30, message = "Name must be between 3 and 30 characters")
     private String name;
 
     @NotBlank(message = "Email is required")
@@ -19,7 +19,7 @@ public class UpdateProfileRequest {
     @Size(max = 254, message = "Email must not exceed 254 characters")
     private String email;
 
-    @Size(min = 8, max = 30, message = "Password must be between 8 and 72 characters")
+    @Size(min = 8, max = 30, message = "Password must be between 8 and 30 characters")
     private String newPassword;
 
     private String avatar;

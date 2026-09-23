@@ -14,7 +14,7 @@ import lombok.Setter;
 public class RegisterRequest {
 
     @NotBlank(message = "Name is required")
-    @Size(min = 3, max = 30, message = "Name must be between 3 and 100 characters")
+    @Size(min = 3, max = 30, message = "Name must be between 3 and 30 characters")
     private String name;
 
     @NotBlank(message = "Email is required")
@@ -23,7 +23,7 @@ public class RegisterRequest {
     private String email;
 
     @NotBlank(message = "Password is required")
-    @Size(min = 8, max = 30, message = "Password must be between 8 and 80 characters")
+    @Size(min = 8, max = 30, message = "Password must be between 8 and 30 characters")
     private String password;
 
     @NotNull(message = "Role is required")
