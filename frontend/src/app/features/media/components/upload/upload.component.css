@@ -164,6 +164,8 @@
 
 .upload-hint-error {
   color: var(--color-error);
+
+  white-space: pre-line;
 }
 
 /* =========================================================
