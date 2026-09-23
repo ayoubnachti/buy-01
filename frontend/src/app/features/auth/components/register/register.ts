@@ -35,7 +35,7 @@ export class Register implements OnInit {
     name: ['', [
       Validators.required,
       Validators.minLength(2),
-      Validators.maxLength(50)
+      Validators.maxLength(30)
     ]],
 
     email: ['', [
@@ -46,7 +46,7 @@ export class Register implements OnInit {
     password: ['', [
       Validators.required,
       Validators.minLength(8),
-      Validators.maxLength(100)
+      Validators.maxLength(30)
     ]],
 
     role: ['CLIENT', [

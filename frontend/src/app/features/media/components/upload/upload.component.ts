@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output, computed, inject, signal } from '@angular/core';
+import { Component, Input, computed, inject, signal } from '@angular/core';
 import { Observable, catchError, map, of, throwError } from 'rxjs';
 
 import { ImagePreview } from '../../models/image-preview.model';
@@ -33,9 +33,6 @@ export class Upload {
     this.previews.set(urls.filter(Boolean).map((url) => ({ url, file: null })));
     this.originalAvatarUrl = urls[0] ?? null;
   }
-
-  // Confirmed image URLs, emitted only once the backend has accepted the upload
-  @Output() imagesSelected = new EventEmitter<string[]>();
 
   private readonly uploadService = inject(UploadService);
 
@@ -81,6 +78,7 @@ export class Upload {
       url: URL.createObjectURL(file),
       file,
     }));
+
 
     this.previews.update((list) => {
       if (this.isSingle()) {
@@ -195,10 +193,7 @@ export class Upload {
 
         this.uploading.set(false);
 
-        const urls = nextPreviews.map((preview) => preview.url);
-        this.imagesSelected.emit(urls);
-
-        return urls;
+        return nextPreviews.map((preview) => preview.url);
       }),
       catchError((error) => {
         this.uploading.set(false);

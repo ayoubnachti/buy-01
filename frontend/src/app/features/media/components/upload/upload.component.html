@@ -13,7 +13,7 @@
   </div>
   }
 
-  @if (isSingle() || canAddMore()) {
+  @if (isSingle() || canAddMore() || uploading()) {
   <div class="avatar-upload" role="button" tabindex="0" (click)="fileInput.click()" (keydown.enter)="fileInput.click()"
     (keydown.space)="fileInput.click()">
     <div class="avatar-upload-preview">
