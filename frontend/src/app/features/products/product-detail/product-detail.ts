@@ -28,15 +28,6 @@ export class ProductDetail implements OnInit {
       return;
     }
 
-
-    const statePayload = history.state as { product?: Product } | undefined;
-    const stateProduct = statePayload?.product;
-    if (stateProduct && stateProduct.id === id) {
-      this.product.set(stateProduct);
-      this.loading.set(false);
-      return;
-    }
-
     this.productService.getById(id).subscribe({
       next: (product) => {
         this.product.set(product);

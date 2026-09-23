@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute } from '@angular/router';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { of, throwError } from 'rxjs';
 
 import { ProductDetail } from './product-detail';
@@ -40,10 +40,6 @@ describe('ProductDetail', () => {
     });
   });
 
-  afterEach(() => {
-    history.pushState(null, '');
-  });
-
   function createFixture(): ComponentFixture<ProductDetail> {
     return TestBed.createComponent(ProductDetail);
   }
@@ -66,30 +62,7 @@ describe('ProductDetail', () => {
     expect(fixture.componentInstance.loading()).toBe(false);
   });
 
-  it('should use history.state.product when its id matches the route, without calling getById', () => {
-    history.pushState({ product: mockProduct }, '');
-
-    const fixture = createFixture();
-    fixture.detectChanges();
-
-    expect(productService.getById).not.toHaveBeenCalled();
-    expect(fixture.componentInstance.product()).toEqual(mockProduct);
-    expect(fixture.componentInstance.loading()).toBe(false);
-  });
-
-  it('should ignore history.state.product when its id does not match the route id, and fetch instead', () => {
-    history.pushState({ product: { ...mockProduct, id: 'different-id' } }, '');
-    productService.getById.mockReturnValue(of(mockProduct));
-
-    const fixture = createFixture();
-    fixture.detectChanges();
-
-    expect(productService.getById).toHaveBeenCalledWith(mockProduct.id);
-    expect(fixture.componentInstance.product()).toEqual(mockProduct);
-  });
-
-  it('should fetch via getById when there is no history state — the direct URL / refresh case', () => {
-    history.pushState(null, '');
+  it('should fetch via getById', () => {
     productService.getById.mockReturnValue(of(mockProduct));
 
     const fixture = createFixture();
@@ -101,7 +74,6 @@ describe('ProductDetail', () => {
   });
 
   it('should show an error and turn off loading when getById fails', () => {
-    history.pushState(null, '');
     productService.getById.mockReturnValue(throwError(() => new Error('network error')));
 
     const fixture = createFixture();

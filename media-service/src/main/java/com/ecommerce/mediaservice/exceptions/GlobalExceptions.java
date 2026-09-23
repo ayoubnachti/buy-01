@@ -15,6 +15,7 @@ import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import com.ecommerce.mediaservice.common.ResponseData;
 import com.ecommerce.mediaservice.exceptions.Product.ForbiddenToChangeProductMediaException;
+import com.ecommerce.mediaservice.exceptions.Product.MoreThanFiveImagesException;
 import com.ecommerce.mediaservice.exceptions.Product.ProductNotFoundException;
 import com.ecommerce.mediaservice.exceptions.Product.ProductServiceUnavailableException;
 import com.ecommerce.mediaservice.exceptions.media.CloudinaryDeleteException;
@@ -27,6 +28,7 @@ import com.ecommerce.mediaservice.exceptions.media.InvalidImageTypeException;
 import com.ecommerce.mediaservice.exceptions.media.InvalidSizeLimitException;
 import com.ecommerce.mediaservice.exceptions.media.MediaPersistenceException;
 import com.ecommerce.mediaservice.exceptions.profile.ForbiddenToChangeProfileException;
+import com.ecommerce.mediaservice.exceptions.profile.MoreThanOneImageException;
 
 @RestControllerAdvice
 public class GlobalExceptions {
@@ -100,6 +102,16 @@ public class GlobalExceptions {
         return buildError(HttpStatus.METHOD_NOT_ALLOWED, "HTTP method not supported for this endpoint");
     }
 
+    @ExceptionHandler(MoreThanFiveImagesException.class)
+    public ResponseEntity<ResponseData<Void>> handleMoreThanFiveImagesException(Exception ex) {
+        return buildError(HttpStatus.BAD_REQUEST, ex.getMessage());
+    }
+
+    @ExceptionHandler(MoreThanOneImageException.class)
+    public ResponseEntity<ResponseData<Void>> handleMoreThanOneImageException(Exception ex) {
+        return buildError(HttpStatus.BAD_REQUEST, ex.getMessage());
+    }
+
     @ExceptionHandler(NoResourceFoundException.class)
     public ResponseEntity<ResponseData<Void>> handleNoResourceFoundException(Exception ex) {
         return buildError(HttpStatus.NOT_FOUND, "The requested endpoint does not exist");
@@ -118,6 +130,7 @@ public class GlobalExceptions {
     public ResponseEntity<ResponseData<Void>> handleMissingServletRequestPartException(MissingServletRequestPartException ex) {
         return buildError(HttpStatus.BAD_REQUEST, "Required part '" + ex.getRequestPartName() + "' is missing !");
     }
+    
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ResponseData<Void>> handleHttpMessageNotReadableException(HttpMessageNotReadableException ex) {

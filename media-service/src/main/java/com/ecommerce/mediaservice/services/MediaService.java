@@ -19,7 +19,9 @@ import com.ecommerce.mediaservice.dtos.DeleteMediaRequest;
 import com.ecommerce.mediaservice.dtos.MediaRequest;
 import com.ecommerce.mediaservice.dtos.Product;
 import com.ecommerce.mediaservice.dtos.TargetType;
+import com.ecommerce.mediaservice.models.Media;
 import com.ecommerce.mediaservice.exceptions.Product.ForbiddenToChangeProductMediaException;
+import com.ecommerce.mediaservice.exceptions.Product.MoreThanFiveImagesException;
 import com.ecommerce.mediaservice.exceptions.Product.ProductNotFoundException;
 import com.ecommerce.mediaservice.exceptions.Product.ProductServiceUnavailableException;
 import com.ecommerce.mediaservice.exceptions.media.CloudinaryDeleteException;
@@ -32,7 +34,7 @@ import com.ecommerce.mediaservice.exceptions.media.InvalidImageTypeException;
 import com.ecommerce.mediaservice.exceptions.media.InvalidSizeLimitException;
 import com.ecommerce.mediaservice.exceptions.media.MediaPersistenceException;
 import com.ecommerce.mediaservice.exceptions.profile.ForbiddenToChangeProfileException;
-import com.ecommerce.mediaservice.models.Media;
+import com.ecommerce.mediaservice.exceptions.profile.MoreThanOneImageException;
 import com.ecommerce.mediaservice.repositories.MediaRepository;
 
 import feign.FeignException;
@@ -50,6 +52,12 @@ public class MediaService {
         List<String> imagesPaths = new ArrayList<>();
         if (images == null || images.length == 0) {
             throw new ImageNullOrEmptyException("At least one image is required !");
+        }
+
+        if (request.targetType().equals(TargetType.PRODUCT) && images.length > 5) {
+            throw new MoreThanFiveImagesException("The maximum number of allowed images is 5 !");
+        } else if (request.targetType().equals(TargetType.PROFILE) && images.length > 1) {
+            throw new MoreThanOneImageException("You are allowed to send only one image !");
         }
         for (MultipartFile image : images) {
             validateImage(image);
