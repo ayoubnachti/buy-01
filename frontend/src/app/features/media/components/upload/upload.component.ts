@@ -4,11 +4,13 @@ import { Observable, catchError, map, of, throwError } from 'rxjs';
 import { ImagePreview } from '../../models/image-preview.model';
 import { ApiResponse, DeleteMediaRequest, MediaRequest, SaveMediaRequest, TargetType } from '../../models/media.model';
 import { UploadService } from '../../services/upload.service';
+import { ConfirmationModal } from '../../../../shared/components/confirmation-modal/confirmation-modal'; // adjust path
+import { ToastService } from '../../../../core/services/toast.service'; // adjust path
 
 @Component({
   selector: 'app-upload',
   standalone: true,
-  imports: [],
+  imports: [ConfirmationModal],
   templateUrl: './upload.component.html',
   styleUrl: './upload.component.css',
 })
@@ -35,6 +37,7 @@ export class Upload {
   }
 
   private readonly uploadService = inject(UploadService);
+  private readonly toastService = inject(ToastService);
 
   // The last backend-confirmed avatar url, kept aside so a pending pick
   // (which replaces `previews`) doesn't lose track of what to ask the
@@ -44,6 +47,8 @@ export class Upload {
   readonly previews = signal<ImagePreview[]>([]);
   readonly uploading = signal(false);
   readonly errorMessage = signal('');
+
+  readonly pendingDeleteIndex = signal<number | null>(null);
 
   readonly isSingle = computed(() => this.maxFiles <= 1);
   readonly canAddMore = computed(() => !this.uploading() && this.previews().length < this.maxFiles);
@@ -79,7 +84,6 @@ export class Upload {
       file,
     }));
 
-
     this.previews.update((list) => {
       if (this.isSingle()) {
         list.forEach((preview) => this.revokeIfLocal(preview));
@@ -104,7 +108,28 @@ export class Upload {
       return;
     }
 
-    // Already-persisted image — delete it from the backend before dropping it from the UI.
+    // Already-persisted image — ask for confirmation first; the actual
+    // delete request happens in confirmRemove().
+    this.pendingDeleteIndex.set(index);
+  }
+
+  cancelRemove(): void {
+    this.pendingDeleteIndex.set(null);
+  }
+
+  confirmRemove(): void {
+    const index = this.pendingDeleteIndex();
+    this.pendingDeleteIndex.set(null);
+
+    if (index === null) {
+      return;
+    }
+
+    const preview = this.previews()[index];
+    if (!preview) {
+      return;
+    }
+
     this.errorMessage.set('');
 
     const request: DeleteMediaRequest = {
@@ -114,9 +139,14 @@ export class Upload {
     };
 
     this.uploadService.deleteMedia(request).subscribe({
-      next: () => this.previews.update((list) => list.filter((p) => p !== preview)),
+      next: () => {
+        this.previews.update((list) => list.filter((p) => p !== preview));
+        this.toastService.success('Image deleted.');
+      },
       error: (error) => {
-        this.errorMessage.set(error?.error?.message || 'Failed to delete image. Please try again.');
+        const message = error?.error?.message || 'Failed to delete image. Please try again.';
+        this.errorMessage.set(message);
+        this.toastService.error(message);
       },
     });
   }

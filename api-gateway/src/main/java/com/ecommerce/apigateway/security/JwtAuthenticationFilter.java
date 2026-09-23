@@ -56,6 +56,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 }
 
                 String token = authorizationHeader.substring(7);
+                String userId;
+                String role;
 
                 try {
 
@@ -65,45 +67,43 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                         .parseSignedClaims(token)
                                         .getPayload();
 
-                        String userId = claims.get("userId", String.class);
-                        String role = claims.get("role", String.class);
-
-                        if (userId == null || role == null) {
-                                sendUnauthorized(response, "Invalid JWT claims");
-                                return;
-                        }
-
-                        var authorities = List.of(
-                                        new SimpleGrantedAuthority("ROLE_" + role));
-
-                        var authentication = new UsernamePasswordAuthenticationToken(
-                                        userId,
-                                        null,
-                                        authorities);
-
-                        SecurityContextHolder
-                                        .getContext()
-                                        .setAuthentication(authentication);
-
-                        /*
-                         * Store trusted JWT claims as request attributes.
-                         *
-                         * The Gateway WebMVC filter will read these values
-                         * and inject them into the downstream request.
-                         */
-                        request.setAttribute(USER_ID_ATTRIBUTE, userId);
-                        request.setAttribute(USER_ROLE_ATTRIBUTE, role);
-
-                        filterChain.doFilter(request, response);
+                        userId = claims.get("userId", String.class);
+                        role = claims.get("role", String.class);
 
                 } catch (Exception e) {
 
                         SecurityContextHolder.clearContext();
-
-                        sendUnauthorized(
-                                        response,
-                                        "Invalid or expired JWT");
+                        sendUnauthorized(response, "Invalid or expired JWT");
+                        return;
                 }
+
+                if (userId == null || role == null) {
+                        sendUnauthorized(response, "Invalid JWT claims");
+                        return;
+                }
+
+                var authorities = List.of(
+                                new SimpleGrantedAuthority("ROLE_" + role));
+
+                var authentication = new UsernamePasswordAuthenticationToken(
+                                userId,
+                                null,
+                                authorities);
+
+                SecurityContextHolder
+                                .getContext()
+                                .setAuthentication(authentication);
+
+                /*
+                 * Store trusted JWT claims as request attributes.
+                 *
+                 * The Gateway WebMVC filter will read these values
+                 * and inject them into the downstream request.
+                 */
+                request.setAttribute(USER_ID_ATTRIBUTE, userId);
+                request.setAttribute(USER_ROLE_ATTRIBUTE, role);
+
+                filterChain.doFilter(request, response);
         }
 
         private void sendUnauthorized(
