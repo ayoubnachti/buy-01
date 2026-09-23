@@ -8,6 +8,8 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import jakarta.validation.constraints.DecimalMax;
+import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.PositiveOrZero;
@@ -25,29 +27,31 @@ import lombok.Setter;
 @Getter
 @Setter
 public class Product {
-  @Id
-  private String id;
+    @Id
+    private String id;
 
-  @NotBlank
-  @Size(max = 100)
-  private String name;
+    @NotBlank
+    @Size(max = 100)
+    private String name;
 
-  @NotBlank
-  @Size(max = 1000)
-  private String description;
+    @NotBlank
+    @Size(max = 1000)
+    private String description;
 
-  @Positive
-  private BigDecimal price;
+    @Positive
+    @DecimalMax("999999.99")
+    private BigDecimal price;
 
-  @PositiveOrZero
-  private Integer quantity;
+    @PositiveOrZero
+    @Max(999999)
+    private Integer quantity;
 
-  @NotBlank
-  private String userId;
+    @NotBlank
+    private String userId;
 
-  @CreatedDate
-  private Instant createdAt;
+    @CreatedDate
+    private Instant createdAt;
 
-  @LastModifiedDate
-  private Instant updatedAt;
+    @LastModifiedDate
+    private Instant updatedAt;
 }

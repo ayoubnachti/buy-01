@@ -46,7 +46,9 @@ describe('ProductForm', () => {
     const saveSpy = vi.fn();
     fixture.componentInstance.save.subscribe(saveSpy);
 
-    fixture.nativeElement.querySelector('form').dispatchEvent(new Event('submit', { cancelable: true }));
+    fixture.nativeElement
+      .querySelector('form')
+      .dispatchEvent(new Event('submit', { cancelable: true }));
     await fixture.whenStable();
 
     expect(saveSpy).not.toHaveBeenCalled();
@@ -62,14 +64,44 @@ describe('ProductForm', () => {
     expect(fixture.nativeElement.textContent).toContain('Price must be greater than 0.');
   });
 
-  it('should show a validation error for a non-positive quantity once touched', () => {
+  it('should NOT show a validation error for a quantity of 0 (out of stock is valid)', () => {
     const quantityInput: HTMLInputElement = fixture.nativeElement.querySelector('#pfQuantity');
     quantityInput.value = '0';
     quantityInput.dispatchEvent(new Event('input'));
     quantityInput.dispatchEvent(new Event('blur'));
     fixture.detectChanges();
 
-    expect(fixture.nativeElement.textContent).toContain('Quantity must be greater than 0.');
+    expect(fixture.nativeElement.textContent).not.toContain('Quantity cannot be negative.');
+  });
+
+  it('should show a validation error for a negative quantity once touched', () => {
+    const quantityInput: HTMLInputElement = fixture.nativeElement.querySelector('#pfQuantity');
+    quantityInput.value = '-1';
+    quantityInput.dispatchEvent(new Event('input'));
+    quantityInput.dispatchEvent(new Event('blur'));
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('Quantity cannot be negative.');
+  });
+
+  it('should show a validation error when price exceeds 999,999.99', () => {
+    const priceInput: HTMLInputElement = fixture.nativeElement.querySelector('#pfPrice');
+    priceInput.value = '1000000';
+    priceInput.dispatchEvent(new Event('input'));
+    priceInput.dispatchEvent(new Event('blur'));
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('Price must be at most 999,999.99.');
+  });
+
+  it('should show a validation error when quantity exceeds 999,999', () => {
+    const quantityInput: HTMLInputElement = fixture.nativeElement.querySelector('#pfQuantity');
+    quantityInput.value = '1000000';
+    quantityInput.dispatchEvent(new Event('input'));
+    quantityInput.dispatchEvent(new Event('blur'));
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('Quantity must be at most 999,999.');
   });
 
   it('should emit save with the form value when valid', async () => {
@@ -82,7 +114,9 @@ describe('ProductForm', () => {
     setInputValue(fixture, '#pfQuantity', '10');
     fixture.detectChanges();
 
-    fixture.nativeElement.querySelector('form').dispatchEvent(new Event('submit', { cancelable: true }));
+    fixture.nativeElement
+      .querySelector('form')
+      .dispatchEvent(new Event('submit', { cancelable: true }));
     await fixture.whenStable();
 
     expect(saveSpy).toHaveBeenCalledWith({

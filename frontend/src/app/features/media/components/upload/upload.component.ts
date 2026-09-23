@@ -4,11 +4,12 @@ import { Observable, catchError, map, of, throwError } from 'rxjs';
 import { ImagePreview } from '../../models/image-preview.model';
 import { ApiResponse, DeleteMediaRequest, MediaRequest, SaveMediaRequest, TargetType } from '../../models/media.model';
 import { UploadService } from '../../services/upload.service';
+import { ConfirmationModal } from '../../../../shared/components/confirmation-modal/confirmation-modal'; // adjust path
 
 @Component({
   selector: 'app-upload',
   standalone: true,
-  imports: [],
+  imports: [ConfirmationModal],
   templateUrl: './upload.component.html',
   styleUrl: './upload.component.css',
 })
@@ -45,6 +46,8 @@ export class Upload {
   readonly uploading = signal(false);
   readonly errorMessage = signal('');
 
+  readonly pendingDeleteIndex = signal<number | null>(null);
+
   readonly isSingle = computed(() => this.maxFiles <= 1);
   readonly canAddMore = computed(() => !this.uploading() && this.previews().length < this.maxFiles);
   readonly hasPendingChanges = computed(() => this.previews().some((preview) => preview.file));
@@ -79,7 +82,6 @@ export class Upload {
       file,
     }));
 
-
     this.previews.update((list) => {
       if (this.isSingle()) {
         list.forEach((preview) => this.revokeIfLocal(preview));
@@ -104,7 +106,28 @@ export class Upload {
       return;
     }
 
-    // Already-persisted image — delete it from the backend before dropping it from the UI.
+    // Already-persisted image — ask for confirmation first; the actual
+    // delete request happens in confirmRemove().
+    this.pendingDeleteIndex.set(index);
+  }
+
+  cancelRemove(): void {
+    this.pendingDeleteIndex.set(null);
+  }
+
+  confirmRemove(): void {
+    const index = this.pendingDeleteIndex();
+    this.pendingDeleteIndex.set(null);
+
+    if (index === null) {
+      return;
+    }
+
+    const preview = this.previews()[index];
+    if (!preview) {
+      return;
+    }
+
     this.errorMessage.set('');
 
     const request: DeleteMediaRequest = {

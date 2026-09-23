@@ -10,7 +10,6 @@ import { LoadingSpinner } from '../../shared/components/loading-spinner/loading-
 import { EmptyState } from '../../shared/components/empty-state/empty-state';
 import { ConfirmationModal } from '../../shared/components/confirmation-modal/confirmation-modal';
 import { ProductService } from '../../core/services/product.service';
-import { UploadService } from '../media/services/upload.service';
 import { ToastService } from '../../core/services/toast.service';
 import { AuthService } from '../../core/services/auth.service';
 
@@ -24,7 +23,6 @@ const PAGE_SIZE = 20;
 })
 export class SellerDashboard {
   private readonly productService = inject(ProductService);
-  private readonly uploadService = inject(UploadService);
   private readonly toastService = inject(ToastService);
   private readonly authService = inject(AuthService);
   private readonly destroyRef = inject(DestroyRef);
@@ -78,8 +76,6 @@ export class SellerDashboard {
           this.toastService.success('Product deleted.');
           this.productPendingDelete.set(null);
 
-          // Deleting the only item on a page beyond the first should step
-          // back a page, not leave an empty page with a stale "Previous".
           if (this.products().length === 1 && this.currentPage() > 0) {
             this.currentPage.update((p) => p - 1);
           }
@@ -122,13 +118,12 @@ export class SellerDashboard {
         this.finishSave();
       },
       error: () => {
-        // The product itself is already saved at this point; only the
-        // image attachment failed, so keep the product and let the user
-        // retry the images from the edit form instead of losing the save.
         this.toastService.error(
           'Product saved, but the image(s) failed to upload. You can retry from the edit form.',
         );
-        this.finishSave();
+
+        this.editingProduct.set(savedProduct);
+        this.fetchProducts();
       },
     });
   }
@@ -181,32 +176,10 @@ export class SellerDashboard {
           this.hasPrevious.set(response.hasPrevious);
           this.totalElements.set(response.totalElements);
           this.loading.set(false);
-          this.loadProductImages();
         },
         error: () => {
           this.toastService.error('Could not load your products. Try refreshing.');
           this.loading.set(false);
-        },
-      });
-  }
-
-  private loadProductImages(): void {
-    this.uploadService
-      .getProductsMedias()
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (res) => {
-          const mediasByProduct = res.data;
-
-          this.products.update((list) =>
-            list.map((product) => ({
-              ...product,
-              imageUrls: mediasByProduct[product.id] ?? product.imageUrls ?? [],
-            })),
-          );
-        },
-        error: () => {
-          // Image lookup is best-effort; leave whatever imageUrls the products came with.
         },
       });
   }

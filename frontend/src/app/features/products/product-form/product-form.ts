@@ -68,9 +68,19 @@ export class ProductForm {
     validate(schemaPath.price, (ctx) =>
       ctx.value() > 0 ? null : { kind: 'price', message: 'Price must be greater than 0.' },
     );
+    validate(schemaPath.price, (ctx) =>
+      ctx.value() <= 999_999.99
+        ? null
+        : { kind: 'price', message: 'Price must be at most 999,999.99.' },
+    );
 
     validate(schemaPath.quantity, (ctx) =>
-      ctx.value() > 0 ? null : { kind: 'quantity', message: 'Quantity must be greater than 0.' },
+      ctx.value() >= 0 ? null : { kind: 'quantity', message: 'Quantity cannot be negative.' },
+    );
+    validate(schemaPath.quantity, (ctx) =>
+      ctx.value() <= 999_999
+        ? null
+        : { kind: 'quantity', message: 'Quantity must be at most 999,999.' },
     );
   });
 
@@ -79,7 +89,7 @@ export class ProductForm {
   constructor() {
     effect(() => {
       const editing = this.editingProduct();
-      this.focusTrigger(); 
+      this.focusTrigger();
 
       this.model.set(
         editing
