@@ -4,6 +4,7 @@ import { Observable, catchError, map, of, throwError } from 'rxjs';
 import { ImagePreview } from '../../models/image-preview.model';
 import { ApiResponse, DeleteMediaRequest, MediaRequest, SaveMediaRequest, TargetType } from '../../models/media.model';
 import { UploadService } from '../../services/upload.service';
+import { validateImageFiles } from '../../utils/image-validation';
 import { ConfirmationModal } from '../../../../shared/components/confirmation-modal/confirmation-modal'; // adjust path
 import { ToastService } from '../../../../core/services/toast.service'; // adjust path
 
@@ -68,12 +69,16 @@ export class Upload {
       return;
     }
 
-    const remaining = this.isSingle() ? 1 : this.maxFiles - this.previews().length;
-    const accepted = files.slice(0, remaining);
+    const { valid, errors } = validateImageFiles(files);
 
-    this.errorMessage.set(
-      files.length > accepted.length ? `You can only upload up to ${this.maxFiles} image(s).` : '',
-    );
+    const remaining = this.isSingle() ? 1 : this.maxFiles - this.previews().length;
+    const accepted = valid.slice(0, remaining);
+
+    if (valid.length > accepted.length) {
+      errors.push(`You can only upload up to ${this.maxFiles} image(s).`);
+    }
+
+    this.errorMessage.set(errors.join('\n'));
 
     if (!accepted.length) {
       return;
