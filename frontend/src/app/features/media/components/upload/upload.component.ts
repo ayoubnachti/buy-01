@@ -5,6 +5,7 @@ import { ImagePreview } from '../../models/image-preview.model';
 import { ApiResponse, DeleteMediaRequest, MediaRequest, SaveMediaRequest, TargetType } from '../../models/media.model';
 import { UploadService } from '../../services/upload.service';
 import { ConfirmationModal } from '../../../../shared/components/confirmation-modal/confirmation-modal'; // adjust path
+import { ToastService } from '../../../../core/services/toast.service'; // adjust path
 
 @Component({
   selector: 'app-upload',
@@ -36,6 +37,7 @@ export class Upload {
   }
 
   private readonly uploadService = inject(UploadService);
+  private readonly toastService = inject(ToastService);
 
   // The last backend-confirmed avatar url, kept aside so a pending pick
   // (which replaces `previews`) doesn't lose track of what to ask the
@@ -137,9 +139,14 @@ export class Upload {
     };
 
     this.uploadService.deleteMedia(request).subscribe({
-      next: () => this.previews.update((list) => list.filter((p) => p !== preview)),
+      next: () => {
+        this.previews.update((list) => list.filter((p) => p !== preview));
+        this.toastService.success('Image deleted.');
+      },
       error: (error) => {
-        this.errorMessage.set(error?.error?.message || 'Failed to delete image. Please try again.');
+        const message = error?.error?.message || 'Failed to delete image. Please try again.';
+        this.errorMessage.set(message);
+        this.toastService.error(message);
       },
     });
   }
