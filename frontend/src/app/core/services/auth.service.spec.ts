@@ -5,6 +5,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { provideHttpClient } from '@angular/common/http';
 
 import { AuthService } from './auth.service';
+import { environment } from '../../../environments/environment';
 
 describe('AuthService', () => {
   let service: AuthService;
@@ -76,7 +77,7 @@ describe('AuthService', () => {
       expect(result).toEqual(response);
     });
 
-    const req = httpMock.expectOne('http://localhost:8080/auth/login');
+    const req = httpMock.expectOne(`${environment.apiUrl}/auth/login`);
 
     expect(req.request.method).toBe('POST');
 
@@ -109,7 +110,7 @@ describe('AuthService', () => {
       expect(result).toEqual(response);
     });
 
-    const req = httpMock.expectOne('http://localhost:8080/auth/register');
+    const req = httpMock.expectOne(`${environment.apiUrl}/auth/register`);
 
     expect(req.request.method).toBe('POST');
 

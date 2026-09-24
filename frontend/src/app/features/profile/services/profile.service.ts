@@ -3,6 +3,7 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
 import { ApiResponse, ProfileResponse, UpdateProfileRequest } from '../models/profile.model';
+import { environment } from '../../../../environments/environment.prod';
 
 @Injectable({
   providedIn: 'root',
@@ -10,7 +11,7 @@ import { ApiResponse, ProfileResponse, UpdateProfileRequest } from '../models/pr
 export class ProfileService {
   private readonly http = inject(HttpClient);
 
-  private readonly apiUrl = 'http://localhost:8080';
+  private readonly apiUrl = environment.apiUrl;
 
   // Get the currently authenticated user's profile.
   getProfile(): Observable<ApiResponse<ProfileResponse>> {

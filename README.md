@@ -11,15 +11,21 @@ An end-to-end e-commerce platform built as **Spring Boot microservices** behind 
 
 ## Table of contents
 
-- [Architecture](#architecture)
-- [Tech stack](#tech-stack)
-- [Project structure](#project-structure)
-- [Services](#services)
-- [Authentication](#authentication)
-- [Getting started](#getting-started)
-- [Environment variables](#environment-variables)
-- [Demo data](#demo-data)
-- [Testing](#testing)
+- [buy-01](#buy-01)
+  - [Table of contents](#table-of-contents)
+  - [Architecture](#architecture)
+  - [Tech stack](#tech-stack)
+  - [Project structure](#project-structure)
+  - [Services](#services)
+    - [user-service](#user-service)
+    - [product-service](#product-service)
+    - [media-service](#media-service)
+    - [api-gateway](#api-gateway)
+  - [Authentication](#authentication)
+  - [Getting started](#getting-started)
+  - [Environment variables](#environment-variables)
+  - [Demo data](#demo-data)
+  - [Testing](#testing)
 
 ## Architecture
 
