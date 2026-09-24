@@ -1,55 +1,35 @@
 package com.ecommerce.mediaservice.services;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.imageio.ImageIO;
-
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.cloudinary.Cloudinary;
-import com.cloudinary.utils.ObjectUtils;
-import com.ecommerce.mediaservice.clients.ProductClient;
 import com.ecommerce.mediaservice.common.ResponseData;
 import com.ecommerce.mediaservice.dtos.DeleteMediaRequest;
 import com.ecommerce.mediaservice.dtos.MediaRequest;
-import com.ecommerce.mediaservice.dtos.Product;
 import com.ecommerce.mediaservice.dtos.TargetType;
 import com.ecommerce.mediaservice.models.Media;
-import com.ecommerce.mediaservice.exceptions.Product.ForbiddenToChangeProductMediaException;
-import com.ecommerce.mediaservice.exceptions.Product.MoreThanFiveImagesException;
-import com.ecommerce.mediaservice.exceptions.Product.ProductNotFoundException;
-import com.ecommerce.mediaservice.exceptions.Product.ProductServiceUnavailableException;
-import com.ecommerce.mediaservice.exceptions.media.CloudinaryDeleteException;
-import com.ecommerce.mediaservice.exceptions.media.CloudinaryUploadException;
 import com.ecommerce.mediaservice.exceptions.media.ImageNotDeletedException;
 import com.ecommerce.mediaservice.exceptions.media.ImageNotFoundException;
 import com.ecommerce.mediaservice.exceptions.media.ImageNullOrEmptyException;
-import com.ecommerce.mediaservice.exceptions.media.InvalidImageBodyException;
-import com.ecommerce.mediaservice.exceptions.media.InvalidImageTypeException;
-import com.ecommerce.mediaservice.exceptions.media.InvalidSizeLimitException;
 import com.ecommerce.mediaservice.exceptions.media.MediaPersistenceException;
-import com.ecommerce.mediaservice.exceptions.profile.ForbiddenToChangeProfileException;
+import com.ecommerce.mediaservice.exceptions.Product.MoreThanFiveImagesException;
 import com.ecommerce.mediaservice.exceptions.profile.MoreThanOneImageException;
 import com.ecommerce.mediaservice.repositories.MediaRepository;
 
-import feign.FeignException;
 import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
 public class MediaService {
-    private static final long MAX_IMAGE_SIZE = 2 * 1024 * 1024;
     private final MediaRepository mediaRepository;
-    private final Cloudinary cloudinary;
-    private final ProductClient productClient;
+    private final MediaHelper mediaHelper;
 
     public ResponseData<List<String>> saveMedia(MediaRequest request, MultipartFile[] images) {
-        List<String> imagesPaths = new ArrayList<>();
         if (images == null || images.length == 0) {
             throw new ImageNullOrEmptyException("At least one image is required !");
         }
@@ -59,9 +39,10 @@ public class MediaService {
         } else if (request.targetType().equals(TargetType.PROFILE) && images.length > 1) {
             throw new MoreThanOneImageException("You are allowed to send only one image !");
         }
+        List<String> imagesPaths = new ArrayList<>();
         for (MultipartFile image : images) {
-            validateImage(image);
-            String imageUrl = uploadToCloudinary(image, request.targetType(), request.targetId());
+            mediaHelper.validateImage(image);
+            String imageUrl = mediaHelper.uploadToCloudinary(image, request.targetType(), request.targetId());
             if (request.targetType().equals(TargetType.PRODUCT)) {
                 Media media = Media.builder().imagePath(imageUrl).productId(request.targetId()).build();
                 try {
@@ -95,7 +76,7 @@ public class MediaService {
     }
 
     public ResponseData<List<String>> getMedias(String productId) {
-       
+
         List<Media> medias = mediaRepository.findByProductId(productId).orElse(new ArrayList<>());
 
         List<String> imagesPaths = new ArrayList<>();
@@ -106,7 +87,7 @@ public class MediaService {
     }
 
     public ResponseData<String> deleteMedias(String userId, DeleteMediaRequest request) {
-        checkOwnership(request.targetType(), request.targetId(), userId);
+        mediaHelper.checkOwnership(request.targetType(), request.targetId(), userId);
 
         for (String imagePath : request.imagePaths()) {
             Media media = null;
@@ -117,10 +98,10 @@ public class MediaService {
                     throw new ImageNotFoundException("Image not found !");
                 }
             } else {
-                verifyImageBelongsToTarget(imagePath, request.targetType(), request.targetId());
+                mediaHelper.verifyImageBelongsToTarget(imagePath, request.targetType(), request.targetId());
             }
 
-            deleteFromCloudinary(imagePath);
+            mediaHelper.deleteFromCloudinary(imagePath);
 
             if (media != null) {
                 try {
@@ -131,46 +112,46 @@ public class MediaService {
             }
         }
 
-        String folder = getFolder(request.targetType(), request.targetId());
-        deleteFolderIfEmpty(folder);
+        String folder = mediaHelper.getFolder(request.targetType(), request.targetId());
+        mediaHelper.deleteFolderIfEmpty(folder);
         return ResponseData.success("Image(s) deleted successfully !", null);
     }
 
     public ResponseData<List<String>> updateMedias(String userId, MediaRequest request, MultipartFile[] images) {
-        checkOwnership(request.targetType(), request.targetId(), userId);
+        mediaHelper.checkOwnership(request.targetType(), request.targetId(), userId);
 
         if (images == null || images.length == 0) {
             throw new ImageNullOrEmptyException("At least one image is required !");
         }
 
         for (MultipartFile image : images) {
-            validateImage(image);
+            mediaHelper.validateImage(image);
         }
 
         if (request.oldImagePaths() != null) {
             for (String oldImagePath : request.oldImagePaths()) {
-                verifyImageBelongsToTarget(oldImagePath, request.targetType(), request.targetId());
+                mediaHelper.verifyImageBelongsToTarget(oldImagePath, request.targetType(), request.targetId());
                 if (request.targetType().equals(TargetType.PRODUCT)) {
                     Media media = mediaRepository.findByImagePath(oldImagePath)
                             .orElseThrow(() -> new ImageNotFoundException("Image not found !"));
                     if (!media.getProductId().equals(request.targetId())) {
                         throw new ImageNotFoundException("Image not found !");
                     }
-                    deleteFromCloudinary(oldImagePath);
+                    mediaHelper.deleteFromCloudinary(oldImagePath);
                     try {
                         mediaRepository.delete(media);
                     } catch (Exception ex) {
                         throw new ImageNotDeletedException("This image is not deleted, please try again later !");
                     }
                 } else {
-                    deleteFromCloudinary(oldImagePath);
+                    mediaHelper.deleteFromCloudinary(oldImagePath);
                 }
             }
         }
 
         List<String> newImagePaths = new ArrayList<>();
         for (MultipartFile image : images) {
-            String imageUrl = uploadToCloudinary(image, request.targetType(), request.targetId());
+            String imageUrl = mediaHelper.uploadToCloudinary(image, request.targetType(), request.targetId());
             newImagePaths.add(imageUrl);
             if (request.targetType().equals(TargetType.PRODUCT)) {
                 Media media = Media.builder()
@@ -181,135 +162,9 @@ public class MediaService {
             }
         }
 
-        String folder = getFolder(request.targetType(), request.targetId());
-        deleteFolderIfEmpty(folder);
+        String folder = mediaHelper.getFolder(request.targetType(), request.targetId());
+        mediaHelper.deleteFolderIfEmpty(folder);
 
         return ResponseData.success("Media updated successfully !", newImagePaths);
-    }
-
-    private String uploadToCloudinary(MultipartFile image, TargetType targetType, String targetId) {
-        Map<?, ?> uploadResult;
-        try {
-            if (targetType.equals(TargetType.PRODUCT)) {
-                uploadResult = cloudinary.uploader().upload(image.getBytes(),
-                        ObjectUtils.asMap("folder", "products/" + targetId));
-            } else {
-                uploadResult = cloudinary.uploader().upload(image.getBytes(),
-                        ObjectUtils.asMap("folder", "profile/" + targetId));
-            }
-        } catch (IOException e) {
-            throw new CloudinaryUploadException("Failed to upload image to Cloudinary !", e);
-        }
-
-        Object secureUrl = uploadResult.get("secure_url");
-        if (secureUrl == null) {
-            throw new CloudinaryUploadException("Cloudinary did not return a valid upload result !");
-        }
-        return secureUrl.toString();
-    }
-
-    private void verifyImageBelongsToTarget(String imagePath, TargetType targetType, String targetId) {
-        String folder = targetType.equals(TargetType.PRODUCT)
-                ? "/products/" + targetId + "/"
-                : "/profile/" + targetId + "/";
-        if (!imagePath.contains(folder)) {
-            throw new ImageNotFoundException("Image not found !");
-        }
-    }
-
-    private String getFolder(TargetType targetType, String targetId) {
-        return targetType.equals(TargetType.PRODUCT) ? "products/" + targetId + "/" : "profile/" + targetId + "/";
-    }
-
-    // this method checks ownership
-    private void checkOwnership(TargetType targetType, String targetId, String userId) {
-        if (targetType.equals(TargetType.PROFILE)) {
-            boolean isOwner = targetId.equals(userId);
-            if (!isOwner) {
-                throw new ForbiddenToChangeProfileException("You do not have access to delete this image");
-            }
-        } else {
-            Product product = null;
-            try {
-                product = productClient.getProduct(targetId).getData();
-            } catch (FeignException.NotFound ex) {
-                throw new ProductNotFoundException("Product not found !");
-            } catch (Exception ex) {
-                throw new ProductServiceUnavailableException("Unable to reach the product service, please try again later !", ex);
-            }
-
-            if (!product.userId().equals(userId)) {
-                throw new ForbiddenToChangeProductMediaException(
-                        "You do not have access to the media of this product !");
-            }
-        }
-    }
-
-    private void deleteFolderIfEmpty(String folder) {
-        try {
-            Map<?, ?> resourcesResult = cloudinary.api().resources(ObjectUtils.asMap(
-                    "type", "upload",
-                    "prefix", folder,
-                    "max_results", 1));
-            List<?> resources = (List<?>) resourcesResult.get("resources");
-            if (resources == null || resources.isEmpty()) {
-                cloudinary.api().deleteFolder(folder, ObjectUtils.emptyMap());
-            }
-        } catch (Exception e) {
-            throw new CloudinaryDeleteException("Failed to delete empty folder from Cloudinary !", e);
-        }
-    }
-
-    private void deleteFromCloudinary(String imagePath) {
-        String publicId = extractPublicId(imagePath);
-        Map<?, ?> result;
-        try {
-            result = cloudinary.uploader().destroy(publicId, ObjectUtils.emptyMap());
-        } catch (IOException e) {
-            throw new CloudinaryDeleteException("Failed to delete image from Cloudinary !", e);
-        }
-
-        Object status = result.get("result");
-        if (status == null || !status.equals("ok")) {
-            throw new ImageNotFoundException("Image not found on Cloudinary : " + publicId);
-        }
-    }
-
-    private String extractPublicId(String imageUrl) {
-        int uploadIndex = imageUrl.indexOf("/upload/");
-        if (uploadIndex == -1) {
-            throw new CloudinaryDeleteException("Invalid Cloudinary image URL !");
-        }
-
-        String path = imageUrl.substring(uploadIndex + "/upload/".length());
-        if (path.matches("^v\\d+/.*")) { // valid: v12/anything
-            path = path.substring(path.indexOf('/') + 1);
-        }
-
-        int dotIndex = path.lastIndexOf('.');
-        return dotIndex == -1 ? path : path.substring(0, dotIndex);
-    }
-
-    private void validateImage(MultipartFile image) {
-        if (image == null || image.isEmpty()) {
-            throw new ImageNullOrEmptyException("The image is empty or null !");
-        }
-
-        if (image.getSize() > MAX_IMAGE_SIZE) {
-            throw new InvalidSizeLimitException("The image has more than 2MB !");
-        }
-
-        String contentType = image.getContentType();
-        if (contentType == null || !contentType.startsWith("image/")) {
-            throw new InvalidImageTypeException("Invalid content type !");
-        }
-
-        try {
-            if (ImageIO.read(image.getInputStream()) == null) {
-                throw new InvalidImageBodyException("The image body doesn't contain data of an image !");
-            }
-        } catch (IOException e) {
-            throw new InvalidImageBodyException("The image body doesn't contain data of an image !");
-        }
     }
 }

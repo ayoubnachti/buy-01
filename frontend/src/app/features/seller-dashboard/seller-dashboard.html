@@ -22,27 +22,29 @@
           (action)="onCreateClick()"
         />
       } @else {
-        <table class="table table-hover align-middle mb-0">
-          <thead>
-            <tr class="text-secondary">
-              <th scope="col" class="border-end fw-normal">ID</th>
-              <th scope="col" class="border-end fw-normal">name</th>
-              <th scope="col" class="border-end fw-normal">price</th>
-              <th scope="col" class="border-end fw-normal">quantity</th>
-              <th scope="col" class="fw-normal">actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (product of products(); track product.id) {
-              <tr
-                app-product-table-row
-                [product]="product"
-                (edit)="onEditClick($event)"
-                (delete)="onDeleteClick($event)"
-              ></tr>
-            }
-          </tbody>
-        </table>
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead>
+              <tr class="text-secondary">
+                <th scope="col" class="border-end fw-normal">ID</th>
+                <th scope="col" class="border-end fw-normal">name</th>
+                <th scope="col" class="border-end fw-normal">price</th>
+                <th scope="col" class="border-end fw-normal">quantity</th>
+                <th scope="col" class="fw-normal">actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (product of products(); track product.id) {
+                <tr
+                  app-product-table-row
+                  [product]="product"
+                  (edit)="onEditClick($event)"
+                  (delete)="onDeleteClick($event)"
+                ></tr>
+              }
+            </tbody>
+          </table>
+        </div>
 
         <nav class="d-flex justify-content-between align-items-center mt-3" aria-label="Product pages">
           <button
