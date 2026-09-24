@@ -23,6 +23,7 @@ An end-to-end e-commerce platform built as **Spring Boot microservices** behind 
     - [api-gateway](#api-gateway)
   - [Authentication](#authentication)
   - [Getting started](#getting-started)
+  - [HTTPS (self-signed, local dev)](#https-self-signed-local-dev)
   - [Environment variables](#environment-variables)
   - [Demo data](#demo-data)
   - [Testing](#testing)
@@ -183,6 +184,50 @@ cd product-service
 ./mvnw spring-boot:run
 ```
 
+## HTTPS (self-signed, local dev)
+
+`api-gateway` serves over HTTPS on port `8443` using a self-signed certificate —
+this is the only service with TLS; every other service stays on plain HTTP
+behind it, since nothing outside the Docker network can reach them directly
+(only `gateway:8443` and `discovery:8761` are exposed to the host).
+
+### Generating the keystore (already done once — regenerate if needed)
+
+```bash
+keytool -genkeypair \
+  -alias gateway \
+  -keyalg RSA \
+  -keysize 2048 \
+  -storetype PKCS12 \
+  -keystore keystore.p12 \
+  -validity 3650 \
+  -dname "CN=localhost, OU=Dev, O=Vendify" \
+  -storepass changeit \
+  -keypass changeit
+```
+
+Notes on the flags:
+- `-storepass` / `-keypass` must be **identical** for a PKCS12 keystore —
+  the format doesn't support a separate per-entry key password the way
+  older JKS keystores did. `keytool` will warn (or reject) if they differ.
+- `-dname "CN=localhost, ..."` sets all the identity fields non-interactively
+  in one go — omit it and `keytool` prompts for each field one at a time,
+  plus a yes/no confirmation, which is fine by hand but not reproducible
+  in a script or a teammate following these instructions blind.
+- If you're on **Windows using Git Bash**, this command has an advantage
+  worth knowing about: `openssl`'s equivalent needs a `-subj` value starting
+  with `/` (e.g. `/CN=localhost`), which Git Bash's automatic Unix-path
+  conversion mangles before `openssl` ever sees it. `keytool`'s `-dname`
+  value has no leading `/`, so it isn't affected by that conversion at all.
+
+Update `SSL_KEYSTORE_PASSWORD` in `.env` to match `-storepass` if you
+change it from `changeit`, and `SSL_KEYSTORE_PATH` if you move the file
+somewhere other than the default `classpath:keystore.p12`.
+
+Place `keystore.p12` at `api-gateway/src/main/resources/keystore.p12` —
+Maven packages it into the built JAR from there, no separate volume
+mount needed for the default classpath-based setup.
+
 ## Environment variables
 
 | Variable | Used by | Default | Notes |
@@ -190,6 +235,8 @@ cd product-service
 | `MONGODB_URI` | user/product/media-service | `mongodb://localhost:27017/<service>_db` | Set per-service in `compose.yml` |
 | `EUREKA_CLIENT_SERVICEURL_DEFAULTZONE` | all services | `http://localhost:8761/eureka/` | Points every service at the discovery server |
 | `JWT_SECRET` | user-service, api-gateway | a dev default in `application.*` | Must match between the two — override in production |
+| `SSL_KEYSTORE_PATH` | api-gateway | `classpath:keystore.p12` | See [HTTPS](#https-self-signed-local-dev) |
+| `SSL_KEYSTORE_PASSWORD` | api-gateway | `changeit` | Must match the `-storepass` used to generate `keystore.p12` |
 | `CLOUDINARY_URL` | media-service | *(required, no default)* | Set in `media-service/.env` (not committed); get it from your Cloudinary dashboard |
 | `CORS_ALLOWED_ORIGIN` | api-gateway | `http://localhost:4200` | Frontend origin allowed through CORS |
 
