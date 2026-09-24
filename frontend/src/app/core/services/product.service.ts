@@ -6,11 +6,12 @@ import { CreateProductRequest } from '../../shared/models/create-product-request
 import { Product } from '../../shared/models/product.model';
 import { ProductPageResponse } from '../../shared/models/product-page-response';
 import { ResponseData } from '../../shared/models/response-data';
+import { environment } from '../../../environments/environment.prod';
 
 @Injectable({ providedIn: 'root' })
 export class ProductService {
   private readonly http = inject(HttpClient);
-  private readonly apiUrl = 'http://localhost:8080/products';
+  private readonly apiUrl = `${environment.apiUrl}/products`;
 
   getAll(owner?: string, page?: number, limit?: number) {
     let params = new HttpParams();

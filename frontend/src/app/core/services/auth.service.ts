@@ -6,6 +6,7 @@ import { AuthResponse } from '../../features/auth/models/auth-response';
 import { RegisterRequest } from '../../features/auth/models/register-request';
 import { RegisterResponse } from '../../features/auth/models/register-response';
 import { User } from '../../features/auth/models/user.modelt';
+import { environment } from '../../../environments/environment.prod';
 
 @Injectable({
   providedIn: 'root',
@@ -13,7 +14,7 @@ import { User } from '../../features/auth/models/user.modelt';
 export class AuthService {
   private readonly http = inject(HttpClient);
 
-  private readonly apiUrl = 'http://localhost:8080/auth';
+  private readonly apiUrl = `${environment.apiUrl}/auth`;
 
   private readonly userSignal = signal<User | null>(null);
 
