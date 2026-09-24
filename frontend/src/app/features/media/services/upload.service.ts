@@ -3,6 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
 import { ApiResponse, DeleteMediaRequest, MediaRequest, SaveMediaRequest } from '../models/media.model';
+import { environment } from '../../../../environments/environment.prod';
 
 @Injectable({
   providedIn: 'root',
@@ -10,7 +11,7 @@ import { ApiResponse, DeleteMediaRequest, MediaRequest, SaveMediaRequest } from 
 export class UploadService {
   private readonly http = inject(HttpClient);
 
-  private readonly apiUrl = 'http://localhost:8080';
+  private readonly apiUrl = environment.apiUrl;
 
   // Create new media for a target that has none yet (e.g. a brand-new product).
   saveMedia(request: SaveMediaRequest, images: File[]): Observable<ApiResponse<string[]>> {
