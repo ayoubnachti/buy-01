@@ -25,5 +25,21 @@ jobs:
           distribution: 'temurin'
           cache: maven
 
+      - name: Generate self-signed keystore for CI
+        run: |
+          keytool -genkeypair \
+            -alias gateway \
+            -keyalg RSA \
+            -keysize 2048 \
+            -storetype PKCS12 \
+            -keystore src/main/resources/keystore.p12 \
+            -validity 3650 \
+            -dname "CN=localhost, OU=CI, O=Vendify" \
+            -storepass "${{ secrets.SSL_KEYSTORE_PASSWORD }}" \
+            -keypass "${{ secrets.SSL_KEYSTORE_PASSWORD }}"
+
       - name: Build and test
+        env:
+          SSL_KEYSTORE_PASSWORD: ${{ secrets.SSL_KEYSTORE_PASSWORD }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
         run: mvn -B verify

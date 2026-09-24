@@ -1,36 +1,4 @@
 services:
-  kafka:
-    image: apache/kafka:4.3.1
-    container_name: kafka
-    restart: unless-stopped
-    environment:
-      KAFKA_NODE_ID: 1
-      KAFKA_PROCESS_ROLES: broker,controller
-      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
-      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
-      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-      GROUP_INITIAL_REBALANCE_DELAY_MS: 0
-      CLUSTER_ID: "MkU3OEVBNTcwNTJENDM2Qk"
-    healthcheck:
-      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092 || exit 1"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 20s
-
-  kafka-ui:
-    image: ghcr.io/kafbat/kafka-ui:latest
-    container_name: kafka-ui
-    restart: unless-stopped
-    environment:
-      KAFKA_CLUSTERS_0_NAME: local
-      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
-    depends_on:
-      kafka:
-        condition: service_healthy
 
   discovery-server:
     build: ./discovery-server
@@ -72,8 +40,6 @@ services:
         condition: service_healthy
       discovery-server:
         condition: service_healthy
-      kafka:
-        condition: service_healthy
 
   product-service:
     build: ./product-service
@@ -87,8 +53,6 @@ services:
       mongodb:
         condition: service_healthy
       discovery-server:
-        condition: service_healthy
-      kafka:
         condition: service_healthy
 
   media-service:
@@ -104,8 +68,6 @@ services:
       mongodb:
         condition: service_healthy
       discovery-server:
-        condition: service_healthy
-      kafka:
         condition: service_healthy
 
   api-gateway:

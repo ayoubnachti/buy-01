@@ -26,7 +26,7 @@ class ActuatorHealthIntegrationTest {
         var client = HttpClient.newHttpClient();
 
         var request = HttpRequest.newBuilder()
-                .uri(URI.create("http://localhost:" + port + "/actuator/health"))
+                .uri(URI.create("https://localhost:" + port + "/actuator/health"))
                 .GET()
                 .build();
 
