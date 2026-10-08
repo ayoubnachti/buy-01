@@ -1,0 +1,121 @@
+# Jenkins Configuration as Code: controller config, zero clicks.
+# Secrets are NEVER in this file: they come from environment variables
+
+jenkins:
+  systemMessage: "Managed by JCasC. Do not configure by hand."
+  numExecutors: 0                     # controller runs no build work
+  mode: NORMAL
+  labelAtoms:
+    - name: "backend"
+    - name: "frontend"
+
+  securityRealm:
+    local:
+      allowsSignup: false             # no public self-registration
+      users:
+        - id: "${JENKINS_ADMIN_ID}"
+          password: "${JENKINS_ADMIN_PASSWORD}"
+          properties:
+            - mailer:
+                emailAddress: "${NOTIFY_EMAIL}"
+
+  authorizationStrategy:
+    loggedInUsersCanDoAnything:
+      allowAnonymousRead: false
+
+  nodes:
+    - permanent:
+        name: "agent-backend"
+        labelString: "backend"
+        remoteFS: "/home/jenkins/agent"
+        mode: EXCLUSIVE               # only jobs that ask for this label
+        retentionStrategy: "always"
+        launcher:
+          ssh:
+            host: "agent-backend"
+            port: 22
+            credentialsId: "agent-ssh-key"
+            sshHostKeyVerificationStrategy:
+              manuallyTrustedKeyVerificationStrategy:
+                requireInitialManualTrust: false
+    - permanent:
+        name: "agent-frontend"
+        labelString: "frontend"
+        remoteFS: "/home/jenkins/agent"
+        mode: EXCLUSIVE
+        retentionStrategy: "always"
+        launcher:
+          ssh:
+            host: "agent-frontend"
+            port: 22
+            credentialsId: "agent-ssh-key"
+            sshHostKeyVerificationStrategy:
+              manuallyTrustedKeyVerificationStrategy:
+                requireInitialManualTrust: false
+
+credentials:
+  system:
+    domainCredentials:
+      - credentials:
+          # Git host token (used by the Multibranch job + checkouts)
+          - usernamePassword:
+              id: "git-token"
+              scope: GLOBAL
+              username: "${GIT_USERNAME}"
+              password: "${GIT_TOKEN}"
+              description: "Git host PAT, read-only"
+          # SSH key the controller uses to launch agents (System scope)
+          - basicSSHUserPrivateKey:
+              id: "agent-ssh-key"
+              scope: SYSTEM
+              username: "jenkins"
+              description: "SSH key for build agents"
+              privateKeySource:
+                directEntry:
+                  privateKey: "${decodeBase64:${AGENT_SSH_KEY_B64}}"
+          # Gmail app password for notifications
+          - usernamePassword:
+              id: "gmail-smtp"
+              scope: GLOBAL
+              username: "${SMTP_USERNAME}"
+              password: "${SMTP_APP_PASSWORD}"
+              description: "Gmail SMTP app password"
+
+unclassified:
+  location:
+    url: "${JENKINS_URL}"             # http://localhost:8080/ locally; https://jenkins... on the server
+    adminAddress: "${NOTIFY_EMAIL}"
+
+  # GitHub webhook endpoint advertised to the hook config
+  gitHubPluginConfig:
+    hookUrl: "${JENKINS_URL}github-webhook/"
+
+  # Extended E-mail (emailext) — 587/TLS, authenticated. NOT 465/SSL.
+  email-ext:
+    charset: "UTF-8"
+    defaultContentType: "text/plain"
+    defaultRecipients: "${NOTIFY_EMAIL}"
+    defaultSubject: "$PROJECT_NAME - Build #$BUILD_NUMBER - $BUILD_STATUS"
+    defaultBody: |-
+      $PROJECT_NAME - Build #$BUILD_NUMBER - $BUILD_STATUS
+      Console: $BUILD_URL console
+    mailAccount:
+      credentialsId: "gmail-smtp"
+      smtpHost: "smtp.gmail.com"
+      smtpPort: "587"
+      useTls: true
+      useSsl: false
+
+  # Plain Mailer (kept consistent with emailext; some plugins read it)
+  mailer:
+    charset: "UTF-8"
+    useSsl: false
+    useTls: true
+    smtpHost: "smtp.gmail.com"
+    smtpPort: "587"
+
+tool:
+  git:
+    installations:
+      - name: "Default"
+        home: "git"

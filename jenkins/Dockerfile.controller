@@ -1,0 +1,20 @@
+FROM jenkins/jenkins:2.580.1-lts-jdk21
+
+# No setup wizard: JCasC configures everything.
+ENV JAVA_OPTS="-Djenkins.install.runSetupWizard=false -Xmx1g"
+
+# Where JCasC reads its config. Deliberately OUTSIDE /var/jenkins_home:
+# that path is a volume, and Docker only seeds a volume from the image
+# when the volume is empty, so a config stored there would never update.
+ENV CASC_JENKINS_CONFIG=/usr/share/jenkins/casc/casc.yaml
+
+# Refuse to apply the config if a ${VAR} is missing, instead of silently
+# substituting an empty string (e.g. an empty admin password).
+ENV CASC_STRICT_SECRET_RESOLUTION=true
+
+# Install the pinned plugins at build time (no runtime download, reproducible).
+COPY plugins.txt /usr/share/jenkins/ref/plugins.txt
+RUN jenkins-plugin-cli --plugin-file /usr/share/jenkins/ref/plugins.txt
+
+# Ship the config inside the image.
+COPY casc.yaml /usr/share/jenkins/casc/casc.yaml

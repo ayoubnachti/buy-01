@@ -1,0 +1,34 @@
+# Only the plugins this project uses, pinned to the versions tested in the sandbox
+# (Jenkins 2.580.1 LTS). Re-check and bump together when you upgrade Jenkins:
+# Manage Jenkins -> Plugins -> Installed, or read
+# JENKINS_HOME/plugins/<name>/META-INF/MANIFEST.MF (Plugin-Version).
+
+# Pipeline (Declarative + core)
+workflow-aggregator:608.v67378e9d3db_1
+pipeline-stage-view:2.34                 # pin a current version before submitting
+
+# Configuration as Code
+configuration-as-code:2132.v60435f73c18a_
+
+# Git / SCM / Multibranch
+git:5.10.1
+workflow-multibranch:842.v3a_b_59b_57b_e6e
+github:1.47.0                             # GitHub webhook endpoint (/github-webhook/)
+
+# Credentials
+credentials:1511.v2e3cb_0008ef0
+credentials-binding:728.v902a_273b_8947
+ssh-credentials:372.va_250881b_08cd
+plain-credentials:199.v9f8e1f741799
+
+# Agents over SSH
+ssh-slaves:3.1097.v868116049892
+
+# Tests + email
+junit:1431.vc0d98912a_756
+email-ext:2038.v7b_8817a_499d9
+mailer:534.v1b_36f5864073
+
+# Quality-of-life used in the pipeline
+timestamper:1.30
+ws-cleanup:0.49                           # cleanWs() / workspace cleanup
