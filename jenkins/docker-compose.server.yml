@@ -1,0 +1,14 @@
+# Server-only additions, layered on top of docker-compose.yml:
+#   docker compose -f docker-compose.yml -f docker-compose.server.yml up -d
+# Jenkins is reached through Caddy on the shared "web" network, so it
+# publishes no port of its own.
+services:
+  jenkins:
+    ports: !reset []
+    networks:
+      - default
+      - web
+
+networks:
+  web:
+    external: true
