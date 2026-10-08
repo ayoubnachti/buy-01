@@ -6,7 +6,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 
 import com.ecommerce.productservice.clients.MediaServiceGateway;
@@ -94,11 +93,6 @@ public class ProductService {
     }
 
     productRepository.delete(existingProduct);
-  }
-
-  @KafkaListener(topics = "user-events", groupId = "product-service")
-  public void deleteProductByUserId(String id) {
-    productRepository.deleteByUserId(id);
   }
 
   private Product findProductById(String id) {
