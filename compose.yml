@@ -1,7 +1,7 @@
 services:
 
   discovery-server:
-    build: ./discovery-server
+    build: ./backend/discovery-server
     container_name: discovery-server
     restart: unless-stopped
     ports:
@@ -27,7 +27,7 @@ services:
       start_period: 30s
 
   user-service:
-    build: ./user-service
+    build: ./backend/user-service
     container_name: user-service
     restart: unless-stopped
     environment:
@@ -41,7 +41,7 @@ services:
         condition: service_healthy
 
   product-service:
-    build: ./product-service
+    build: ./backend/product-service
     container_name: product-service
     restart: unless-stopped
     environment:
@@ -54,7 +54,7 @@ services:
         condition: service_healthy
 
   media-service:
-    build: ./media-service
+    build: ./backend/media-service
     container_name: media-service
     restart: unless-stopped
     environment:
@@ -68,7 +68,7 @@ services:
         condition: service_healthy
 
   api-gateway:
-    build: ./api-gateway
+    build: ./backend/api-gateway
     container_name: api-gateway
     restart: unless-stopped
     ports:
