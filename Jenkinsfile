@@ -5,6 +5,7 @@ pipeline {
     timeout(time: 30, unit: 'MINUTES')
     timestamps()
     buildDiscarder(logRotator(numToKeepStr: '20'))
+    disableConcurrentBuilds()      // one build at a time; a new push waits in the queue
   }
 
   environment {
