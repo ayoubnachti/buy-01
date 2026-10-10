@@ -1,7 +1,12 @@
+# The e-commerce stack: used by the pipeline to deploy, and for local runs.
+# Images are tagged ${TAG}: the build number in the pipeline, "dev" locally.
+# Every service has a healthcheck, so `docker compose up --wait` only succeeds
+# when the whole stack is healthy (the pipeline relies on that).
 services:
 
   discovery-server:
     build: ./backend/discovery-server
+    image: ecommerce/discovery-server:${TAG:-dev}
     container_name: discovery-server
     restart: unless-stopped
     ports:
@@ -28,12 +33,19 @@ services:
 
   user-service:
     build: ./backend/user-service
+    image: ecommerce/user-service:${TAG:-dev}
     container_name: user-service
     restart: unless-stopped
     environment:
       - MONGODB_URI=${USER_MONGODB_URI}
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=${EUREKA_CLIENT_SERVICEURL_DEFAULTZONE}
       - JWT_SECRET=${JWT_SECRET}
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8081/actuator/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+      start_period: 60s
     depends_on:
       mongodb:
         condition: service_healthy
@@ -42,11 +54,18 @@ services:
 
   product-service:
     build: ./backend/product-service
+    image: ecommerce/product-service:${TAG:-dev}
     container_name: product-service
     restart: unless-stopped
     environment:
       - MONGODB_URI=${PRODUCT_MONGODB_URI}
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=${EUREKA_CLIENT_SERVICEURL_DEFAULTZONE}
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8082/actuator/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+      start_period: 60s
     depends_on:
       mongodb:
         condition: service_healthy
@@ -55,12 +74,19 @@ services:
 
   media-service:
     build: ./backend/media-service
+    image: ecommerce/media-service:${TAG:-dev}
     container_name: media-service
     restart: unless-stopped
     environment:
       - MONGODB_URI=${MEDIA_MONGODB_URI}
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=${EUREKA_CLIENT_SERVICEURL_DEFAULTZONE}
       - CLOUDINARY_URL=${CLOUDINARY_URL}
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8083/actuator/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+      start_period: 60s
     depends_on:
       mongodb:
         condition: service_healthy
@@ -69,6 +95,7 @@ services:
 
   api-gateway:
     build: ./backend/api-gateway
+    image: ecommerce/api-gateway:${TAG:-dev}
     container_name: api-gateway
     restart: unless-stopped
     ports:
@@ -89,17 +116,20 @@ services:
       retries: 5
       start_period: 30s
 
+  # Production build of the Angular app, served by nginx.
+  # For live reload while coding, run `npm start` in frontend/ instead.
   frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile.dev
+    build: ./frontend
+    image: ecommerce/frontend:${TAG:-dev}
     container_name: frontend
     restart: unless-stopped
     ports:
-      - "4200:4200"
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
+      - "4200:80"
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost/"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
     depends_on:
       api-gateway:
         condition: service_healthy
