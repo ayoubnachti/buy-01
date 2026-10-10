@@ -5,7 +5,7 @@
 
 # Pipeline (Declarative + core)
 workflow-aggregator:608.v67378e9d3db_1
-pipeline-stage-view:2.34                 # pin a current version before submitting
+pipeline-graph-view:1053.v9df19e6ceed2   # pipeline graph + logs (the default UI of the setup wizard)
 
 # Configuration as Code
 configuration-as-code:2132.v60435f73c18a_
