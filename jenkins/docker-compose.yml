@@ -36,6 +36,16 @@ services:
       - npm_cache:/home/jenkins/.npm
     mem_limit: 2g
 
+  # Throwaway MongoDB for the backend tests (reached as mongo-test:27017).
+  # Data lives in RAM and disappears on restart.
+  mongo-test:
+    image: mongo:7
+    restart: unless-stopped
+    command: ["--wiredTigerCacheSizeGB", "0.25"]
+    tmpfs:
+      - /data/db
+    mem_limit: 768m
+
 volumes:
   jenkins_home:
   agent_backend_ssh:
