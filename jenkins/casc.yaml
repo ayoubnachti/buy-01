@@ -73,6 +73,13 @@ credentials:
               privateKeySource:
                 directEntry:
                   privateKey: "${decodeBase64:${AGENT_SSH_KEY_B64}}"
+          # The app's runtime settings (.env for compose.yml), used by the deploy
+          - file:
+              id: "ecommerce-env"
+              scope: GLOBAL
+              fileName: "app.env"
+              secretBytes: "${APP_ENV_B64}"
+              description: "App .env for deploys (base64 in jenkins/.env)"
           # Gmail app password for notifications
           - usernamePassword:
               id: "gmail-smtp"
