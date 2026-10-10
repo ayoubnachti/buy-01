@@ -43,7 +43,12 @@ pipeline {
           steps {
             dir('frontend') {
               sh 'npm ci'
-              sh 'npx ng test --watch=false'
+              sh 'npx ng test --watch=false --reporters=junit --reporters=default --output-file=test-results/junit.xml'
+            }
+          }
+          post {
+            always {
+              junit allowEmptyResults: true, testResults: 'frontend/test-results/junit.xml'
             }
           }
         }
