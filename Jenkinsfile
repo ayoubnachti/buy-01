@@ -13,7 +13,7 @@ pipeline {
   }
 
   stages {
-    stage('Test') {
+    stage('Build & test') {
       parallel {
         stage('Backend tests') {
           agent { label 'backend' }
@@ -90,20 +90,49 @@ pipeline {
               '''
             }
             failure {
-              withCredentials([file(credentialsId: 'ecommerce-env', variable: 'APP_ENV')]) {
-                sh '''
-                  if docker image inspect ecommerce/api-gateway:last-good >/dev/null 2>&1; then
-                    echo "Deploy of build $TAG is unhealthy: rolling back to last-good"
-                    TAG=last-good $COMPOSE --env-file "$APP_ENV" up -d --wait --wait-timeout 300
-                  else
-                    echo "Deploy failed and there is no previous good release to roll back to"
-                  fi
-                '''
+              script {
+                // Roll back only if a previous healthy release exists
+                if (sh(returnStatus: true, script: 'docker image inspect ecommerce/api-gateway:last-good > /dev/null 2>&1') == 0) {
+                  echo "Deploy of build ${TAG} is unhealthy: rolling back to last-good"
+                  withCredentials([file(credentialsId: 'ecommerce-env', variable: 'APP_ENV')]) {
+                    sh 'TAG=last-good $COMPOSE --env-file "$APP_ENV" up -d --wait --wait-timeout 300'
+                  }
+                  env.ROLLED_BACK = 'true'   // reported in the email
+                } else {
+                  echo 'Deploy failed and there is no previous good release to roll back to'
+                }
               }
             }
           }
         }
       }
+    }
+  }
+
+  post {
+    success {
+      emailext(
+        to: '$DEFAULT_RECIPIENTS',
+        subject: "SUCCESS: ${env.JOB_NAME} #${env.BUILD_NUMBER} deployed",
+        body: """Build #${env.BUILD_NUMBER} passed all tests and is deployed.
+          Running images: ecommerce/*:${env.TAG}
+
+          Changes: ${env.BUILD_URL}changes
+          Console: ${env.BUILD_URL}console
+        """
+      )
+    }
+    failure {
+      emailext(
+        to: '$DEFAULT_RECIPIENTS',
+        subject: "FAILED: ${env.JOB_NAME} #${env.BUILD_NUMBER}" + (env.ROLLED_BACK ? ' (rolled back)' : ''),
+        body: """Build #${env.BUILD_NUMBER} failed.
+          ${env.ROLLED_BACK ? 'The new release was unhealthy, so the previous good release (last-good) was redeployed. The site is still up.' : 'Nothing new was deployed: the running release is unchanged.'}
+
+          Test results: ${env.BUILD_URL}testReport
+          Console: ${env.BUILD_URL}console
+        """
+      )
     }
   }
 }
