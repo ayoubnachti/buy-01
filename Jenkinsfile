@@ -87,6 +87,10 @@ pipeline {
                 for svc in discovery-server api-gateway user-service product-service media-service frontend; do
                   docker tag ecommerce/$svc:$TAG ecommerce/$svc:last-good
                 done
+                docker images 'ecommerce/*' --format '{{.Repository}}:{{.Tag}}' \
+                  | grep -vE ":($TAG|last-good)$" \
+                  | xargs -r docker rmi
+                docker image prune -f
               '''
             }
             failure {
