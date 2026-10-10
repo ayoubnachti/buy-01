@@ -6,7 +6,7 @@ import { CreateProductRequest } from '../../shared/models/create-product-request
 import { Product } from '../../shared/models/product.model';
 import { ProductPageResponse } from '../../shared/models/product-page-response';
 import { ResponseData } from '../../shared/models/response-data';
-import { environment } from '../../../environments/environment.prod';
+import { environment } from '../../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
 export class ProductService {
