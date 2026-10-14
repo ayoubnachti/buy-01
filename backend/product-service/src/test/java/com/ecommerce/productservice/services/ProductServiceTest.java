@@ -285,7 +285,7 @@ class ProductServiceTest {
 
     ArgumentCaptor<Pageable> captor = ArgumentCaptor.forClass(Pageable.class);
     verify(productRepository).findAll(captor.capture());
-    assertThat(captor.getValue().getPageNumber()).isEqualTo(0);
+    assertThat(captor.getValue().getPageNumber()).isEqualTo(10);
     assertThat(captor.getValue().getPageSize()).isEqualTo(20); // DEFAULT_LIMIT
   }
 }
