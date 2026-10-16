@@ -1,0 +1,36 @@
+{
+    "id": "6710a1f2c3d4e5f6a7b8c9d0",
+    "userId": "user-1",
+    "sellerId": "seller-1",
+    "status": "PENDING",
+    "items": [
+        {
+            "productId": "p-100",
+            "name": "Wireless Mouse",
+            "category": "Electronics",
+            "unitPrice": 19.99,
+            "quantity": 2,
+            "imageUrl": "/media/p-100.jpg"
+        }
+    ],
+    "shippingAddress": {
+        "fullName": "Test Client",
+        "phone": "+212600000000",
+        "street": "12 Main Street",
+        "city": "Casablanca",
+        "postalCode": "20000",
+        "country": "Morocco"
+    },
+    "paymentMethod": "PAY_ON_DELIVERY",
+    "totalAmount": 39.98,
+    "statusHistory": [
+        {
+            "status": "PENDING",
+            "at": "2026-10-16T22:00:00Z",
+            "by": "user-1"
+        }
+    ],
+    "deletedByUser": false,
+    "createdAt": "2026-10-16T22:00:00Z",
+    "updatedAt": "2026-10-16T22:00:00Z"
+}
