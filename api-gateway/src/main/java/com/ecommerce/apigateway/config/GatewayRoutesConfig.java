@@ -12,49 +12,52 @@ import org.springframework.web.servlet.function.ServerResponse;
 @Configuration
 public class GatewayRoutesConfig {
 
-    private final UserClaimsGatewayFilter userClaimsGatewayFilter;
+        private final UserClaimsGatewayFilter userClaimsGatewayFilter;
 
-    public GatewayRoutesConfig(
-            UserClaimsGatewayFilter userClaimsGatewayFilter) {
-        this.userClaimsGatewayFilter = userClaimsGatewayFilter;
-    }
+        public GatewayRoutesConfig(
+                        UserClaimsGatewayFilter userClaimsGatewayFilter) {
+                this.userClaimsGatewayFilter = userClaimsGatewayFilter;
+        }
 
-    @Bean
-    public RouterFunction<ServerResponse> gatewayRoutes() {
+        @Bean
+        public RouterFunction<ServerResponse> gatewayRoutes() {
 
-        RouterFunction<ServerResponse> userServiceRoute =
-                route("user-service-route")
-                        .route(
-                                request -> request.path().startsWith("/auth/") ||
-                                 request.path().equals("/MyProfile"),
-                                http()
-                        )
-                        .before(userClaimsGatewayFilter::apply)
-                        .filter(lb("user-service"))
-                        .build();
+                RouterFunction<ServerResponse> userServiceRoute = route("user-service-route")
+                                .route(
+                                                request -> request.path().startsWith("/auth/") ||
+                                                                request.path().equals("/MyProfile"),
+                                                http())
+                                .before(userClaimsGatewayFilter::apply)
+                                .filter(lb("user-service"))
+                                .build();
 
-        RouterFunction<ServerResponse> productServiceRoute =
-                route("product-service-route")
-                        .route(
-                                request -> request.path().startsWith("/products"),
-                                http()
-                        )
-                        .before(userClaimsGatewayFilter::apply)
-                        .filter(lb("product-service"))
-                        .build();
+                RouterFunction<ServerResponse> productServiceRoute = route("product-service-route")
+                                .route(
+                                                request -> request.path().startsWith("/products"),
+                                                http())
+                                .before(userClaimsGatewayFilter::apply)
+                                .filter(lb("product-service"))
+                                .build();
 
-        RouterFunction<ServerResponse> mediaServiceRoute =
-                route("media-service-route")
-                        .route(
-                                request -> request.path().startsWith("/media"),
-                                http()
-                        )
-                        .before(userClaimsGatewayFilter::apply)
-                        .filter(lb("media-service"))
-                        .build();
+                RouterFunction<ServerResponse> mediaServiceRoute = route("media-service-route")
+                                .route(
+                                                request -> request.path().startsWith("/media"),
+                                                http())
+                                .before(userClaimsGatewayFilter::apply)
+                                .filter(lb("media-service"))
+                                .build();
 
-        return userServiceRoute
-                .and(productServiceRoute)
-                .and(mediaServiceRoute);
-    }
+                RouterFunction<ServerResponse> orderServiceRoute = route("order-service-route")
+                                .route(
+                                                request -> request.path().startsWith("/orders") ||
+                                                                request.path().startsWith("/profile"),
+                                                http())
+                                .before(userClaimsGatewayFilter::apply)
+                                .filter(lb("order-service"))
+                                .build();
+
+                return userServiceRoute
+                                .and(productServiceRoute)
+                                .and(mediaServiceRoute);
+        }
 }
