@@ -58,6 +58,7 @@ public class GatewayRoutesConfig {
 
                 return userServiceRoute
                                 .and(productServiceRoute)
+                                .and(orderServiceRoute)
                                 .and(mediaServiceRoute);
         }
 }
