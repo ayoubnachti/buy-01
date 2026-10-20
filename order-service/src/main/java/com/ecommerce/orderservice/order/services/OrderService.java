@@ -7,13 +7,16 @@ import com.ecommerce.orderservice.exceptions.orderExceptions.OrderAlreadyCancell
 import com.ecommerce.orderservice.exceptions.orderExceptions.OrderAlreadyDeliveredException;
 import com.ecommerce.orderservice.exceptions.orderExceptions.OrderAlreadyShippedException;
 import com.ecommerce.orderservice.exceptions.orderExceptions.OrderNotFoundException;
+import com.ecommerce.orderservice.exceptions.orderExceptions.OrderStillActiveException;
 import com.ecommerce.orderservice.exceptions.orderExceptions.OutOfStockException;
 import com.ecommerce.orderservice.exceptions.orderExceptions.ProductNotFoundException;
 import com.ecommerce.orderservice.order.clients.ProductServiceGateway;
+import com.ecommerce.orderservice.order.dtos.request.AddressRequest;
 import com.ecommerce.orderservice.order.dtos.request.CreateOrderRequest;
 import com.ecommerce.orderservice.order.dtos.request.OrderItemRequest;
 import com.ecommerce.orderservice.order.dtos.response.OrderResponse;
 import com.ecommerce.orderservice.order.dtos.response.ProductDto;
+import com.ecommerce.orderservice.order.models.Address;
 import com.ecommerce.orderservice.order.models.Order;
 import com.ecommerce.orderservice.order.models.OrderItem;
 import com.ecommerce.orderservice.order.models.OrderStatus;
@@ -185,6 +188,31 @@ public class OrderService {
 
         boolean forSeller = savedOrder.getSellerId().equals(callerId);
         return ResponseData.success("Order cancelled successfully", OrderResponse.from(savedOrder, forSeller));
+    }
+
+    /** Only the owner. Makes a NEW order with the same products; price and stock are checked again. */
+    public ResponseData<List<OrderResponse>> redo(String orderId, String userId) {
+        Order oldOrder = orderRepository.findById(orderId)
+                .orElseThrow(() -> new OrderNotFoundException("Order not found"));
+
+        if (!oldOrder.getUserId().equals(userId) || oldOrder.isDeletedByUser()) {
+            throw new OrderNotFoundException("Order not found");
+        }
+
+        if (!canRedoOrRemove(oldOrder.getStatus())) {
+            throw new OrderStillActiveException("Only CANCELLED or DELIVERED orders can be ordered again");
+        }
+
+        List<OrderItemRequest> items = new ArrayList<>();
+        for (OrderItem item : oldOrder.getItems()) {
+            items.add(new OrderItemRequest(item.productId(), item.quantity()));
+        }
+
+        Address oldAddress = oldOrder.getShippingAddress();
+        AddressRequest address = new AddressRequest(oldAddress.fullName(), oldAddress.phone(), oldAddress.street(),
+                oldAddress.city(), oldAddress.postalCode(), oldAddress.country());
+
+        return createOrders(userId, new CreateOrderRequest(address, items)); // same checks as a new order
     }
 
     private boolean canCancel(OrderStatus status) {
