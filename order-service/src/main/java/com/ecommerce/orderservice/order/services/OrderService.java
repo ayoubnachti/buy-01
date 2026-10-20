@@ -2,6 +2,7 @@ package com.ecommerce.orderservice.order.services;
 
 import com.ecommerce.orderservice.common.ResponseData;
 import com.ecommerce.orderservice.exceptions.orderExceptions.CannotOrderOwnProductException;
+import com.ecommerce.orderservice.exceptions.orderExceptions.OrderNotFoundException;
 import com.ecommerce.orderservice.exceptions.orderExceptions.OutOfStockException;
 import com.ecommerce.orderservice.exceptions.orderExceptions.ProductNotFoundException;
 import com.ecommerce.orderservice.order.clients.ProductServiceGateway;
@@ -117,6 +118,29 @@ public class OrderService {
         }
 
         return ResponseData.success("Order created successfully", response);
+    }
+
+    public ResponseData<OrderResponse> getOrder(String orderId, String callerId) {
+        Order order = getVisibleOrder(orderId, callerId);
+        boolean forSeller = order.getSellerId().equals(callerId);
+        return ResponseData.success("Order retrieved successfully", OrderResponse.from(order, forSeller));
+    }
+
+    /**
+     * Only the owner or the seller can see the order. Everyone else gets a
+     * "not found" error, not "forbidden" — so we never reveal that the order exists.
+     */
+    private Order getVisibleOrder(String orderId, String callerId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new OrderNotFoundException("Order not found"));
+
+        boolean isOwner = order.getUserId().equals(callerId) && !order.isDeletedByUser();
+        boolean isSeller = order.getSellerId().equals(callerId);
+        if (!isOwner && !isSeller) {
+            throw new OrderNotFoundException("Order not found");
+        }
+
+        return order;
     }
 
     private BigDecimal computeTotal(List<OrderItem> items) {
