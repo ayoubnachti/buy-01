@@ -46,9 +46,46 @@ services:
       - /data/db
     mem_limit: 768m
 
+  sonar-db:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: sonar
+      POSTGRES_PASSWORD: ${SONAR_DB_PASSWORD:?set SONAR_DB_PASSWORD in jenkins/.env}
+      POSTGRES_DB: sonar
+    volumes:
+      - sonar_db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sonar -d sonar"]
+      interval: 5s
+      retries: 10
+    mem_limit: 512m
+    restart: unless-stopped
+
+  sonarqube:
+    image: mc1arke/sonarqube-with-community-branch-plugin:26.5.0.122743-community
+    depends_on:
+      sonar-db:
+        condition: service_healthy
+    environment:
+      SONAR_JDBC_URL: jdbc:postgresql://sonar-db:5432/sonar
+      SONAR_JDBC_USERNAME: sonar
+      SONAR_JDBC_PASSWORD: ${SONAR_DB_PASSWORD:?set SONAR_DB_PASSWORD in jenkins/.env}
+    volumes:
+      - sonar_data:/opt/sonarqube/data
+      - sonar_extensions:/opt/sonarqube/extensions
+      - sonar_logs:/opt/sonarqube/logs
+    ports:
+      - "${SONAR_PORT:-9000}:9000"
+    mem_limit: 4g
+    restart: unless-stopped
+
 volumes:
   jenkins_home:
   agent_backend_ssh:
   agent_frontend_ssh:
   maven_repo:
   npm_cache:
+  sonar_db:
+  sonar_data:
+  sonar_extensions:
+  sonar_logs:
