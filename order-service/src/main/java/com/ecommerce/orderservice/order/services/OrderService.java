@@ -3,6 +3,9 @@ package com.ecommerce.orderservice.order.services;
 import com.ecommerce.orderservice.common.ResponseData;
 import com.ecommerce.orderservice.exceptions.orderExceptions.CannotOrderOwnProductException;
 import com.ecommerce.orderservice.exceptions.orderExceptions.InvalidOrderStatusTransitionException;
+import com.ecommerce.orderservice.exceptions.orderExceptions.OrderAlreadyCancelledException;
+import com.ecommerce.orderservice.exceptions.orderExceptions.OrderAlreadyDeliveredException;
+import com.ecommerce.orderservice.exceptions.orderExceptions.OrderAlreadyShippedException;
 import com.ecommerce.orderservice.exceptions.orderExceptions.OrderNotFoundException;
 import com.ecommerce.orderservice.exceptions.orderExceptions.OutOfStockException;
 import com.ecommerce.orderservice.exceptions.orderExceptions.ProductNotFoundException;
@@ -161,6 +164,35 @@ public class OrderService {
         Order savedOrder = orderRepository.save(order); // @Version protects against two updates at once
 
         return ResponseData.success("Order status updated successfully", OrderResponse.from(savedOrder, true));
+    }
+
+    /** The owner or the seller can cancel, only while the order is PENDING or CONFIRMED. */
+    public ResponseData<OrderResponse> cancel(String orderId, String callerId) {
+        Order order = getVisibleOrder(orderId, callerId);
+
+        if (!canCancel(order.getStatus())) {
+            if (order.getStatus() == OrderStatus.CANCELLED) {
+                throw new OrderAlreadyCancelledException("This order is already cancelled");
+            }
+            if (order.getStatus() == OrderStatus.DELIVERED) {
+                throw new OrderAlreadyDeliveredException("This order was already delivered");
+            }
+            throw new OrderAlreadyShippedException("This order has already shipped");
+        }
+
+        order.changeStatus(OrderStatus.CANCELLED, callerId);
+        Order savedOrder = orderRepository.save(order);
+
+        boolean forSeller = savedOrder.getSellerId().equals(callerId);
+        return ResponseData.success("Order cancelled successfully", OrderResponse.from(savedOrder, forSeller));
+    }
+
+    private boolean canCancel(OrderStatus status) {
+        return status == OrderStatus.PENDING || status == OrderStatus.CONFIRMED;
+    }
+
+    private boolean canRedoOrRemove(OrderStatus status) {
+        return status == OrderStatus.CANCELLED || status == OrderStatus.DELIVERED;
     }
 
     /** A seller can only move one step forward: PENDING -> CONFIRMED -> SHIPPED -> DELIVERED. */
