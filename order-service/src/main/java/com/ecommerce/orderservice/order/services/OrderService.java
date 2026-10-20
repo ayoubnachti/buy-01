@@ -216,7 +216,7 @@ public class OrderService {
     }
 
     /** Soft delete: the owner stops seeing it, but dashboards still count it. */
-    public ResponseData<Void> remove(String orderId, String userId) {
+    public void remove(String orderId, String userId) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new OrderNotFoundException("Order not found"));
 
@@ -230,8 +230,6 @@ public class OrderService {
 
         order.setDeletedByUser(true);
         orderRepository.save(order);
-
-        return ResponseData.success("Order removed successfully", null);
     }
 
     private boolean canCancel(OrderStatus status) {
