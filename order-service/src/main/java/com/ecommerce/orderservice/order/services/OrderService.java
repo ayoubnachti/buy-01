@@ -2,6 +2,7 @@ package com.ecommerce.orderservice.order.services;
 
 import com.ecommerce.orderservice.common.ResponseData;
 import com.ecommerce.orderservice.exceptions.orderExceptions.CannotOrderOwnProductException;
+import com.ecommerce.orderservice.exceptions.orderExceptions.InvalidOrderStatusTransitionException;
 import com.ecommerce.orderservice.exceptions.orderExceptions.OrderNotFoundException;
 import com.ecommerce.orderservice.exceptions.orderExceptions.OutOfStockException;
 import com.ecommerce.orderservice.exceptions.orderExceptions.ProductNotFoundException;
@@ -141,6 +142,25 @@ public class OrderService {
         }
 
         return order;
+    }
+
+    public ResponseData<OrderResponse> updateStatusAsSeller(String orderId, String sellerId, OrderStatus newStatus) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new OrderNotFoundException("Order not found"));
+
+        if (!order.getSellerId().equals(sellerId)) {
+            throw new OrderNotFoundException("Order not found");
+        }
+
+        if (!canMoveToNextStatus(order.getStatus(), newStatus)) {
+            throw new InvalidOrderStatusTransitionException(
+                    "Cannot change status from " + order.getStatus() + " to " + newStatus);
+        }
+
+        order.changeStatus(newStatus, sellerId);
+        Order savedOrder = orderRepository.save(order); // @Version protects against two updates at once
+
+        return ResponseData.success("Order status updated successfully", OrderResponse.from(savedOrder, true));
     }
 
     /** A seller can only move one step forward: PENDING -> CONFIRMED -> SHIPPED -> DELIVERED. */
