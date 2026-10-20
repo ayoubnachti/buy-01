@@ -11,7 +11,6 @@ import com.ecommerce.orderservice.order.services.OrderService;
 
 import jakarta.validation.Valid;
 
-import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -29,7 +28,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import lombok.RequiredArgsConstructor;
 
-import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -52,25 +50,19 @@ public class OrderController {
     public ResponseEntity<ResponseData<PageResponse<OrderResponse>>> myOrders(
             @RequestHeader("X-User-Id") String userId,
             @RequestParam(required = false) OrderStatus status,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
-            @RequestParam(required = false) String q,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
-        return ResponseEntity.ok(searchService.search("userId", userId, true, status, from, to, q, page, size, false));
+        return ResponseEntity.ok(searchService.getMyOrders(userId, status, page, size));
     }
 
     @PreAuthorize("hasRole('SELLER')")
     @GetMapping("/seller")
     public ResponseEntity<ResponseData<PageResponse<OrderResponse>>> sellerOrders(
-            @RequestHeader("X-User-Id") String userId,
+            @RequestHeader("X-User-Id") String sellerId,
             @RequestParam(required = false) OrderStatus status,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
-            @RequestParam(required = false) String q,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
-        return ResponseEntity.ok(searchService.search("sellerId", userId, false, status, from, to, q, page, size, true));
+        return ResponseEntity.ok(searchService.getSellerOrders(sellerId, status, page, size));
     }
 
     @GetMapping("/{id}")
