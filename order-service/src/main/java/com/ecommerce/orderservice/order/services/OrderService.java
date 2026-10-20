@@ -1,17 +1,22 @@
 package com.ecommerce.orderservice.order.services;
 
+import com.ecommerce.orderservice.common.ResponseData;
 import com.ecommerce.orderservice.exceptions.orderExceptions.CannotOrderOwnProductException;
 import com.ecommerce.orderservice.exceptions.orderExceptions.OutOfStockException;
 import com.ecommerce.orderservice.exceptions.orderExceptions.ProductNotFoundException;
 import com.ecommerce.orderservice.order.clients.ProductServiceGateway;
 import com.ecommerce.orderservice.order.dtos.request.CreateOrderRequest;
 import com.ecommerce.orderservice.order.dtos.request.OrderItemRequest;
+import com.ecommerce.orderservice.order.dtos.response.OrderResponse;
 import com.ecommerce.orderservice.order.dtos.response.ProductDto;
 import com.ecommerce.orderservice.order.models.Order;
 import com.ecommerce.orderservice.order.models.OrderItem;
 import com.ecommerce.orderservice.order.models.OrderStatus;
 import com.ecommerce.orderservice.order.repositories.OrderRepository;
+
 import org.springframework.stereotype.Service;
+
+import lombok.RequiredArgsConstructor;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -21,18 +26,15 @@ import java.util.List;
 import java.util.Map;
 
 @Service
+@RequiredArgsConstructor
 public class OrderService {
 
     private final OrderRepository orderRepository;
     private final ProductServiceGateway productServiceGateway;
 
-    public OrderService(OrderRepository orderRepository, ProductServiceGateway productServiceGateway) {
-        this.orderRepository = orderRepository;
-        this.productServiceGateway = productServiceGateway;
-    }
+    public ResponseData<List<OrderResponse>> createOrders(String userId, CreateOrderRequest request) {
 
-    public List<Order> createOrders(String userId, CreateOrderRequest request) {
-
+        // Step 1: if the same product appears twice in the request, add the quantities together.
         Map<String, Integer> quantityByProduct = new HashMap<>();
         for (OrderItemRequest itemRequest : request.items()) {
             String productId = itemRequest.productId();
@@ -46,6 +48,7 @@ public class OrderService {
             }
         }
 
+        // Step 2: check every product first. Nothing is saved yet.
         Map<String, List<OrderItem>> itemsBySeller = new HashMap<>();
 
         for (Map.Entry<String, Integer> entry : quantityByProduct.entrySet()) {
@@ -65,6 +68,8 @@ public class OrderService {
                 throw new OutOfStockException("Not enough stock for: " + product.name());
             }
 
+            // OrderItem.imageUrl is one String. product.imageUrls() is a list of images.
+            // We just keep the first image, or none.
             String imageUrl = null;
             if (product.imageUrls() != null && !product.imageUrls().isEmpty()) {
                 imageUrl = product.imageUrls().get(0);
@@ -86,6 +91,7 @@ public class OrderService {
             sellerItems.add(item);
         }
 
+        // Step 3: build one order per seller.
         List<Order> orders = new ArrayList<>();
         for (Map.Entry<String, List<OrderItem>> entry : itemsBySeller.entrySet()) {
             String sellerId = entry.getKey();
@@ -102,7 +108,15 @@ public class OrderService {
             orders.add(order);
         }
 
-        return orderRepository.saveAll(orders);
+        List<Order> savedOrders = orderRepository.saveAll(orders);
+
+        // Step 4: turn the saved orders into the response shape.
+        List<OrderResponse> response = new ArrayList<>();
+        for (Order order : savedOrders) {
+            response.add(OrderResponse.from(order, false));
+        }
+
+        return ResponseData.success("Order created successfully", response);
     }
 
     private BigDecimal computeTotal(List<OrderItem> items) {
