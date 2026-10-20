@@ -1,0 +1,11 @@
+package com.ecommerce.orderservice.exceptions.orderExceptions;
+
+public class ProductServiceUnavailableException extends RuntimeException {
+    public ProductServiceUnavailableException(String message) {
+        super(message);
+    }
+
+    public ProductServiceUnavailableException(String message, Throwable cause) {
+        super(message, cause);
+    }
+}
