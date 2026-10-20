@@ -3,14 +3,20 @@ package com.ecommerce.orderservice.order.services;
 import com.ecommerce.orderservice.common.ResponseData;
 import com.ecommerce.orderservice.exceptions.orderExceptions.CannotOrderOwnProductException;
 import com.ecommerce.orderservice.exceptions.orderExceptions.InvalidOrderStatusTransitionException;
+import com.ecommerce.orderservice.exceptions.orderExceptions.OrderAlreadyCancelledException;
+import com.ecommerce.orderservice.exceptions.orderExceptions.OrderAlreadyDeliveredException;
+import com.ecommerce.orderservice.exceptions.orderExceptions.OrderAlreadyShippedException;
 import com.ecommerce.orderservice.exceptions.orderExceptions.OrderNotFoundException;
+import com.ecommerce.orderservice.exceptions.orderExceptions.OrderStillActiveException;
 import com.ecommerce.orderservice.exceptions.orderExceptions.OutOfStockException;
 import com.ecommerce.orderservice.exceptions.orderExceptions.ProductNotFoundException;
 import com.ecommerce.orderservice.order.clients.ProductServiceGateway;
+import com.ecommerce.orderservice.order.dtos.request.AddressRequest;
 import com.ecommerce.orderservice.order.dtos.request.CreateOrderRequest;
 import com.ecommerce.orderservice.order.dtos.request.OrderItemRequest;
 import com.ecommerce.orderservice.order.dtos.response.OrderResponse;
 import com.ecommerce.orderservice.order.dtos.response.ProductDto;
+import com.ecommerce.orderservice.order.models.Address;
 import com.ecommerce.orderservice.order.models.Order;
 import com.ecommerce.orderservice.order.models.OrderItem;
 import com.ecommerce.orderservice.order.models.OrderStatus;
@@ -161,6 +167,77 @@ public class OrderService {
         Order savedOrder = orderRepository.save(order); // @Version protects against two updates at once
 
         return ResponseData.success("Order status updated successfully", OrderResponse.from(savedOrder, true));
+    }
+
+    /** The owner or the seller can cancel, only while the order is PENDING or CONFIRMED. */
+    public ResponseData<OrderResponse> cancel(String orderId, String callerId) {
+        Order order = getVisibleOrder(orderId, callerId);
+
+        if (!canCancel(order.getStatus())) {
+            if (order.getStatus() == OrderStatus.CANCELLED) {
+                throw new OrderAlreadyCancelledException("This order is already cancelled");
+            }
+            if (order.getStatus() == OrderStatus.DELIVERED) {
+                throw new OrderAlreadyDeliveredException("This order was already delivered");
+            }
+            throw new OrderAlreadyShippedException("This order has already shipped");
+        }
+
+        order.changeStatus(OrderStatus.CANCELLED, callerId);
+        Order savedOrder = orderRepository.save(order);
+
+        boolean forSeller = savedOrder.getSellerId().equals(callerId);
+        return ResponseData.success("Order cancelled successfully", OrderResponse.from(savedOrder, forSeller));
+    }
+
+    /** Only the owner. Makes a NEW order with the same products; price and stock are checked again. */
+    public ResponseData<List<OrderResponse>> redo(String orderId, String userId) {
+        Order oldOrder = orderRepository.findById(orderId)
+                .orElseThrow(() -> new OrderNotFoundException("Order not found"));
+
+        if (!oldOrder.getUserId().equals(userId) || oldOrder.isDeletedByUser()) {
+            throw new OrderNotFoundException("Order not found");
+        }
+
+        if (!canRedoOrRemove(oldOrder.getStatus())) {
+            throw new OrderStillActiveException("Only CANCELLED or DELIVERED orders can be ordered again");
+        }
+
+        List<OrderItemRequest> items = new ArrayList<>();
+        for (OrderItem item : oldOrder.getItems()) {
+            items.add(new OrderItemRequest(item.productId(), item.quantity()));
+        }
+
+        Address oldAddress = oldOrder.getShippingAddress();
+        AddressRequest address = new AddressRequest(oldAddress.fullName(), oldAddress.phone(), oldAddress.street(),
+                oldAddress.city(), oldAddress.postalCode(), oldAddress.country());
+
+        return createOrders(userId, new CreateOrderRequest(address, items)); // same checks as a new order
+    }
+
+    /** Soft delete: the owner stops seeing it, but dashboards still count it. */
+    public void remove(String orderId, String userId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new OrderNotFoundException("Order not found"));
+
+        if (!order.getUserId().equals(userId) || order.isDeletedByUser()) {
+            throw new OrderNotFoundException("Order not found");
+        }
+
+        if (!canRedoOrRemove(order.getStatus())) {
+            throw new OrderStillActiveException("Only CANCELLED or DELIVERED orders can be removed");
+        }
+
+        order.setDeletedByUser(true);
+        orderRepository.save(order);
+    }
+
+    private boolean canCancel(OrderStatus status) {
+        return status == OrderStatus.PENDING || status == OrderStatus.CONFIRMED;
+    }
+
+    private boolean canRedoOrRemove(OrderStatus status) {
+        return status == OrderStatus.CANCELLED || status == OrderStatus.DELIVERED;
     }
 
     /** A seller can only move one step forward: PENDING -> CONFIRMED -> SHIPPED -> DELIVERED. */
