@@ -174,7 +174,7 @@ class OrderCancelRedoRemoveIntegrationTest {
     }
 
     @Test
-    void removeDeliveredOrder_returns200() throws Exception {
+    void removeDeliveredOrder_returns204() throws Exception {
         String orderId = createOrderAsClient("client-1", "product-1", "seller-1");
         moveStatus(orderId, "seller-1", "CONFIRMED");
         moveStatus(orderId, "seller-1", "SHIPPED");
@@ -183,7 +183,7 @@ class OrderCancelRedoRemoveIntegrationTest {
         mockMvc.perform(delete("/orders/" + orderId)
                         .header("X-User-Id", "client-1")
                         .header("X-User-Role", "CLIENT"))
-                .andExpect(status().isOk());
+                .andExpect(status().isNoContent());
     }
 
     @Test

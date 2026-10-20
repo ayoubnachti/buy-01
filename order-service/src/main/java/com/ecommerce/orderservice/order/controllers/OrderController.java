@@ -24,6 +24,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import lombok.RequiredArgsConstructor;
@@ -101,8 +102,8 @@ public class OrderController {
 
     @PreAuthorize("hasRole('CLIENT')")
     @DeleteMapping("/{id}")
-    public ResponseEntity<ResponseData<Void>> remove(@PathVariable String id,
-            @RequestHeader("X-User-Id") String userId) {
-        return ResponseEntity.ok(orderService.remove(id, userId));
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void remove(@PathVariable String id, @RequestHeader("X-User-Id") String userId) {
+        orderService.remove(id, userId);
     }
 }
