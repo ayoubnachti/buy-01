@@ -215,6 +215,25 @@ public class OrderService {
         return createOrders(userId, new CreateOrderRequest(address, items)); // same checks as a new order
     }
 
+    /** Soft delete: the owner stops seeing it, but dashboards still count it. */
+    public ResponseData<Void> remove(String orderId, String userId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new OrderNotFoundException("Order not found"));
+
+        if (!order.getUserId().equals(userId) || order.isDeletedByUser()) {
+            throw new OrderNotFoundException("Order not found");
+        }
+
+        if (!canRedoOrRemove(order.getStatus())) {
+            throw new OrderStillActiveException("Only CANCELLED or DELIVERED orders can be removed");
+        }
+
+        order.setDeletedByUser(true);
+        orderRepository.save(order);
+
+        return ResponseData.success("Order removed successfully", null);
+    }
+
     private boolean canCancel(OrderStatus status) {
         return status == OrderStatus.PENDING || status == OrderStatus.CONFIRMED;
     }
