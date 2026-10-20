@@ -5,9 +5,10 @@
 services:
   jenkins:
     ports: !reset []
-    networks:
-      - default
-      - web
+    networks: [default, web]
+  sonarqube:
+    ports: !reset []
+    networks: [default, web]
 
 networks:
   web:
