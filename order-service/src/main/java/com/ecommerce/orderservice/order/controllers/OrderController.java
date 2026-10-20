@@ -2,6 +2,7 @@ package com.ecommerce.orderservice.order.controllers;
 
 import com.ecommerce.orderservice.common.ResponseData;
 import com.ecommerce.orderservice.order.dtos.request.CreateOrderRequest;
+import com.ecommerce.orderservice.order.dtos.request.UpdateStatusRequest;
 import com.ecommerce.orderservice.order.dtos.response.OrderResponse;
 import com.ecommerce.orderservice.order.dtos.response.PageResponse;
 import com.ecommerce.orderservice.order.models.OrderStatus;
@@ -15,6 +16,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -73,5 +75,13 @@ public class OrderController {
     public ResponseEntity<ResponseData<OrderResponse>> getOne(@PathVariable String id,
             @RequestHeader("X-User-Id") String userId) {
         return ResponseEntity.ok(orderService.getOrder(id, userId));
+    }
+
+    @PreAuthorize("hasRole('SELLER')")
+    @PatchMapping("/{id}/status")
+    public ResponseEntity<ResponseData<OrderResponse>> updateStatus(@PathVariable String id,
+            @RequestHeader("X-User-Id") String sellerId,
+            @Valid @RequestBody UpdateStatusRequest request) {
+        return ResponseEntity.ok(orderService.updateStatusAsSeller(id, sellerId, request.status()));
     }
 }
