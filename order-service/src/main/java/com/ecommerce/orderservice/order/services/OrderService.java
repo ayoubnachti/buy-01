@@ -143,6 +143,20 @@ public class OrderService {
         return order;
     }
 
+    /** A seller can only move one step forward: PENDING -> CONFIRMED -> SHIPPED -> DELIVERED. */
+    private boolean canMoveToNextStatus(OrderStatus from, OrderStatus to) {
+        if (from == OrderStatus.PENDING && to == OrderStatus.CONFIRMED) {
+            return true;
+        }
+        if (from == OrderStatus.CONFIRMED && to == OrderStatus.SHIPPED) {
+            return true;
+        }
+        if (from == OrderStatus.SHIPPED && to == OrderStatus.DELIVERED) {
+            return true;
+        }
+        return false;
+    }
+
     private BigDecimal computeTotal(List<OrderItem> items) {
         BigDecimal total = BigDecimal.ZERO;
         for (OrderItem item : items) {
