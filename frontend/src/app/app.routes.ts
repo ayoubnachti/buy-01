@@ -27,6 +27,12 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./features/seller-dashboard/seller-dashboard').then((m) => m.SellerDashboard),
   },
+  {
+    path: 'orders',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./features/orders/orders-list/orders-list').then((m) => m.OrdersList),
+  },
 
   {
     path: 'login',
