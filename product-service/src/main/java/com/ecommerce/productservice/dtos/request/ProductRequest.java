@@ -11,6 +11,8 @@ import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.constraints.Size;
 
+import com.ecommerce.productservice.models.ProductCategory;
+
 public record ProductRequest(
     @NotBlank
     @Size(max = 100, message = "Name must be at most 100 characters")
@@ -29,6 +31,9 @@ public record ProductRequest(
     @PositiveOrZero
     @Max(value = 999999, message = "Quantity must be at most 999,999")
     Integer quantity,
+
+    @NotNull(message = "Category is required")
+    ProductCategory category,
 
     @Size(max = 20, message = "A product may have at most 5 images")
     List<@NotBlank(message = "Image URL must not be blank") String> imageUrls

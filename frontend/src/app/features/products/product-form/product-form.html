@@ -66,6 +66,15 @@
   </div>
 
   <div class="mb-4">
+    <label for="pfCategory" class="form-label">Category:</label>
+    <select id="pfCategory" class="form-select" [formField]="productForm.category">
+      @for (c of categories; track c) {
+        <option [value]="c">{{ c }}</option>
+      }
+    </select>
+  </div>
+
+  <div class="mb-4">
     <app-upload
       [targetType]="'PRODUCT'"
       [targetId]="editingProduct()?.id ?? ''"

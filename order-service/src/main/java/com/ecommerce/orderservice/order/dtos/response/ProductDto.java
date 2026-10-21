@@ -8,7 +8,8 @@ public record ProductDto(
         String name,
         String description,
         BigDecimal price,
-        Integer quantity,       
+        Integer quantity,
+        String category,
         String userId,
         List<String> imageUrls) {
 }

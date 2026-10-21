@@ -44,7 +44,7 @@ class OrderControllerIntegrationTest {
     void createOrder_withValidClientRequest_returns201AndSavesOrder() throws Exception {
         ProductDto product = new ProductDto(
                 "product-1", "Keyboard", "A nice keyboard",
-                new BigDecimal("19.99"), 10, "seller-1", List.of());
+                new BigDecimal("19.99"), 10, "ELECTRONICS", "seller-1", List.of());
         when(productServiceGateway.getProduct("product-1")).thenReturn(product);
 
         CreateOrderRequest request = new CreateOrderRequest(

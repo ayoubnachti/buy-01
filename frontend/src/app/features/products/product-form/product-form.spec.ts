@@ -10,6 +10,7 @@ const mockProduct: Product = {
   description: 'A sturdy wooden chair.',
   price: 21,
   quantity: 20,
+  category: 'ELECTRONICS',
 };
 
 const setInputValue = (fixture: ComponentFixture<ProductForm>, selector: string, value: string) => {
@@ -39,6 +40,7 @@ describe('ProductForm', () => {
       description: '',
       price: 0,
       quantity: 0,
+      category: 'ELECTRONICS',
     });
   });
 
@@ -124,6 +126,7 @@ describe('ProductForm', () => {
       description: 'A wooden table.',
       price: 50,
       quantity: 10,
+      category: 'ELECTRONICS',
     });
   });
 
@@ -137,6 +140,7 @@ describe('ProductForm', () => {
       description: 'A sturdy wooden chair.',
       price: 21,
       quantity: 20,
+      category: 'ELECTRONICS',
     });
   });
 
@@ -154,6 +158,7 @@ describe('ProductForm', () => {
       description: '',
       price: 0,
       quantity: 0,
+      category: 'ELECTRONICS',
     });
   });
 });
