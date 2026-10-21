@@ -16,6 +16,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import com.ecommerce.productservice.dtos.request.ProductRequest;
+import com.ecommerce.productservice.models.ProductCategory;
 
 class ProductRequestValidationTest {
 
@@ -36,36 +37,44 @@ class ProductRequestValidationTest {
   @Test
   void validRequest_hasNoViolations() {
     ProductRequest request = new ProductRequest(
-        "Keyboard", "Mechanical, brown switches", BigDecimal.TEN, 3, List.of("http://img/1.png"));
+        "Keyboard", "Mechanical, brown switches", BigDecimal.TEN, 3,
+        ProductCategory.ELECTRONICS, List.of("http://img/1.png"));
 
     assertThat(validator.validate(request)).isEmpty();
   }
 
   @Test
   void blankName_isRejected() {
-    ProductRequest request = new ProductRequest("", "Desc", BigDecimal.TEN, 1, null);
+    ProductRequest request = new ProductRequest("", "Desc", BigDecimal.TEN, 1, ProductCategory.ELECTRONICS, null);
     Set<ConstraintViolation<ProductRequest>> violations = validator.validate(request);
     assertThat(violations).anyMatch(v -> v.getPropertyPath().toString().equals("name"));
   }
 
   @Test
   void nonPositivePrice_isRejected() {
-    ProductRequest request = new ProductRequest("Name", "Desc", BigDecimal.ZERO, 1, null);
+    ProductRequest request = new ProductRequest("Name", "Desc", BigDecimal.ZERO, 1, ProductCategory.ELECTRONICS, null);
     Set<ConstraintViolation<ProductRequest>> violations = validator.validate(request);
     assertThat(violations).anyMatch(v -> v.getPropertyPath().toString().equals("price"));
   }
 
   @Test
   void negativeQuantity_isRejected() {
-    ProductRequest request = new ProductRequest("Name", "Desc", BigDecimal.TEN, -1, null);
+    ProductRequest request = new ProductRequest("Name", "Desc", BigDecimal.TEN, -1, ProductCategory.ELECTRONICS, null);
     Set<ConstraintViolation<ProductRequest>> violations = validator.validate(request);
     assertThat(violations).anyMatch(v -> v.getPropertyPath().toString().equals("quantity"));
   }
 
   @Test
+  void nullCategory_isRejected() {
+    ProductRequest request = new ProductRequest("Name", "Desc", BigDecimal.TEN, 1, null, null);
+    Set<ConstraintViolation<ProductRequest>> violations = validator.validate(request);
+    assertThat(violations).anyMatch(v -> v.getPropertyPath().toString().equals("category"));
+  }
+
+  @Test
   void blankImageUrlInList_isRejected() {
     ProductRequest request = new ProductRequest(
-        "Name", "Desc", BigDecimal.TEN, 1, List.of("http://img/1.png", "  "));
+        "Name", "Desc", BigDecimal.TEN, 1, ProductCategory.ELECTRONICS, List.of("http://img/1.png", "  "));
     Set<ConstraintViolation<ProductRequest>> violations = validator.validate(request);
     assertThat(violations).anyMatch(v -> v.getPropertyPath().toString().startsWith("imageUrls"));
   }
@@ -75,14 +84,14 @@ class ProductRequestValidationTest {
     List<String> urls = java.util.stream.IntStream.range(0, 21)
         .mapToObj(i -> "http://img/" + i + ".png")
         .toList();
-    ProductRequest request = new ProductRequest("Name", "Desc", BigDecimal.TEN, 1, urls);
+    ProductRequest request = new ProductRequest("Name", "Desc", BigDecimal.TEN, 1, ProductCategory.ELECTRONICS, urls);
     Set<ConstraintViolation<ProductRequest>> violations = validator.validate(request);
     assertThat(violations).anyMatch(v -> v.getPropertyPath().toString().equals("imageUrls"));
   }
 
   @Test
   void nullImageUrls_isAccepted() {
-    ProductRequest request = new ProductRequest("Name", "Desc", BigDecimal.TEN, 1, null);
+    ProductRequest request = new ProductRequest("Name", "Desc", BigDecimal.TEN, 1, ProductCategory.ELECTRONICS, null);
     assertThat(validator.validate(request)).isEmpty();
   }
 }
