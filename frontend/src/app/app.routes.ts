@@ -39,6 +39,12 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./features/orders/order-details/order-details').then((m) => m.OrderDetails),
   },
+  {
+    path: 'seller/orders',
+    canActivate: [sellerGuard],
+    loadComponent: () =>
+      import('./features/orders/seller-orders/seller-orders').then((m) => m.SellerOrders),
+  },
 
   {
     path: 'login',
