@@ -26,6 +26,7 @@ import com.ecommerce.productservice.dtos.request.ProductRequest;
 import com.ecommerce.productservice.exceptions.custom.ForbiddenException;
 import com.ecommerce.productservice.exceptions.custom.ResourceNotFoundException;
 import com.ecommerce.productservice.models.Product;
+import com.ecommerce.productservice.models.ProductCategory;
 import com.ecommerce.productservice.repositories.ProductRepository;
 
 @ExtendWith(MockitoExtension.class)
@@ -53,7 +54,7 @@ class ProductServiceTest {
   @Test
   void create_setsSellerIdFromParam_notFromRequestBody() {
     ProductRequest request = new ProductRequest(
-        "Keyboard", "Mechanical", BigDecimal.TEN, 5, List.of("http://img/1.png"));
+        "Keyboard", "Mechanical", BigDecimal.TEN, 5, ProductCategory.ELECTRONICS, List.of("http://img/1.png"));
 
     when(productRepository.save(any(Product.class)))
         .thenAnswer(invocation -> invocation.getArgument(0));
@@ -68,7 +69,7 @@ class ProductServiceTest {
   @Test
   void create_ignoresRequestImageUrls_responseHasNoImages() {
     List<String> urls = List.of("http://img/1.png", "http://img/2.png");
-    ProductRequest request = new ProductRequest("Monitor", "27in", BigDecimal.TEN, 2, urls);
+    ProductRequest request = new ProductRequest("Monitor", "27in", BigDecimal.TEN, 2, ProductCategory.ELECTRONICS, urls);
 
     when(productRepository.save(any(Product.class)))
         .thenAnswer(invocation -> invocation.getArgument(0));
@@ -94,7 +95,7 @@ class ProductServiceTest {
         .build();
 
     ProductRequest request = new ProductRequest(
-        "New name", "New desc", BigDecimal.TEN, 5, List.of("http://img/new.png"));
+        "New name", "New desc", BigDecimal.TEN, 5, ProductCategory.ELECTRONICS, List.of("http://img/new.png"));
 
     when(productRepository.findById(PRODUCT_ID)).thenReturn(Optional.of(existing));
     when(productRepository.save(any(Product.class)))
@@ -119,7 +120,7 @@ class ProductServiceTest {
         .userId(SELLER_ID)
         .build();
 
-    ProductRequest request = new ProductRequest("Hacked", "Desc", BigDecimal.ONE, 1, null);
+    ProductRequest request = new ProductRequest("Hacked", "Desc", BigDecimal.ONE, 1, ProductCategory.ELECTRONICS, null);
 
     when(productRepository.findById(PRODUCT_ID)).thenReturn(Optional.of(existing));
 
@@ -131,7 +132,7 @@ class ProductServiceTest {
 
   @Test
   void updateProduct_productDoesNotExist_throwsNotFound() {
-    ProductRequest request = new ProductRequest("Name", "Desc", BigDecimal.ONE, 1, null);
+    ProductRequest request = new ProductRequest("Name", "Desc", BigDecimal.ONE, 1, ProductCategory.ELECTRONICS, null);
 
     when(productRepository.findById(PRODUCT_ID)).thenReturn(Optional.empty());
 

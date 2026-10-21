@@ -63,6 +63,7 @@ public class ProductService {
         .description(request.description())
         .price(request.price())
         .quantity(request.quantity())
+        .category(request.category())
         .userId(sellerId)
         .build();
 
@@ -81,6 +82,7 @@ public class ProductService {
     existingProduct.setDescription(req.description());
     existingProduct.setPrice(req.price());
     existingProduct.setQuantity(req.quantity());
+    existingProduct.setCategory(req.category());
 
     Product saved = productRepository.save(existingProduct);
     return ProductResponse.from(saved, mediaServiceGateway.getImages(id));
