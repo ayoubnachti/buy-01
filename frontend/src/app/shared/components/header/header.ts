@@ -14,6 +14,7 @@ export class Header {
 
   isLoggedIn = computed(() => this.authService.user() !== null);
   isSeller = computed(() => this.authService.user()?.role === 'SELLER');
+  isClient = computed(() => this.authService.user()?.role === 'CLIENT');
 
   logout(): void {
     this.authService.logout();
