@@ -17,6 +17,7 @@ const mockProduct: Product = {
   description: 'A sturdy wooden chair.',
   price: 21,
   quantity: 20,
+  category: 'ELECTRONICS',
 };
 
 function pageResponse(items: Product[], overrides: Partial<ProductPageResponse> = {}): ProductPageResponse {
@@ -263,17 +264,25 @@ describe('SellerDashboard', () => {
     fixture.detectChanges();
     const component = fixture.componentInstance;
     const before = component.focusTrigger();
-    const newProduct: Product = { id: '3', name: 'table', description: 'desc', price: 50, quantity: 5 };
+    const newProduct: Product = {
+      id: '3',
+      name: 'table',
+      description: 'desc',
+      price: 50,
+      quantity: 5,
+      category: 'HOME',
+    };
     productService.create.mockReturnValue(of(newProduct));
     productService.getAll.mockReturnValue(of(pageResponse([mockProduct, newProduct])));
 
-    component.onFormSave({ name: 'table', description: 'desc', price: 50, quantity: 5 });
+    component.onFormSave({ name: 'table', description: 'desc', price: 50, quantity: 5, category: 'HOME' });
 
     expect(productService.create).toHaveBeenCalledWith({
       name: 'table',
       description: 'desc',
       price: 50,
       quantity: 5,
+      category: 'HOME',
     });
     expect(toastService.success).toHaveBeenCalledWith('Product created.');
     expect(component.focusTrigger()).toBeGreaterThan(before);
@@ -298,6 +307,7 @@ describe('SellerDashboard', () => {
       description: mockProduct.description,
       price: 99,
       quantity: mockProduct.quantity,
+      category: mockProduct.category,
     });
 
     expect(productService.update).toHaveBeenCalledWith(mockProduct.id, {
@@ -305,6 +315,7 @@ describe('SellerDashboard', () => {
       description: mockProduct.description,
       price: 99,
       quantity: mockProduct.quantity,
+      category: mockProduct.category,
     });
     expect(toastService.success).toHaveBeenCalledWith('Product updated.');
     expect(component.editingProduct()).toBeNull();
@@ -317,7 +328,13 @@ describe('SellerDashboard', () => {
     fixture.detectChanges();
     productService.create.mockReturnValue(throwError(() => new Error('network error')));
 
-    fixture.componentInstance.onFormSave({ name: 'table', description: 'desc', price: 50, quantity: 5 });
+    fixture.componentInstance.onFormSave({
+      name: 'table',
+      description: 'desc',
+      price: 50,
+      quantity: 5,
+      category: 'HOME',
+    });
 
     expect(toastService.error).toHaveBeenCalledWith('Could not create this product.');
     expect(productService.getAll).toHaveBeenCalledTimes(1);
@@ -335,6 +352,7 @@ describe('SellerDashboard', () => {
       description: mockProduct.description,
       price: 99,
       quantity: mockProduct.quantity,
+      category: mockProduct.category,
     });
 
     expect(component.editingProduct()).toEqual(mockProduct);

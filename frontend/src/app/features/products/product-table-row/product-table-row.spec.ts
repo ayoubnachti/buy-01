@@ -10,6 +10,7 @@ const mockProduct: Product = {
   description: 'A sturdy wooden chair.',
   price: 21,
   quantity: 20,
+  category: 'ELECTRONICS',
 };
 
 describe('ProductTableRow', () => {
