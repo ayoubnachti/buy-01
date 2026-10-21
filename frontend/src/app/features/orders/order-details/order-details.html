@@ -19,7 +19,14 @@
 
     <div class="d-flex justify-content-between align-items-start gap-3 mb-4">
       <h1 class="h2 fw-bold mb-0">Order #{{ o.id.slice(-6) }}</h1>
-      <span class="badge rounded-pill text-bg-primary">{{ o.status }}</span>
+      <div class="d-flex align-items-center gap-2">
+        <span class="badge rounded-pill text-bg-primary">{{ o.status }}</span>
+        @if (o.status === 'PENDING' || o.status === 'CONFIRMED') {
+          <button type="button" class="btn btn-outline-danger btn-sm" (click)="onCancelClick()">
+            Cancel order
+          </button>
+        }
+      </div>
     </div>
 
     <p class="text-body-secondary mb-4">Placed on {{ o.createdAt | date: 'medium' }}</p>
@@ -65,5 +72,15 @@
         {{ o.shippingAddress.phone }}
       }
     </address>
+
+    @if (showCancelConfirm()) {
+      <app-confirmation-modal
+        title="Cancel order?"
+        message="This can't be undone."
+        confirmLabel="Cancel order"
+        (confirmed)="onCancelConfirmed()"
+        (cancelled)="onCancelDismissed()"
+      />
+    }
   }
 </div>
