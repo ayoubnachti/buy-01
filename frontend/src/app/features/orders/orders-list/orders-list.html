@@ -1,0 +1,64 @@
+<div class="container py-5">
+  <h1 class="h2 fw-bold mb-4">My Orders</h1>
+
+  @if (loading()) {
+    <app-loading-spinner label="Loading your orders…" />
+  }
+
+  @if (error()) {
+    <div class="alert alert-danger" role="alert">
+      Couldn't load your orders. Please try again later.
+    </div>
+  }
+
+  @if (!loading() && !error() && orders().length === 0) {
+    <app-empty-state message="You have no orders yet." />
+  }
+
+  @if (!loading() && !error() && orders().length > 0) {
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead>
+          <tr class="text-secondary">
+            <th scope="col" class="border-end fw-normal">Order</th>
+            <th scope="col" class="border-end fw-normal">Status</th>
+            <th scope="col" class="border-end fw-normal">Items</th>
+            <th scope="col" class="border-end fw-normal">Total</th>
+            <th scope="col" class="fw-normal">Placed on</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (order of orders(); track order.id) {
+            <tr>
+              <td class="border-end">#{{ order.id.slice(-6) }}</td>
+              <td class="border-end">{{ order.status }}</td>
+              <td class="border-end">{{ order.items.length }}</td>
+              <td class="border-end">{{ order.totalAmount | currency }}</td>
+              <td>{{ order.createdAt | date: 'medium' }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <nav class="d-flex justify-content-between align-items-center mt-3" aria-label="Order pages">
+      <button
+        type="button"
+        class="btn btn-outline-primary btn-sm"
+        [disabled]="currentPage() === 0"
+        (click)="onPreviousPage()"
+      >
+        Previous
+      </button>
+      <span class="text-secondary small">Page {{ currentPage() + 1 }} of {{ totalPages() }}</span>
+      <button
+        type="button"
+        class="btn btn-outline-primary btn-sm"
+        [disabled]="currentPage() + 1 >= totalPages()"
+        (click)="onNextPage()"
+      >
+        Next
+      </button>
+    </nav>
+  }
+</div>
