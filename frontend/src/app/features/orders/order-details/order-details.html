@@ -37,6 +37,7 @@
         <thead>
           <tr class="text-secondary">
             <th scope="col" class="border-end fw-normal">Product</th>
+            <th scope="col" class="border-end fw-normal">Category</th>
             <th scope="col" class="border-end fw-normal">Price</th>
             <th scope="col" class="border-end fw-normal">Qty</th>
             <th scope="col" class="fw-normal">Total</th>
@@ -46,6 +47,7 @@
           @for (item of o.items; track item.productId) {
             <tr>
               <td class="border-end">{{ item.name }}</td>
+              <td class="border-end">{{ item.category }}</td>
               <td class="border-end">{{ item.unitPrice | currency }}</td>
               <td class="border-end">{{ item.quantity }}</td>
               <td>{{ lineTotal(item.unitPrice, item.quantity) | currency }}</td>
@@ -54,7 +56,7 @@
         </tbody>
         <tfoot>
           <tr>
-            <th colspan="3" class="border-end text-end">Total</th>
+            <th colspan="4" class="border-end text-end">Total</th>
             <th>{{ o.totalAmount | currency }}</th>
           </tr>
         </tfoot>
