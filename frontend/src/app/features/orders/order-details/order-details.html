@@ -1,0 +1,69 @@
+<div class="container py-5">
+  @if (loading()) {
+    <app-loading-spinner label="Loading order…" />
+  }
+
+  @if (error()) {
+    <div class="alert alert-danger" role="alert">
+      Couldn't load this order. It may not exist, or something went wrong.
+    </div>
+  }
+
+  @if (!loading() && !error() && order(); as o) {
+    <a routerLink="/orders" class="link-primary text-decoration-none small fw-semibold d-inline-flex align-items-center gap-1 mb-4">
+      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true">
+        <path fill-rule="evenodd" d="M11.354 1.646a.5.5 0 0 1 0 .708L5.707 8l5.647 5.646a.5.5 0 0 1-.708.708l-6-6a.5.5 0 0 1 0-.708l6-6a.5.5 0 0 1 .708 0"/>
+      </svg>
+      Back to my orders
+    </a>
+
+    <div class="d-flex justify-content-between align-items-start gap-3 mb-4">
+      <h1 class="h2 fw-bold mb-0">Order #{{ o.id.slice(-6) }}</h1>
+      <span class="badge rounded-pill text-bg-primary">{{ o.status }}</span>
+    </div>
+
+    <p class="text-body-secondary mb-4">Placed on {{ o.createdAt | date: 'medium' }}</p>
+
+    <h2 class="fs-6 text-uppercase text-body-secondary fw-semibold mb-2">Items</h2>
+    <div class="table-responsive mb-4">
+      <table class="table table-hover align-middle mb-0">
+        <thead>
+          <tr class="text-secondary">
+            <th scope="col" class="border-end fw-normal">Product</th>
+            <th scope="col" class="border-end fw-normal">Price</th>
+            <th scope="col" class="border-end fw-normal">Qty</th>
+            <th scope="col" class="fw-normal">Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (item of o.items; track item.productId) {
+            <tr>
+              <td class="border-end">{{ item.name }}</td>
+              <td class="border-end">{{ item.unitPrice | currency }}</td>
+              <td class="border-end">{{ item.quantity }}</td>
+              <td>{{ lineTotal(item.unitPrice, item.quantity) | currency }}</td>
+            </tr>
+          }
+        </tbody>
+        <tfoot>
+          <tr>
+            <th colspan="3" class="border-end text-end">Total</th>
+            <th>{{ o.totalAmount | currency }}</th>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+
+    <h2 class="fs-6 text-uppercase text-body-secondary fw-semibold mb-2">Delivery address</h2>
+    <address class="mb-0">
+      {{ o.shippingAddress.fullName }}<br />
+      {{ o.shippingAddress.street }}<br />
+      {{ o.shippingAddress.postalCode }} {{ o.shippingAddress.city }}<br />
+      {{ o.shippingAddress.country }}
+      @if (o.shippingAddress.phone) {
+        <br />
+        {{ o.shippingAddress.phone }}
+      }
+    </address>
+  }
+</div>
