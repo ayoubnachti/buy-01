@@ -2,7 +2,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { map } from 'rxjs';
 
-import { Order } from '../../shared/models/order.model';
+import { Order, OrderStatus } from '../../shared/models/order.model';
 import { OrderPageResponse } from '../../shared/models/order-page-response';
 import { ResponseData } from '../../shared/models/response-data';
 import { environment } from '../../../environments/environment.prod';
@@ -29,6 +29,20 @@ export class OrdersService {
   cancel(id: string) {
     return this.http
       .post<ResponseData<Order>>(`${this.apiUrl}/${id}/cancel`, {})
+      .pipe(map((response) => response.data));
+  }
+
+  getSellerOrders(page: number, size: number) {
+    const params = new HttpParams().set('page', page.toString()).set('size', size.toString());
+
+    return this.http
+      .get<ResponseData<OrderPageResponse>>(`${this.apiUrl}/seller`, { params })
+      .pipe(map((response) => response.data));
+  }
+
+  updateStatus(id: string, status: OrderStatus) {
+    return this.http
+      .patch<ResponseData<Order>>(`${this.apiUrl}/${id}/status`, { status })
       .pipe(map((response) => response.data));
   }
 }
