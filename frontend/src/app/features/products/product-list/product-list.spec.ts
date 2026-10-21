@@ -18,6 +18,7 @@ describe('ProductList', () => {
       description: 'chair to sit on',
       price: 122.21,
       quantity: 12,
+      category: 'ELECTRONICS',
       userId: 'u1',
       imageUrls: [],
       createdAt: '2026-01-01T00:00:00Z',

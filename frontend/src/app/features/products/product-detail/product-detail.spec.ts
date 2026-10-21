@@ -13,6 +13,7 @@ const mockProduct: Product = {
   description: 'A sturdy wooden chair.',
   price: 21,
   quantity: 20,
+  category: 'ELECTRONICS',
   userId: 'u1',
   imageUrls: [],
   createdAt: '2026-01-01T00:00:00Z',

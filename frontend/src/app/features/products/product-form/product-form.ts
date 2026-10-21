@@ -12,7 +12,7 @@ import {
 import { FormField, form, required, submit, validate } from '@angular/forms/signals';
 import { Observable, of } from 'rxjs';
 
-import { Product } from '../../../shared/models/product.model';
+import { Product, ProductCategory } from '../../../shared/models/product.model';
 import { CreateProductRequest } from '../../../shared/models/create-product-request';
 
 import { Upload } from '../../media/components/upload/upload.component';
@@ -22,9 +22,25 @@ interface ProductFormModel {
   description: string;
   price: number;
   quantity: number;
+  category: ProductCategory;
 }
 
-const EMPTY_MODEL: ProductFormModel = { name: '', description: '', price: 0, quantity: 0 };
+const EMPTY_MODEL: ProductFormModel = {
+  name: '',
+  description: '',
+  price: 0,
+  quantity: 0,
+  category: 'ELECTRONICS',
+};
+
+export const PRODUCT_CATEGORIES: ProductCategory[] = [
+  'ELECTRONICS',
+  'CLOTHING',
+  'BOOKS',
+  'HOME',
+  'SPORTS',
+  'OTHER',
+];
 
 // Stable reference so the `[initialImages]` binding doesn't look "changed"
 // (and re-clear the picker) on every unrelated re-render while creating.
@@ -49,6 +65,8 @@ export class ProductForm {
   // Exposed so the template's `[initialImages]` fallback can use this stable
   // reference instead of a fresh `[]` literal on every re-render.
   readonly noImages = NO_IMAGES;
+
+  readonly categories = PRODUCT_CATEGORIES;
 
   private readonly model = signal<ProductFormModel>({ ...EMPTY_MODEL });
 
@@ -98,6 +116,7 @@ export class ProductForm {
               description: editing.description,
               price: editing.price,
               quantity: editing.quantity,
+              category: editing.category,
             }
           : { ...EMPTY_MODEL },
       );

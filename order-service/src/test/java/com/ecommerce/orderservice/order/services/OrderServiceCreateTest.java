@@ -41,7 +41,7 @@ class OrderServiceCreateTest {
             "Test", "+212600000000", "1 Main St", "Casablanca", "20000", "Morocco");
 
     private ProductDto product(String id, String seller, String price, int stock) {
-        return new ProductDto(id, "Product " + id, "desc", new BigDecimal(price), stock, seller, List.of());
+        return new ProductDto(id, "Product " + id, "desc", new BigDecimal(price), stock, "ELECTRONICS", seller, List.of());
     }
 
     private OrderResponse findOrderBySeller(List<OrderResponse> orders, String sellerId) {

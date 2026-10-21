@@ -11,6 +11,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.constraints.Size;
@@ -45,6 +46,9 @@ public class Product {
     @PositiveOrZero
     @Max(999999)
     private Integer quantity;
+
+    @NotNull
+    private ProductCategory category;
 
     @NotBlank
     private String userId;
