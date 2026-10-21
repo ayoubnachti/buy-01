@@ -29,7 +29,7 @@
         </thead>
         <tbody>
           @for (order of orders(); track order.id) {
-            <tr>
+            <tr [routerLink]="['/orders', order.id]" style="cursor: pointer;">
               <td class="border-end">#{{ order.id.slice(-6) }}</td>
               <td class="border-end">{{ order.status }}</td>
               <td class="border-end">{{ order.items.length }}</td>
