@@ -60,7 +60,7 @@ class OrderCancelRedoRemoveIntegrationTest {
 
     private String createOrderAsClient(String clientId, String productId, String sellerId) throws Exception {
         ProductDto product = new ProductDto(
-                productId, "Mouse", "A nice mouse", new BigDecimal("9.99"), 10, sellerId, List.of());
+                productId, "Mouse", "A nice mouse", new BigDecimal("9.99"), 10, "ELECTRONICS", sellerId, List.of());
         when(productServiceGateway.getProduct(productId)).thenReturn(product);
 
         CreateOrderRequest request = new CreateOrderRequest(address, List.of(new OrderItemRequest(productId, 1)));

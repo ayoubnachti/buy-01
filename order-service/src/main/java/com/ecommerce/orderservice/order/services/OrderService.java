@@ -86,6 +86,7 @@ public class OrderService {
             OrderItem item = new OrderItem(
                     product.id(),
                     product.name(),
+                    product.category(),
                     product.price(),
                     quantity,
                     imageUrl);

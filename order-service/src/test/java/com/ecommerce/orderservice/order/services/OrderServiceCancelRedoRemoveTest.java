@@ -47,7 +47,7 @@ class OrderServiceCancelRedoRemoveTest {
         order.setUserId("client-1");
         order.setSellerId("seller-1");
         order.setShippingAddress(new Address("Test", "+212600000000", "1 Main St", "Casablanca", "20000", "Morocco"));
-        order.setItems(List.of(new OrderItem("product-1", "Mouse", new BigDecimal("9.99"), 1, null)));
+        order.setItems(List.of(new OrderItem("product-1", "Mouse", "ELECTRONICS", new BigDecimal("9.99"), 1, null)));
         order.changeStatus(status, "client-1");
         return order;
     }
@@ -109,7 +109,7 @@ class OrderServiceCancelRedoRemoveTest {
         when(orderRepository.findById("order-1")).thenReturn(Optional.of(oldOrder));
 
         ProductDto product = new ProductDto(
-                "product-1", "Mouse", "desc", new BigDecimal("9.99"), 10, "seller-1", List.of());
+                "product-1", "Mouse", "desc", new BigDecimal("9.99"), 10, "ELECTRONICS", "seller-1", List.of());
         when(productServiceGateway.getProduct("product-1")).thenReturn(product);
         when(orderRepository.saveAll(anyList())).thenAnswer(invocation -> invocation.getArgument(0));
 
