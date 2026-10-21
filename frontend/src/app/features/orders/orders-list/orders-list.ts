@@ -1,5 +1,6 @@
 import { Component, inject, signal } from '@angular/core';
 import { CurrencyPipe, DatePipe } from '@angular/common';
+import { RouterLink } from '@angular/router';
 
 import { OrdersService } from '../../../core/services/orders.service';
 import { Order } from '../../../shared/models/order.model';
@@ -11,7 +12,7 @@ const PAGE_SIZE = 10;
 @Component({
   selector: 'app-orders-list',
   standalone: true,
-  imports: [CurrencyPipe, DatePipe, LoadingSpinner, EmptyState],
+  imports: [CurrencyPipe, DatePipe, RouterLink, LoadingSpinner, EmptyState],
   templateUrl: './orders-list.html',
 })
 export class OrdersList {
