@@ -3,6 +3,7 @@ export type OrderStatus = 'PENDING' | 'CONFIRMED' | 'SHIPPED' | 'DELIVERED' | 'C
 export interface OrderItem {
   productId: string;
   name: string;
+  category: string;
   unitPrice: number;
   quantity: number;
   imageUrl: string | null;
