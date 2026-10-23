@@ -87,6 +87,12 @@ credentials:
               username: "${SMTP_USERNAME}"
               password: "${SMTP_APP_PASSWORD}"
               description: "Gmail SMTP app password"
+          #
+          - string:
+            scope: GLOBAL
+            id: sonar-token
+            description: SonarQube analysis token
+            secret: "${SONAR_TOKEN}"
 
 unclassified:
   location:
@@ -120,6 +126,12 @@ unclassified:
     useTls: true
     smtpHost: "smtp.gmail.com"
     smtpPort: "587"
+
+  sonarglobalconfiguration:
+    installations:
+      - name: sonarqube
+        serverUrl: http://sonarqube:9000
+        credentialsId: sonar-token
 
 tool:
   git:
