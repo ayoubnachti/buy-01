@@ -24,12 +24,35 @@ pipeline {
             SSL_KEYSTORE_PASSWORD = 'unused'
           }
           steps {
+            script {
+              // Tell SonarQube what is being analysed: a PR (decorated against its target) or a branch
+              env.SONAR_ARGS = env.CHANGE_ID
+                ? "-Dsonar.pullrequest.key=${env.CHANGE_ID} -Dsonar.pullrequest.branch=${env.CHANGE_BRANCH} -Dsonar.pullrequest.base=${env.CHANGE_TARGET}"
+                : "-Dsonar.branch.name=${env.BRANCH_NAME}"
+            }
             sh '''
               for svc in discovery-server api-gateway user-service product-service media-service; do
                 echo "=== Testing $svc"
-                (cd backend/$svc && MONGODB_URI="mongodb://mongo-test:27017/$svc-test" ./mvnw -B -ntp clean test)
+                (cd backend/$svc && MONGODB_URI="mongodb://mongo-test:27017/$svc-test" ./mvnw -B -ntp clean \
+                  org.jacoco:jacoco-maven-plugin:0.8.15:prepare-agent \
+                  test \
+                  org.jacoco:jacoco-maven-plugin:0.8.15:report)
               done
             '''
+            withSonarQubeEnv('sonarqube') {
+              sh '''
+                for svc in discovery-server api-gateway user-service product-service media-service; do
+                  echo "=== Analysing $svc"
+                  (cd backend/$svc && ./mvnw -B -ntp \
+                    org.sonarsource.scanner.maven:sonar-maven-plugin:5.8.0.7211:sonar \
+                    -Dsonar.projectKey=safe-zone-$svc \
+                    "-Dsonar.projectName=safe-zone $svc" \
+                    -Dsonar.qualitygate.wait=true \
+                    -Dsonar.qualitygate.timeout=300 \
+                    $SONAR_ARGS)
+                done
+              '''
+            }
           }
           post {
             always {
