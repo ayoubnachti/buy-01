@@ -32,3 +32,7 @@ mailer:534.v1b_36f5864073
 # Quality-of-life used in the pipeline
 timestamper:1.30
 ws-cleanup:0.49                           # cleanWs() / workspace cleanup
+
+# SonareQube
+sonar:2.19.0
+github-branch-source:1986.v801e40614d00
