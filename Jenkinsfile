@@ -5,7 +5,7 @@ pipeline {
     timeout(time: 30, unit: 'MINUTES')
     timestamps()
     buildDiscarder(logRotator(numToKeepStr: '20'))
-    disableConcurrentBuilds()      // one build at a time; a new push waits in the queue
+    disableConcurrentBuilds()      // one build at a time per branch/PR; a new push waits in the queue
   }
 
   environment {
@@ -14,75 +14,119 @@ pipeline {
   }
 
   stages {
+    // Runs before the parallel branches, so both see SONAR_ARGS
+    stage('Prepare') {
+      steps {
+        script {
+          // Tell SonarQube what is being analysed: a PR (compared against its target) or a branch
+          env.SONAR_ARGS = env.CHANGE_ID
+            ? "-Dsonar.pullrequest.key=${env.CHANGE_ID} -Dsonar.pullrequest.branch=${env.CHANGE_BRANCH} -Dsonar.pullrequest.base=${env.CHANGE_TARGET}"
+            : "-Dsonar.branch.name=${env.BRANCH_NAME}"
+        }
+      }
+    }
+
     stage('Build & test') {
       parallel {
-        stage('Backend tests') {
+        // One agent + one workspace for tests and analysis: the analysis reuses
+        // the compiled classes and the JaCoCo reports produced by the tests
+        stage('Backend') {
           agent { label 'backend' }
           environment {
             JWT_SECRET            = 'Y2ktdGVzdC1vbmx5LWp3dC1rZXktbm90LWEtcmVhbC1zZWNyZXQ='
             SERVER_SSL_ENABLED    = 'false'
             SSL_KEYSTORE_PASSWORD = 'unused'
           }
-          steps {
-            script {
-              // Tell SonarQube what is being analysed: a PR (decorated against its target) or a branch
-              env.SONAR_ARGS = env.CHANGE_ID
-                ? "-Dsonar.pullrequest.key=${env.CHANGE_ID} -Dsonar.pullrequest.branch=${env.CHANGE_BRANCH} -Dsonar.pullrequest.base=${env.CHANGE_TARGET}"
-                : "-Dsonar.branch.name=${env.BRANCH_NAME}"
+          stages {
+            stage('Backend tests') {
+              steps {
+                sh '''
+                  for svc in discovery-server api-gateway user-service product-service media-service; do
+                    echo "=== Testing $svc"
+                    (cd backend/$svc && MONGODB_URI="mongodb://mongo-test:27017/$svc-test" ./mvnw -B -ntp clean \
+                      org.jacoco:jacoco-maven-plugin:0.8.15:prepare-agent \
+                      test \
+                      org.jacoco:jacoco-maven-plugin:0.8.15:report)
+                  done
+                '''
+              }
+              post {
+                always {
+                  junit allowEmptyResults: true, testResults: 'backend/*/target/surefire-reports/*.xml'
+                }
+              }
             }
-            sh '''
-              for svc in discovery-server api-gateway user-service product-service media-service; do
-                echo "=== Testing $svc"
-                (cd backend/$svc && MONGODB_URI="mongodb://mongo-test:27017/$svc-test" ./mvnw -B -ntp clean \
-                  org.jacoco:jacoco-maven-plugin:0.8.15:prepare-agent \
-                  test \
-                  org.jacoco:jacoco-maven-plugin:0.8.15:report)
-              done
-            '''
-            withSonarQubeEnv('sonarqube') {
-              sh '''
-                for svc in discovery-server api-gateway user-service product-service media-service; do
-                  echo "=== Analysing $svc"
-                  (cd backend/$svc && ./mvnw -B -ntp \
-                    org.sonarsource.scanner.maven:sonar-maven-plugin:5.8.0.7211:sonar \
-                    -Dsonar.projectKey=safe-zone-$svc \
-                    "-Dsonar.projectName=safe-zone $svc" \
-                    -Dsonar.qualitygate.wait=true \
-                    -Dsonar.qualitygate.timeout=300 \
-                    $SONAR_ARGS)
-                done
-              '''
-            }
-          }
-          post {
-            always {
-              junit allowEmptyResults: true, testResults: 'backend/*/target/surefire-reports/*.xml'
+
+            stage('Backend analysis') {
+              steps {
+                withSonarQubeEnv('sonarqube') {
+                  // qualitygate.wait: the scanner exits non-zero if the quality gate fails
+                  sh '''
+                    for svc in discovery-server api-gateway user-service product-service media-service; do
+                      echo "=== Analysing $svc"
+                      (cd backend/$svc && ./mvnw -B -ntp \
+                        org.sonarsource.scanner.maven:sonar-maven-plugin:5.8.0.7211:sonar \
+                        -Dsonar.projectKey=safe-zone-$svc \
+                        "-Dsonar.projectName=safe-zone $svc" \
+                        -Dsonar.qualitygate.wait=true \
+                        -Dsonar.qualitygate.timeout=300 \
+                        $SONAR_ARGS)
+                    done
+                  '''
+                }
+              }
             }
           }
         }
 
-        stage('Frontend tests') {
+        stage('Frontend') {
           agent { label 'frontend' }
-          steps {
-            dir('frontend') {
-              sh 'npm ci'
-              sh 'npx ng test --watch=false --reporters=junit --reporters=default --output-file=test-results/junit.xml'
+          stages {
+            stage('Frontend tests') {
+              steps {
+                dir('frontend') {
+                  sh 'npm ci'
+                  sh 'npx ng test --watch=false --coverage --coverage-reporters=lcov --reporters=junit --reporters=default --output-file=test-results/junit.xml'
+                }
+              }
+              post {
+                always {
+                  junit allowEmptyResults: true, testResults: 'frontend/test-results/junit.xml'
+                }
+              }
             }
-          }
-          post {
-            always {
-              junit allowEmptyResults: true, testResults: 'frontend/test-results/junit.xml'
+
+            stage('Frontend analysis') {
+              steps {
+                dir('frontend') {
+                  withSonarQubeEnv('sonarqube') {
+                    sh '''
+                      npx @sonar/scan \
+                        -Dsonar.projectKey=safe-zone-frontend \
+                        "-Dsonar.projectName=safe-zone frontend" \
+                        -Dsonar.sources=src \
+                        -Dsonar.tests=src \
+                        "-Dsonar.exclusions=**/*.spec.ts" \
+                        "-Dsonar.test.inclusions=**/*.spec.ts" \
+                        -Dsonar.javascript.lcov.reportPaths=coverage/frontend/lcov.info \
+                        -Dsonar.qualitygate.wait=true \
+                        -Dsonar.qualitygate.timeout=300 \
+                        $SONAR_ARGS
+                    '''
+                  }
+                }
+              }
             }
           }
         }
       }
     }
 
-    // Runs only if every test passed. Both stages share one agent and checkout.
+    // Runs only on main, and only if tests and quality gates passed. Both stages share one agent and checkout.
     stage('Deliver') {
       when {
         branch 'main'
-        beforeAgent true
+        beforeAgent true   // check the branch first, so PR builds don't take the backend agent
       }
       agent { label 'backend' }
       stages {
@@ -147,11 +191,11 @@ pipeline {
   }
 
   post {
-        success {
+    success {
       emailext(
         to: '$DEFAULT_RECIPIENTS',
         subject: "SUCCESS: ${env.JOB_NAME} #${env.BUILD_NUMBER}" + (env.BRANCH_NAME == 'main' ? ' deployed' : ' (tests passed)'),
-        body: """Build #${env.BUILD_NUMBER} of ${env.BRANCH_NAME} passed all tests.
+        body: """Build #${env.BUILD_NUMBER} of ${env.BRANCH_NAME} passed all tests and quality gates.
           ${env.BRANCH_NAME == 'main' ? "Deployed. Running images: ecommerce/*:${env.TAG}" : 'Not deployed: only main deploys.'}
 
           Changes: ${env.BUILD_URL}changes
@@ -163,7 +207,7 @@ pipeline {
       emailext(
         to: '$DEFAULT_RECIPIENTS',
         subject: "FAILED: ${env.JOB_NAME} #${env.BUILD_NUMBER}" + (env.ROLLED_BACK ? ' (rolled back)' : ''),
-        body: """Build #${env.BUILD_NUMBER} failed.
+        body: """Build #${env.BUILD_NUMBER} of ${env.BRANCH_NAME} failed.
           ${env.ROLLED_BACK ? 'The new release was unhealthy, so the previous good release (last-good) was redeployed. The site is still up.' : 'Nothing new was deployed: the running release is unchanged.'}
 
           Test results: ${env.BUILD_URL}testReport
