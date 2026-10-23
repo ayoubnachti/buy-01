@@ -57,6 +57,10 @@ pipeline {
 
     // Runs only if every test passed. Both stages share one agent and checkout.
     stage('Deliver') {
+      when {
+        branch 'main'
+        beforeAgent true
+      }
       agent { label 'backend' }
       stages {
         stage('Build images') {
@@ -120,12 +124,12 @@ pipeline {
   }
 
   post {
-    success {
+        success {
       emailext(
         to: '$DEFAULT_RECIPIENTS',
-        subject: "SUCCESS: ${env.JOB_NAME} #${env.BUILD_NUMBER} deployed",
-        body: """Build #${env.BUILD_NUMBER} passed all tests and is deployed.
-          Running images: ecommerce/*:${env.TAG}
+        subject: "SUCCESS: ${env.JOB_NAME} #${env.BUILD_NUMBER}" + (env.BRANCH_NAME == 'main' ? ' deployed' : ' (tests passed)'),
+        body: """Build #${env.BUILD_NUMBER} of ${env.BRANCH_NAME} passed all tests.
+          ${env.BRANCH_NAME == 'main' ? "Deployed. Running images: ecommerce/*:${env.TAG}" : 'Not deployed: only main deploys.'}
 
           Changes: ${env.BUILD_URL}changes
           Console: ${env.BUILD_URL}console
