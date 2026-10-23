@@ -89,10 +89,10 @@ credentials:
               description: "Gmail SMTP app password"
           #
           - string:
-            scope: GLOBAL
-            id: sonar-token
-            description: SonarQube analysis token
-            secret: "${SONAR_TOKEN}"
+              scope: GLOBAL
+              id: sonar-token
+              description: SonarQube analysis token
+              secret: "${SONAR_TOKEN}"
 
 unclassified:
   location:
