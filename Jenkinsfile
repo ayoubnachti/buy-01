@@ -219,11 +219,12 @@ pipeline {
     }
   }
 
-  def fetchTargetBranch() {
-    if (env.CHANGE_ID) {
-      withCredentials([gitUsernamePassword(credentialsId: 'git-token')]) {
-        sh 'git fetch --no-tags origin "+refs/heads/$CHANGE_TARGET:refs/remotes/origin/$CHANGE_TARGET"'
-      }
+}
+
+def fetchTargetBranch() {
+  if (env.CHANGE_ID) {
+    withCredentials([gitUsernamePassword(credentialsId: 'git-token')]) {
+      sh 'git fetch --no-tags origin "+refs/heads/$CHANGE_TARGET:refs/remotes/origin/$CHANGE_TARGET"'
     }
   }
 }
