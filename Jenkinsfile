@@ -59,6 +59,7 @@ pipeline {
 
             stage('Backend analysis') {
               steps {
+                fetchTargetBranch()
                 withSonarQubeEnv('sonarqube') {
                   // qualitygate.wait: the scanner exits non-zero if the quality gate fails
                   sh '''
@@ -98,6 +99,7 @@ pipeline {
 
             stage('Frontend analysis') {
               steps {
+                fetchTargetBranch()
                 dir('frontend') {
                   withSonarQubeEnv('sonarqube') {
                     sh '''
@@ -214,6 +216,14 @@ pipeline {
           Console: ${env.BUILD_URL}console
         """
       )
+    }
+  }
+
+  def fetchTargetBranch() {
+    if (env.CHANGE_ID) {
+      withCredentials([gitUsernamePassword(credentialsId: 'git-token')]) {
+        sh 'git fetch --no-tags origin "+refs/heads/$CHANGE_TARGET:refs/remotes/origin/$CHANGE_TARGET"'
+      }
     }
   }
 }
