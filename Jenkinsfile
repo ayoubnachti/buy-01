@@ -8,6 +8,12 @@ pipeline {
     disableConcurrentBuilds()      // one build at a time per branch/PR; a new push waits in the queue
   }
 
+  triggers {
+    // Nightly test + analysis of main, so code health is re-checked even without pushes.
+    // In a Multibranch job every branch/PR has its own triggers: only main gets a schedule.
+    cron(env.BRANCH_NAME == 'main' ? 'H 3 * * *' : '')
+  }
+
   environment {
     TAG     = "${BUILD_NUMBER}"                        // image tag for this build
     COMPOSE = 'docker compose -p ecommerce -f compose.yml'
@@ -124,11 +130,13 @@ pipeline {
       }
     }
 
-    // Runs only on main, and only if tests and quality gates passed. Both stages share one agent and checkout.
+    // Runs only for pushes to main, and only if tests and quality gates passed.
+    // Both stages share one agent and checkout.
     stage('Deliver') {
       when {
         branch 'main'
-        beforeAgent true   // check the branch first, so PR builds don't take the backend agent
+        not { triggeredBy 'TimerTrigger' }   // the nightly run tests and analyses, but doesn't redeploy
+        beforeAgent true                     // check first, so PR and nightly builds don't take the backend agent
       }
       agent { label 'backend' }
       stages {
@@ -171,6 +179,7 @@ pipeline {
                   | xargs -r docker rmi
                 docker image prune -f
               '''
+              script { env.DEPLOYED = 'true' }   // reported in the email
             }
             failure {
               script {
@@ -196,9 +205,9 @@ pipeline {
     success {
       emailext(
         to: '$DEFAULT_RECIPIENTS',
-        subject: "SUCCESS: ${env.JOB_NAME} #${env.BUILD_NUMBER}" + (env.BRANCH_NAME == 'main' ? ' deployed' : ' (tests passed)'),
+        subject: "SUCCESS: ${env.JOB_NAME} #${env.BUILD_NUMBER}" + (env.DEPLOYED ? ' deployed' : ' (tests and analysis passed)'),
         body: """Build #${env.BUILD_NUMBER} of ${env.BRANCH_NAME} passed all tests and quality gates.
-          ${env.BRANCH_NAME == 'main' ? "Deployed. Running images: ecommerce/*:${env.TAG}" : 'Not deployed: only main deploys.'}
+          ${env.DEPLOYED ? "Deployed. Running images: ecommerce/*:${env.TAG}" : 'Not deployed: only pushes to main deploy (PR builds and the nightly scan do not).'}
 
           Changes: ${env.BUILD_URL}changes
           Console: ${env.BUILD_URL}console
@@ -218,7 +227,6 @@ pipeline {
       )
     }
   }
-
 }
 
 def fetchTargetBranch() {
