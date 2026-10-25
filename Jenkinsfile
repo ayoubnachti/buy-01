@@ -42,6 +42,7 @@ pipeline {
             JWT_SECRET            = 'Y2ktdGVzdC1vbmx5LWp3dC1rZXktbm90LWEtcmVhbC1zZWNyZXQ='
             SERVER_SSL_ENABLED    = 'false'
             SSL_KEYSTORE_PASSWORD = 'unused'
+            CLOUDINARY_URL        = 'cloudinary://test-key:test-secret@test-cloud'
           }
           stages {
             stage('Backend tests') {
