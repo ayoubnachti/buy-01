@@ -17,6 +17,7 @@ pipeline {
   environment {
     TAG     = "${BUILD_NUMBER}"                        // image tag for this build
     COMPOSE = 'docker compose -p ecommerce -f compose.yml'
+    BACKEND_SVCS = 'discovery-server api-gateway user-service product-service media-service order-service'
   }
 
   stages {
@@ -48,7 +49,7 @@ pipeline {
             stage('Backend tests') {
               steps {
                 sh '''
-                  for svc in discovery-server api-gateway user-service product-service media-service; do
+                  for svc in $BACKEND_SVCS; do
                     echo "=== Testing $svc"
                     (cd backend/$svc && MONGODB_URI="mongodb://mongo-test:27017/$svc-test" ./mvnw -B -ntp clean \
                       org.jacoco:jacoco-maven-plugin:0.8.15:prepare-agent \
@@ -70,12 +71,12 @@ pipeline {
                 withSonarQubeEnv('sonarqube') {
                   // qualitygate.wait: the scanner exits non-zero if the quality gate fails
                   sh '''
-                    for svc in discovery-server api-gateway user-service product-service media-service; do
+                    for svc in $BACKEND_SVCS; do
                       echo "=== Analysing $svc"
                       (cd backend/$svc && ./mvnw -B -ntp \
                         org.sonarsource.scanner.maven:sonar-maven-plugin:5.8.0.7211:sonar \
-                        -Dsonar.projectKey=safe-zone-$svc \
-                        "-Dsonar.projectName=safe-zone $svc" \
+                        -Dsonar.projectKey=buy-02-$svc \
+                        "-Dsonar.projectName=buy-02 $svc" \
                         -Dsonar.qualitygate.wait=true \
                         -Dsonar.qualitygate.timeout=300 \
                         $SONAR_ARGS)
@@ -111,8 +112,8 @@ pipeline {
                   withSonarQubeEnv('sonarqube') {
                     sh '''
                       npx @sonar/scan \
-                        -Dsonar.projectKey=safe-zone-frontend \
-                        "-Dsonar.projectName=safe-zone frontend" \
+                        -Dsonar.projectKey=buy-02-frontend \
+                        "-Dsonar.projectName=buy-02 frontend" \
                         -Dsonar.sources=src \
                         -Dsonar.tests=src \
                         "-Dsonar.exclusions=**/*.spec.ts" \
@@ -172,7 +173,7 @@ pipeline {
             success {
               // This release is healthy: remember it as the one to roll back to
               sh '''
-                for svc in discovery-server api-gateway user-service product-service media-service frontend; do
+                for svc in $BACKEND_SVCS frontend; do
                   docker tag ecommerce/$svc:$TAG ecommerce/$svc:last-good
                 done
                 docker images 'ecommerce/*' --format '{{.Repository}}:{{.Tag}}' \
