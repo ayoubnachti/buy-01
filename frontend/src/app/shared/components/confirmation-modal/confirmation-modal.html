@@ -1,6 +1,6 @@
 
-<div class="modal-backdrop fade show" (click)="cancelled.emit()"></div>
-<div class="modal fade show d-block" tabindex="-1" role="dialog" aria-modal="true">
+<div class="modal-backdrop fade show" aria-hidden="true" (click)="cancelled.emit()" (keydown.escape)="cancelled.emit()"></div>
+<div class="modal fade show d-block" tabindex="-1" role="dialog" aria-modal="true" (keydown.escape)="cancelled.emit()">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header">

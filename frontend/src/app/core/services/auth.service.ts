@@ -6,7 +6,7 @@ import { AuthResponse } from '../../features/auth/models/auth-response';
 import { RegisterRequest } from '../../features/auth/models/register-request';
 import { RegisterResponse } from '../../features/auth/models/register-response';
 import { User } from '../../features/auth/models/user.modelt';
-import { environment } from '../../../environments/environment.prod';
+import { environment } from '../../../environments/environment';
 
 @Injectable({
   providedIn: 'root',
