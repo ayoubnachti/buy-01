@@ -3,7 +3,7 @@
   <div class="gallery-upload">
     @for (preview of previews(); track preview.url; let i = $index) {
     <div class="gallery-item">
-      <img [src]="preview.url" alt="Selected image" class="gallery-item-img" />
+      <img [src]="preview.url" alt="Preview of" class="gallery-item-img" />
 
       <button type="button" class="gallery-item-remove" (click)="removeImage(i)" aria-label="Remove image">
         &times;
