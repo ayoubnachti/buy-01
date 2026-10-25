@@ -18,6 +18,7 @@ pipeline {
     TAG     = "${BUILD_NUMBER}"                        // image tag for this build
     COMPOSE = 'docker compose -p ecommerce -f compose.yml'
     BACKEND_SVCS = 'discovery-server api-gateway user-service product-service media-service order-service'
+    DEPLOY       = 'false'
   }
 
   stages {
@@ -51,7 +52,7 @@ pipeline {
                 sh '''
                   for svc in $BACKEND_SVCS; do
                     echo "=== Testing $svc"
-                    (cd backend/$svc && MONGODB_URI="mongodb://mongo-test:27017/$svc-test" ./mvnw -B -ntp clean \
+                    (cd backend/$svc && MONGODB_URI="mongodb://mongo-test:27017/buy-02-$svc-test" ./mvnw -B -ntp clean \
                       org.jacoco:jacoco-maven-plugin:0.8.15:prepare-agent \
                       test \
                       org.jacoco:jacoco-maven-plugin:0.8.15:report)
@@ -137,6 +138,7 @@ pipeline {
     stage('Deliver') {
       when {
         branch 'main'
+        environment name: 'DEPLOY', value: 'true'
         not { triggeredBy 'TimerTrigger' }   // the nightly run tests and analyses, but doesn't redeploy
         beforeAgent true                     // check first, so PR and nightly builds don't take the backend agent
       }
