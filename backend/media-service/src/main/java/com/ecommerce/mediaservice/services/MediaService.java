@@ -132,17 +132,7 @@ public class MediaService {
             for (String oldImagePath : request.oldImagePaths()) {
                 mediaHelper.verifyImageBelongsToTarget(oldImagePath, request.targetType(), request.targetId());
                 if (request.targetType().equals(TargetType.PRODUCT)) {
-                    Media media = mediaRepository.findByImagePath(oldImagePath)
-                            .orElseThrow(() -> new ImageNotFoundException("Image not found !"));
-                    if (!media.getProductId().equals(request.targetId())) {
-                        throw new ImageNotFoundException("Image not found !");
-                    }
-                    mediaHelper.deleteFromCloudinary(oldImagePath);
-                    try {
-                        mediaRepository.delete(media);
-                    } catch (Exception ex) {
-                        throw new ImageNotDeletedException("This image is not deleted, please try again later !");
-                    }
+                    deleteProductImage(oldImagePath, request.targetId());
                 } else {
                     mediaHelper.deleteFromCloudinary(oldImagePath);
                 }
@@ -166,5 +156,17 @@ public class MediaService {
         mediaHelper.deleteFolderIfEmpty(folder);
 
         return ResponseData.success("Media updated successfully !", newImagePaths);
+    }
+
+    private void deleteProductImage(String imagePath, String productId) {
+        Media media = mediaRepository.findByImagePath(imagePath)
+                .filter(m -> m.getProductId().equals(productId))   // an image of another product counts as not found
+                .orElseThrow(() -> new ImageNotFoundException("Image not found !"));
+        mediaHelper.deleteFromCloudinary(imagePath);
+        try {
+            mediaRepository.delete(media);
+        } catch (Exception ex) {
+            throw new ImageNotDeletedException("This image is not deleted, please try again later !");
+        }
     }
 }

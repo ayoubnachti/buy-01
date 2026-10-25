@@ -67,8 +67,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                         .parseSignedClaims(token)
                                         .getPayload();
 
-                        userId = claims.get("userId", String.class);
-                        role = claims.get("role", String.class);
+                        userId = claims.get(USER_ID_ATTRIBUTE, String.class);
+                        role = claims.get(USER_ROLE_ATTRIBUTE, String.class);
 
                 } catch (Exception e) {
 
