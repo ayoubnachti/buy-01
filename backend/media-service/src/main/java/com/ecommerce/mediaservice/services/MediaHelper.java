@@ -30,7 +30,7 @@ import lombok.RequiredArgsConstructor;
 @Component
 @RequiredArgsConstructor
 class MediaHelper {
-    private static final long MAX_IMAGE_SIZE = 2 * 1024 * 1024;
+    private static final long MAX_IMAGE_SIZE = 2L * 1024 * 1024;
     private final Cloudinary cloudinary;
     private final ProductServiceGateway productServiceGateway;
 
