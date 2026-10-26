@@ -191,13 +191,6 @@ describe('AuthService', () => {
     expect(localStorage.getItem('jwt')).toBeNull();
   });
 
-  it('should remove user from localStorage on logout', () => {
-    localStorage.setItem('user', JSON.stringify(mockUser));
-
-    service.logout();
-
-  });
-
   it('should clear user signal on logout', () => {
     const token = createFakeToken({
       sub: mockUser.id,
