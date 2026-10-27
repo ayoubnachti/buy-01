@@ -17,7 +17,7 @@ pipeline {
   environment {
     TAG     = "${BUILD_NUMBER}"                        // image tag for this build
     COMPOSE = 'docker compose -p ecommerce -f compose.yml'
-    BACKEND_SVCS = 'discovery-server api-gateway user-service product-service media-service order-service'
+    BACKEND_SVCS = 'discovery-server api-gateway user-service product-service media-service order-service cart-service'
     DEPLOY       = 'false'
   }
 

@@ -113,6 +113,26 @@ services:
       discovery-server:
         condition: service_healthy
 
+  cart-service:
+    build: ./backend/cart-service
+    image: ecommerce/cart-service:${TAG:-dev}
+    container_name: cart-service
+    restart: unless-stopped
+    environment:
+      - MONGODB_URI=${CART_MONGODB_URI}
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=${EUREKA_CLIENT_SERVICEURL_DEFAULTZONE}
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8085/actuator/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+      start_period: 60s
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      discovery-server:
+        condition: service_healthy
+
   api-gateway:
     build: ./backend/api-gateway
     image: ecommerce/api-gateway:${TAG:-dev}
