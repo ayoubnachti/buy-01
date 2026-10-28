@@ -56,9 +56,18 @@ public class GatewayRoutesConfig {
                                 .filter(lb("order-service"))
                                 .build();
 
+                RouterFunction<ServerResponse> cartServiceRoute = route("cart-service-route")
+                                .route(
+                                                request -> request.path().startsWith("/cart"),
+                                                http())
+                                .before(userClaimsGatewayFilter::apply)
+                                .filter(lb("cart-service"))
+                                .build();
+
                 return userServiceRoute
                                 .and(productServiceRoute)
                                 .and(orderServiceRoute)
-                                .and(mediaServiceRoute);
+                                .and(mediaServiceRoute)
+                                .and(cartServiceRoute);
         }
 }
