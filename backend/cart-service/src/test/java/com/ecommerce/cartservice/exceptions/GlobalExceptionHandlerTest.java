@@ -1,6 +1,7 @@
 package com.ecommerce.cartservice.exceptions;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
@@ -9,6 +10,8 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingRequestHeaderException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+
+import com.ecommerce.cartservice.exceptions.custom.CartItemNotFoundException;
 
 import java.util.List;
 
@@ -37,7 +40,8 @@ class GlobalExceptionHandlerTest {
         MethodArgumentNotValidException ex = mock(MethodArgumentNotValidException.class);
         BindingResult binding = mock(BindingResult.class);
         when(ex.getBindingResult()).thenReturn(binding);
-        when(binding.getFieldErrors()).thenReturn(List.of(new FieldError("item", "quantity", "Quantity must be at least 1")));
+        when(binding.getFieldErrors())
+                .thenReturn(List.of(new FieldError("item", "quantity", "Quantity must be at least 1")));
 
         var response = handler.handleMethodArgumentNotValidException(ex);
 
@@ -58,7 +62,8 @@ class GlobalExceptionHandlerTest {
 
     @Test
     void unreadableBody_returns400() {
-        assertThat(handler.handleHttpMessageNotReadableException(mock(HttpMessageNotReadableException.class)).getStatusCode())
+        assertThat(handler.handleHttpMessageNotReadableException(mock(HttpMessageNotReadableException.class))
+                .getStatusCode())
                 .isEqualTo(HttpStatus.BAD_REQUEST);
     }
 
@@ -89,5 +94,17 @@ class GlobalExceptionHandlerTest {
         var response = handler.handleUnexpectedException(new IllegalStateException("db password is hunter2"));
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
         assertThat(response.getBody().getMessage()).doesNotContain("hunter2");
+    }
+
+    @Test
+    void cartItemNotFound_returns404() {
+        assertThat(handler.handleCartItemNotFoundException(new CartItemNotFoundException("p1")).getStatusCode())
+                .isEqualTo(HttpStatus.NOT_FOUND);
+    }
+
+    @Test
+    void concurrentChange_returns409() {
+        assertThat(handler.handleConcurrentCartChange(new OptimisticLockingFailureException("x")).getStatusCode())
+                .isEqualTo(HttpStatus.CONFLICT);
     }
 }
