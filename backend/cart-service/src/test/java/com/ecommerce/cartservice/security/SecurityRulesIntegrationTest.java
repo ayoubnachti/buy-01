@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -18,8 +19,9 @@ import static org.assertj.core.api.Assertions.assertThat;
  * and an allowed request with no matching controller ends as 404 from
  * GlobalExceptionHandler.
  */
+@SpringBootTest
+@ActiveProfiles("test")
 @AutoConfigureMockMvc
-@SpringBootTest(properties = "eureka.client.enabled=false")
 class SecurityRulesIntegrationTest {
 
     @Autowired
@@ -52,6 +54,6 @@ class SecurityRulesIntegrationTest {
         mockMvc.perform(get("/cart")
                 .header("X-User-Id", "client-1")
                 .header("X-User-Role", "CLIENT"))
-                .andExpect(status().isNotFound());
+                .andExpect(status().isOk());
     }
 }

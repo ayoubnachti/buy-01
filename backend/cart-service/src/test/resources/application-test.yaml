@@ -1,0 +1,7 @@
+spring:
+  mongodb:
+    uri: ${MONGODB_URI:mongodb://localhost:27018/cart-service-test}
+
+eureka:
+  client:
+    enabled: false
