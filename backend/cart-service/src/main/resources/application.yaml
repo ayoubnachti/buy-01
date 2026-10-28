@@ -1,0 +1,23 @@
+server:
+  port: 8085
+
+spring:
+  application:
+    name: cart-service
+  mongodb:
+    uri: ${MONGODB_URI:mongodb://localhost:27017/orders_db}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "health"
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_CLIENT_SERVICEURL_DEFAULTZONE:http://localhost:8761/eureka/}
+    fetch-registry: true
+    register-with-eureka: true
+  instance:
+    prefer-ip-address: true
