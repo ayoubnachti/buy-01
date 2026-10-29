@@ -1,9 +1,12 @@
 package com.ecommerce.productservice.controllers;
 
+import java.util.List;
+
 import org.springframework.web.bind.annotation.RestController;
 
 import com.ecommerce.productservice.dtos.request.ProductRequest;
 import com.ecommerce.productservice.dtos.response.*;
+import com.ecommerce.productservice.exceptions.custom.InvalidSearchQueryException;
 import com.ecommerce.productservice.services.ProductService;
 
 import jakarta.validation.Valid;
@@ -26,6 +29,8 @@ import org.springframework.web.bind.annotation.PutMapping;
 @RequestMapping("/products")
 @AllArgsConstructor
 public class ProductController {
+  private static final int MAX_SEARCH_QUERY_LENGTH = 100;
+
   private final ProductService productService;
 
   @GetMapping
@@ -35,6 +40,15 @@ public class ProductController {
       @RequestParam(required = false) Integer limit) {
     ProductPageResponse result = productService.getProducts(owner, page, limit);
     return ResponseData.success("Products retrieved successfully", result);
+  }
+
+  @GetMapping("/search")
+  public ResponseData<List<ProductResponse>> searchProducts(
+      @RequestParam(defaultValue = "") String q) {
+    if (q.length() > MAX_SEARCH_QUERY_LENGTH) {
+      throw new InvalidSearchQueryException("Search query must be at most 100 characters");
+    }
+    return ResponseData.success("Products retrieved successfully", productService.searchProducts(q));
   }
 
   @GetMapping("/{id}")
