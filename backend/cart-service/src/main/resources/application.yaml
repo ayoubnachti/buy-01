@@ -6,6 +6,7 @@ spring:
     name: cart-service
   mongodb:
     uri: ${MONGODB_URI:mongodb://localhost:27017/orders_db}
+    auto-index-creation: true
 
 management:
   endpoints:

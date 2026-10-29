@@ -1,5 +1,7 @@
 package com.ecommerce.cartservice.exceptions;
 
+import org.springframework.dao.DuplicateKeyException;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -14,6 +16,7 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import com.ecommerce.cartservice.common.ResponseData;
+import com.ecommerce.cartservice.exceptions.custom.CartItemNotFoundException;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -32,7 +35,8 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ResponseData<Void>> handleMethodArgumentNotValidException(MethodArgumentNotValidException ex) {
+    public ResponseEntity<ResponseData<Void>> handleMethodArgumentNotValidException(
+            MethodArgumentNotValidException ex) {
         String message = ex.getBindingResult().getFieldErrors().stream()
                 .findFirst()
                 .map(FieldError::getDefaultMessage)
@@ -41,7 +45,8 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
-    public ResponseEntity<ResponseData<Void>> handleHttpMessageNotReadableException(HttpMessageNotReadableException ex) {
+    public ResponseEntity<ResponseData<Void>> handleHttpMessageNotReadableException(
+            HttpMessageNotReadableException ex) {
         return buildError(HttpStatus.BAD_REQUEST, "Malformed request body !");
     }
 
@@ -59,6 +64,19 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<ResponseData<Void>> handleAccessDeniedException(AccessDeniedException ex) {
         return buildError(HttpStatus.FORBIDDEN, "You do not have permission to perform this action !");
+    }
+
+    @ExceptionHandler(CartItemNotFoundException.class)
+    public ResponseEntity<ResponseData<Void>> handleCartItemNotFoundException(CartItemNotFoundException ex) {
+        return buildError(HttpStatus.NOT_FOUND, ex.getMessage());
+    }
+
+    // @Version: another tab saved the cart between our read and our save.
+    // DuplicateKey: two first adds raced to create the cart (unique index on
+    // userId).
+    @ExceptionHandler({ OptimisticLockingFailureException.class, DuplicateKeyException.class })
+    public ResponseEntity<ResponseData<Void>> handleConcurrentCartChange(Exception ex) {
+        return buildError(HttpStatus.CONFLICT, "Your cart was changed at the same time. Reload it and try again.");
     }
 
     @ExceptionHandler(Exception.class)
