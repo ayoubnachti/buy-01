@@ -22,11 +22,22 @@ import com.ecommerce.productservice.dtos.response.ErrorResponse;
 import com.ecommerce.productservice.dtos.response.ValidationErrorResponse;
 import com.ecommerce.productservice.exceptions.GlobalExceptionHandler;
 import com.ecommerce.productservice.exceptions.custom.ForbiddenException;
+import com.ecommerce.productservice.exceptions.custom.InvalidSearchQueryException;
 import com.ecommerce.productservice.exceptions.custom.ResourceNotFoundException;
 
 class GlobalExceptionHandlerTest {
 
     private final GlobalExceptionHandler handler = new GlobalExceptionHandler();
+
+    @Test
+    void handleInvalidSearchQuery_returns400() {
+        ResponseEntity<ErrorResponse> response =
+                handler.handleInvalidSearchQuery(new InvalidSearchQueryException("Invalid search options"));
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(response.getBody().status()).isEqualTo(400);
+        assertThat(response.getBody().message()).isEqualTo("Invalid search options");
+    }
 
     @Test
     void handleValidation_returns400WithFieldErrors() {
