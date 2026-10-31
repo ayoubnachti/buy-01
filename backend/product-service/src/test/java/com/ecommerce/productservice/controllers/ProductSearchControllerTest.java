@@ -33,7 +33,9 @@ class ProductSearchControllerTest {
 
   @Test
   void searchRejectsQueryLongerThanOneHundredCharacters() {
-    assertThatThrownBy(() -> productController.searchProducts("x".repeat(101)))
+    String query = "x".repeat(101);
+
+    assertThatThrownBy(() -> productController.searchProducts(query))
         .isInstanceOf(InvalidSearchQueryException.class)
         .hasMessage("Search query must be at most 100 characters");
   }

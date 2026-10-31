@@ -17,6 +17,8 @@ import lombok.RequiredArgsConstructor;
 @Component
 @RequiredArgsConstructor
 public class ProductSearchIndexInitializer implements ApplicationRunner {
+  private static final String CATEGORY_FIELD = "category";
+
   private final MongoTemplate mongoTemplate;
 
   @Override
@@ -27,14 +29,14 @@ public class ProductSearchIndexInitializer implements ApplicationRunner {
         .named("product_name_description_text")
         .build();
 
-    mongoTemplate.indexOps(Product.class).ensureIndex(textIndex);
+    mongoTemplate.indexOps(Product.class).createIndex(textIndex);
 
     Query productsWithoutCategory = new Query(new Criteria().orOperator(
-        Criteria.where("category").exists(false),
-        Criteria.where("category").is(null)));
+        Criteria.where(CATEGORY_FIELD).exists(false),
+        Criteria.where(CATEGORY_FIELD).is(null)));
     mongoTemplate.updateMulti(
         productsWithoutCategory,
-        Update.update("category", ProductCategory.OTHER),
+        Update.update(CATEGORY_FIELD, ProductCategory.OTHER),
         Product.class);
   }
 }
