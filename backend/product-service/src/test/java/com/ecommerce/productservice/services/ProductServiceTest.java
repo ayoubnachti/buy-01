@@ -23,6 +23,7 @@ import org.springframework.data.domain.Pageable;
 
 import com.ecommerce.productservice.clients.MediaServiceGateway;
 import com.ecommerce.productservice.dtos.request.ProductRequest;
+import com.ecommerce.productservice.dtos.request.ProductSearchRequest;
 import com.ecommerce.productservice.exceptions.custom.ForbiddenException;
 import com.ecommerce.productservice.exceptions.custom.ResourceNotFoundException;
 import com.ecommerce.productservice.models.Product;
@@ -206,17 +207,24 @@ class ProductServiceTest {
   @Test
   void searchProducts_enrichesMatchesWithLiveImages() {
     Product product = Product.builder().id(PRODUCT_ID).name("Chair").build();
-    when(productSearchRepository.search("chair")).thenReturn(List.of(product));
+    ProductSearchRequest request =
+        new ProductSearchRequest("chair", null, null, null, "relevance", 0, 12);
+    when(productSearchRepository.search(request))
+        .thenReturn(new PageImpl<>(List.of(product), PageRequest.of(0, 12), 25));
     when(mediaServiceGateway.getImages(PRODUCT_ID)).thenReturn(List.of("live-image"));
 
-    var results = productService.searchProducts("chair");
+    var results = productService.searchProducts(request);
 
-    assertThat(results).singleElement()
+    assertThat(results.content()).singleElement()
         .satisfies(result -> {
           assertThat(result.id()).isEqualTo(PRODUCT_ID);
           assertThat(result.name()).isEqualTo("Chair");
           assertThat(result.imageUrls()).containsExactly("live-image");
         });
+    assertThat(results.page()).isZero();
+    assertThat(results.size()).isEqualTo(12);
+    assertThat(results.totalElements()).isEqualTo(25);
+    assertThat(results.totalPages()).isEqualTo(3);
   }
 
   @Test
