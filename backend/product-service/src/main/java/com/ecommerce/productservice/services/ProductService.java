@@ -15,6 +15,7 @@ import com.ecommerce.productservice.exceptions.custom.ForbiddenException;
 import com.ecommerce.productservice.exceptions.custom.ResourceNotFoundException;
 import com.ecommerce.productservice.models.Product;
 import com.ecommerce.productservice.repositories.ProductRepository;
+import com.ecommerce.productservice.repositories.ProductSearchRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -22,6 +23,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class ProductService {
   private final ProductRepository productRepository;
+  private final ProductSearchRepository productSearchRepository;
   private final MediaServiceGateway mediaServiceGateway;
 
   private static final int DEFAULT_LIMIT = 20;
@@ -49,6 +51,13 @@ public class ProductService {
         result.getTotalPages(),
         result.hasNext(),
         result.hasPrevious());
+  }
+
+  public List<ProductResponse> searchProducts(String query) {
+    return productSearchRepository.search(query).stream()
+        .map(product -> ProductResponse.from(
+            product, mediaServiceGateway.getImages(product.getId())))
+        .toList();
   }
 
   public ProductResponse getProductById(String id) {

@@ -27,6 +27,12 @@ import lombok.extern.slf4j.Slf4j;
 public class GlobalExceptionHandler {
 
     // 400 ---------------------------------------------------------------------
+    @ExceptionHandler(InvalidSearchQueryException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidSearchQuery(InvalidSearchQueryException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ErrorResponse.of(400, ex.getMessage()));
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ValidationErrorResponse> handleValidation(MethodArgumentNotValidException ex) {
         Map<String, String> fieldErrors = ex.getBindingResult().getFieldErrors().stream()

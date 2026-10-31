@@ -28,12 +28,16 @@ import com.ecommerce.productservice.exceptions.custom.ResourceNotFoundException;
 import com.ecommerce.productservice.models.Product;
 import com.ecommerce.productservice.models.ProductCategory;
 import com.ecommerce.productservice.repositories.ProductRepository;
+import com.ecommerce.productservice.repositories.ProductSearchRepository;
 
 @ExtendWith(MockitoExtension.class)
 class ProductServiceTest {
 
   @Mock
   private ProductRepository productRepository;
+
+  @Mock
+  private ProductSearchRepository productSearchRepository;
 
   @Mock
   private MediaServiceGateway mediaServiceGateway;
@@ -46,7 +50,7 @@ class ProductServiceTest {
 
   @BeforeEach
   void setUp() {
-    productService = new ProductService(productRepository, mediaServiceGateway);
+    productService = new ProductService(productRepository, productSearchRepository, mediaServiceGateway);
   }
 
   // --- create ---
@@ -197,6 +201,22 @@ class ProductServiceTest {
     var result = productService.getProductById(PRODUCT_ID);
 
     assertThat(result.imageUrls()).containsExactly("live-1", "live-2");
+  }
+
+  @Test
+  void searchProducts_enrichesMatchesWithLiveImages() {
+    Product product = Product.builder().id(PRODUCT_ID).name("Chair").build();
+    when(productSearchRepository.search("chair")).thenReturn(List.of(product));
+    when(mediaServiceGateway.getImages(PRODUCT_ID)).thenReturn(List.of("live-image"));
+
+    var results = productService.searchProducts("chair");
+
+    assertThat(results).singleElement()
+        .satisfies(result -> {
+          assertThat(result.id()).isEqualTo(PRODUCT_ID);
+          assertThat(result.name()).isEqualTo("Chair");
+          assertThat(result.imageUrls()).containsExactly("live-image");
+        });
   }
 
   @Test
