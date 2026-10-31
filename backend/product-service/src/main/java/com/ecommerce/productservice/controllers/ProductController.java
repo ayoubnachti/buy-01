@@ -36,7 +36,7 @@ public class ProductController {
   private static final int MAX_SEARCH_SIZE = 50;
   private static final String DEFAULT_SEARCH_SORT = "relevance";
   private static final List<String> ALLOWED_SEARCH_SORTS =
-      List.of("relevance", "price_asc", "price_desc", "newest");
+      List.of(DEFAULT_SEARCH_SORT, "price_asc", "price_desc", "newest");
 
   private final ProductService productService;
 
