@@ -8,6 +8,8 @@ services:
     build: ./backend/discovery-server
     image: ecommerce/discovery-server:${TAG:-dev}
     container_name: discovery-server
+    environment:
+      SPRING_PROFILES_ACTIVE: ${APP_PROFILE:-prod}
     restart: unless-stopped
     ports:
       - "8761:8761"
@@ -37,6 +39,7 @@ services:
     container_name: user-service
     restart: unless-stopped
     environment:
+      - SPRING_PROFILES_ACTIVE=${APP_PROFILE:-prod}
       - MONGODB_URI=${USER_MONGODB_URI}
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=${EUREKA_CLIENT_SERVICEURL_DEFAULTZONE}
       - JWT_SECRET=${JWT_SECRET}
@@ -58,6 +61,7 @@ services:
     container_name: product-service
     restart: unless-stopped
     environment:
+      - SPRING_PROFILES_ACTIVE=${APP_PROFILE:-prod}
       - MONGODB_URI=${PRODUCT_MONGODB_URI}
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=${EUREKA_CLIENT_SERVICEURL_DEFAULTZONE}
     healthcheck:
@@ -78,6 +82,7 @@ services:
     container_name: media-service
     restart: unless-stopped
     environment:
+      - SPRING_PROFILES_ACTIVE=${APP_PROFILE:-prod}
       - MONGODB_URI=${MEDIA_MONGODB_URI}
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=${EUREKA_CLIENT_SERVICEURL_DEFAULTZONE}
       - CLOUDINARY_URL=${CLOUDINARY_URL}
@@ -99,6 +104,7 @@ services:
     container_name: order-service
     restart: unless-stopped
     environment:
+      - SPRING_PROFILES_ACTIVE=${APP_PROFILE:-prod}
       - MONGODB_URI=${ORDER_MONGODB_URI}
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=${EUREKA_CLIENT_SERVICEURL_DEFAULTZONE}
     healthcheck:
@@ -119,6 +125,7 @@ services:
     container_name: cart-service
     restart: unless-stopped
     environment:
+      - SPRING_PROFILES_ACTIVE=${APP_PROFILE:-prod}
       - MONGODB_URI=${CART_MONGODB_URI}
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=${EUREKA_CLIENT_SERVICEURL_DEFAULTZONE}
     healthcheck:
@@ -141,6 +148,7 @@ services:
     ports:
       - "8443:8443"
     environment:
+      - SPRING_PROFILES_ACTIVE=${APP_PROFILE:-prod}
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=${EUREKA_CLIENT_SERVICEURL_DEFAULTZONE}
       - JWT_SECRET=${JWT_SECRET}
       - SSL_KEYSTORE_PATH=${SSL_KEYSTORE_PATH}
