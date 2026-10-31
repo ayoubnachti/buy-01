@@ -241,14 +241,16 @@ mount needed for the default classpath-based setup.
 | `SSL_KEYSTORE_PASSWORD` | api-gateway | `changeit` | Must match the `-storepass` used to generate `keystore.p12` |
 | `CLOUDINARY_URL` | media-service | *(required, no default)* | Set in `media-service/.env` (not committed); get it from your Cloudinary dashboard |
 | `CORS_ALLOWED_ORIGIN` | api-gateway | `http://localhost:4200` | Frontend origin allowed through CORS |
+| `APP_PROFILE` | all Compose services | `prod` | Set to `dev` or `staging` for the demo seed; the seed refuses other profiles |
 
 ## Demo data
 
-On first boot with an empty database, each service seeds a bit of sample data:
-- `user-service`: two demo client accounts (`ayoub@gmail.com` / `Bob@gmail.com`, password `12345678`).
-- `product-service`: four demo products.
-
-Register a new account with the **seller** role from the frontend to try the seller dashboard (product create/edit/delete, image upload).
+Use `./scripts/seed.sh` to reset and reseed the reserved demo accounts, 30
+products, and 40 orders. The command verifies the active profile in the running
+Compose services and refuses to run outside `dev` or `staging`. It uses the real
+product and order APIs and local placeholder product images. See
+[docs/demo-accounts.md](docs/demo-accounts.md) for credentials, reset behavior,
+and setup instructions.
 
 ## Testing
 
