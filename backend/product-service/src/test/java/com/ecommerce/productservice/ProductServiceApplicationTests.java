@@ -149,7 +149,7 @@ class ProductServiceApplicationTests {
 
 		assertThat(explain.toJson()).contains("product_name_description_text");
 		assertThat(mongoTemplate.indexOps(Product.class).getIndexInfo())
-				.extracting(index -> index.getName())
+				.extracting(org.springframework.data.mongodb.core.index.IndexInfo::getName)
 				.contains("product_category_price", "product_created_at");
 	}
 
