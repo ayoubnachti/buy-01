@@ -141,7 +141,9 @@ buy-01/
 - Issues the JWT on login; passwords hashed with Spring Security's `PasswordEncoder`.
 
 ### product-service
-- `GET /products`, `GET /products/{id}`, `POST /products`, `PUT /products/{id}`, `DELETE /products/{id}`
+- `GET /products`, `GET /products/{id}`, `GET /products/search?q=...`, `POST /products`, `PUT /products/{id}`, `DELETE /products/{id}`
+- Search is public and read-only; it searches product names and descriptions and falls back to a literal, case-insensitive prefix match. Search queries are limited to 100 characters.
+- On startup, the service ensures a weighted text index on product names and descriptions and assigns `OTHER` to existing products without a category.
 - Fetches each product's image URLs from media-service on read, through a Resilience4j circuit breaker (falls back to an empty image list if media-service is unavailable).
 
 ### media-service
