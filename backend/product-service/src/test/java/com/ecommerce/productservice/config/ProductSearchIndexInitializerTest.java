@@ -1,7 +1,6 @@
 package com.ecommerce.productservice.config;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -45,7 +44,7 @@ class ProductSearchIndexInitializerTest {
     initializer.run(mock(ApplicationArguments.class));
 
     ArgumentCaptor<IndexDefinition> definition = ArgumentCaptor.forClass(IndexDefinition.class);
-    verify(indexOperations).ensureIndex(definition.capture());
+    verify(indexOperations).createIndex(definition.capture());
     assertThat(definition.getValue().getIndexKeys())
         .containsEntry("name", "text")
         .containsEntry("description", "text");
