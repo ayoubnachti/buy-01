@@ -17,6 +17,7 @@ import org.springframework.boot.ApplicationArguments;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.index.IndexDefinition;
 import org.springframework.data.mongodb.core.index.IndexOperations;
+import org.springframework.data.mongodb.core.index.TextIndexDefinition;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 
@@ -44,15 +45,31 @@ class ProductSearchIndexInitializerTest {
     initializer.run(mock(ApplicationArguments.class));
 
     ArgumentCaptor<IndexDefinition> definition = ArgumentCaptor.forClass(IndexDefinition.class);
-    verify(indexOperations).createIndex(definition.capture());
-    assertThat(definition.getValue().getIndexKeys())
+    verify(indexOperations, org.mockito.Mockito.times(3)).createIndex(definition.capture());
+    IndexDefinition textIndex = definition.getAllValues().stream()
+        .filter(TextIndexDefinition.class::isInstance)
+        .findFirst()
+        .orElseThrow();
+    assertThat(textIndex.getIndexKeys())
         .containsEntry("name", "text")
         .containsEntry("description", "text");
 
-    Document weights = (Document) definition.getValue().getIndexOptions().get("weights");
+    Document weights = (Document) textIndex.getIndexOptions().get("weights");
     assertThat(weights).containsEntry("name", 10f).doesNotContainKey("description");
-    assertThat(definition.getValue().getIndexOptions())
+    assertThat(textIndex.getIndexOptions())
         .containsEntry("name", "product_name_description_text");
+
+    assertThat(definition.getAllValues())
+        .anySatisfy(index -> {
+          assertThat(index.getIndexKeys())
+              .containsEntry("category", 1)
+              .containsEntry("price", 1);
+          assertThat(index.getIndexOptions()).containsEntry("name", "product_category_price");
+        })
+        .anySatisfy(index -> {
+          assertThat(index.getIndexKeys()).containsEntry("createdAt", -1);
+          assertThat(index.getIndexOptions()).containsEntry("name", "product_created_at");
+        });
   }
 
   @Test
