@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 
 import com.ecommerce.productservice.clients.MediaServiceGateway;
 import com.ecommerce.productservice.dtos.request.ProductRequest;
+import com.ecommerce.productservice.dtos.request.ProductSearchRequest;
 import com.ecommerce.productservice.dtos.response.*;
 import com.ecommerce.productservice.exceptions.custom.ForbiddenException;
 import com.ecommerce.productservice.exceptions.custom.ResourceNotFoundException;
@@ -53,11 +54,22 @@ public class ProductService {
         result.hasPrevious());
   }
 
-  public List<ProductResponse> searchProducts(String query) {
-    return productSearchRepository.search(query).stream()
+  public ProductSearchPageResponse searchProducts(ProductSearchRequest request) {
+    Page<Product> result = productSearchRepository.search(request);
+    List<ProductResponse> content = result.getContent().stream()
         .map(product -> ProductResponse.from(
             product, mediaServiceGateway.getImages(product.getId())))
         .toList();
+    return new ProductSearchPageResponse(
+        content,
+        result.getNumber(),
+        result.getSize(),
+        result.getTotalElements(),
+        result.getTotalPages());
+  }
+
+  public ProductSearchFacetsResponse getSearchFacets() {
+    return productSearchRepository.getFacets();
   }
 
   public ProductResponse getProductById(String id) {

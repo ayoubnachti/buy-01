@@ -1,12 +1,15 @@
 package com.ecommerce.productservice.controllers;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 import org.springframework.web.bind.annotation.RestController;
 
 import com.ecommerce.productservice.dtos.request.ProductRequest;
+import com.ecommerce.productservice.dtos.request.ProductSearchRequest;
 import com.ecommerce.productservice.dtos.response.*;
 import com.ecommerce.productservice.exceptions.custom.InvalidSearchQueryException;
+import com.ecommerce.productservice.models.ProductCategory;
 import com.ecommerce.productservice.services.ProductService;
 
 import jakarta.validation.Valid;
@@ -30,6 +33,10 @@ import org.springframework.web.bind.annotation.PutMapping;
 @AllArgsConstructor
 public class ProductController {
   private static final int MAX_SEARCH_QUERY_LENGTH = 100;
+  private static final int MAX_SEARCH_SIZE = 50;
+  private static final String DEFAULT_SEARCH_SORT = "relevance";
+  private static final List<String> ALLOWED_SEARCH_SORTS =
+      List.of(DEFAULT_SEARCH_SORT, "price_asc", "price_desc", "newest");
 
   private final ProductService productService;
 
@@ -43,12 +50,42 @@ public class ProductController {
   }
 
   @GetMapping("/search")
-  public ResponseData<List<ProductResponse>> searchProducts(
-      @RequestParam(defaultValue = "") String q) {
+  public ResponseData<ProductSearchPageResponse> searchProducts(
+      @RequestParam(defaultValue = "") String q,
+      @RequestParam(required = false) List<ProductCategory> category,
+      @RequestParam(required = false) BigDecimal minPrice,
+      @RequestParam(required = false) BigDecimal maxPrice,
+      @RequestParam(defaultValue = DEFAULT_SEARCH_SORT) String sort,
+      @RequestParam(defaultValue = "0") int page,
+      @RequestParam(defaultValue = "12") int size) {
     if (q.length() > MAX_SEARCH_QUERY_LENGTH) {
       throw new InvalidSearchQueryException("Search query must be at most 100 characters");
     }
-    return ResponseData.success("Products retrieved successfully", productService.searchProducts(q));
+    if ((minPrice != null && minPrice.signum() < 0)
+        || (maxPrice != null && maxPrice.signum() < 0)) {
+      throw new InvalidSearchQueryException("Prices must not be negative");
+    }
+    if (minPrice != null && maxPrice != null && minPrice.compareTo(maxPrice) > 0) {
+      throw new InvalidSearchQueryException("minPrice must be less than or equal to maxPrice");
+    }
+    if (!ALLOWED_SEARCH_SORTS.contains(sort)) {
+      throw new InvalidSearchQueryException("sort must be one of: " + String.join(", ", ALLOWED_SEARCH_SORTS));
+    }
+    if (page < 0) {
+      throw new InvalidSearchQueryException("page must not be negative");
+    }
+    if (size < 1 || size > MAX_SEARCH_SIZE) {
+      throw new InvalidSearchQueryException("size must be between 1 and 50");
+    }
+
+    ProductSearchRequest request = new ProductSearchRequest(
+        q, category, minPrice, maxPrice, sort, page, size);
+    return ResponseData.success("Products retrieved successfully", productService.searchProducts(request));
+  }
+
+  @GetMapping("/facets")
+  public ResponseData<ProductSearchFacetsResponse> getSearchFacets() {
+    return ResponseData.success("Product search facets retrieved successfully", productService.getSearchFacets());
   }
 
   @GetMapping("/{id}")
