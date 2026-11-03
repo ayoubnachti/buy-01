@@ -15,8 +15,9 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
-import com.ecommerce.cartservice.common.ResponseData;
+import com.ecommerce.cartservice.dtos.response.ResponseData;
 import com.ecommerce.cartservice.exceptions.custom.CartItemNotFoundException;
+import com.ecommerce.cartservice.exceptions.custom.ProductServiceUnavailableException;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -87,5 +88,11 @@ public class GlobalExceptionHandler {
 
     private ResponseEntity<ResponseData<Void>> buildError(HttpStatus status, String message) {
         return ResponseEntity.status(status).body(ResponseData.error(message));
+    }
+
+    @ExceptionHandler(ProductServiceUnavailableException.class)
+    public ResponseEntity<ResponseData<Void>> handleProductServiceUnavailableException(
+            ProductServiceUnavailableException ex) {
+        return buildError(HttpStatus.SERVICE_UNAVAILABLE, ex.getMessage());
     }
 }
