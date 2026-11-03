@@ -13,21 +13,27 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.bson.Document;
-import org.bson.types.Decimal128;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.stereotype.Service;
+
+import static com.ecommerce.orderservice.analytics.AnalyticsMongoSupport.GROUP_STAGE;
+import static com.ecommerce.orderservice.analytics.AnalyticsMongoSupport.ITEMS_QUANTITY;
+import static com.ecommerce.orderservice.analytics.AnalyticsMongoSupport.PRODUCT_ID;
+import static com.ecommerce.orderservice.analytics.AnalyticsMongoSupport.PROJECT_STAGE;
+import static com.ecommerce.orderservice.analytics.AnalyticsMongoSupport.UNITS;
+import static com.ecommerce.orderservice.analytics.AnalyticsMongoSupport.bestProducts;
+import static com.ecommerce.orderservice.analytics.AnalyticsMongoSupport.decimalValue;
+import static com.ecommerce.orderservice.analytics.AnalyticsMongoSupport.itemAmount;
+import static com.ecommerce.orderservice.analytics.AnalyticsMongoSupport.numberValue;
+import static com.ecommerce.orderservice.analytics.AnalyticsMongoSupport.orderSummary;
+import static com.ecommerce.orderservice.analytics.AnalyticsMongoSupport.orderMatch;
 
 @Service
 public class SellerSalesStatsService {
     static final String INDEX_NAME = "seller_created_at_stats";
     private static final String ORDERS_COLLECTION = "orders";
-    private static final String ITEMS_QUANTITY = "$items.quantity";
-    private static final String GROUP_STAGE = "$group";
-    private static final String PROJECT_STAGE = "$project";
     private static final String REVENUE = "revenue";
-    private static final String UNITS = "units";
-    private static final String PRODUCT_ID = "productId";
     private static final int DAILY_WINDOW_DAYS = 30;
     private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ISO_LOCAL_DATE;
 
@@ -79,45 +85,10 @@ public class SellerSalesStatsService {
 
     List<Document> buildPipeline(
             String sellerId, LocalDate from, LocalDate to, LocalDate firstDailyDate, LocalDate today) {
-        Document match = new Document("sellerId", sellerId)
-                .append("status", new Document("$ne", "CANCELLED"));
-
-        if (from != null || to != null) {
-            Document dateRange = new Document();
-            if (from != null) {
-                dateRange.append("$gte", Date.from(from.atStartOfDay(ZoneOffset.UTC).toInstant()));
-            }
-            if (to != null) {
-                dateRange.append("$lt",
-                        Date.from(to.plusDays(1).atStartOfDay(ZoneOffset.UTC).toInstant()));
-            }
-            match.append("createdAt", dateRange);
-        }
-
-        Document amount = new Document("$multiply", List.of("$items.unitPrice", ITEMS_QUANTITY));
-        List<Document> summary = List.of(
-                new Document(GROUP_STAGE, new Document("_id", null)
-                        .append(REVENUE, new Document("$sum", amount))
-                        .append(UNITS, new Document("$sum", ITEMS_QUANTITY))
-                        .append("orderIds", new Document("$addToSet", "$_id"))),
-                new Document(PROJECT_STAGE, new Document("_id", 0)
-                        .append(REVENUE, 1)
-                        .append(UNITS, 1)
-                        .append("ordersCount", new Document("$size", "$orderIds"))));
-
-        List<Document> bestSellers = List.of(
-                new Document(GROUP_STAGE, new Document("_id",
-                        new Document(PRODUCT_ID, "$items.productId").append("name", "$items.name"))
-                        .append(UNITS, new Document("$sum", ITEMS_QUANTITY))
-                        .append(REVENUE, new Document("$sum", amount))),
-                new Document("$sort",
-                        new Document(UNITS, -1).append(REVENUE, -1).append("_id", 1)),
-                new Document("$limit", 5),
-                new Document(PROJECT_STAGE, new Document("_id", 0)
-                        .append(PRODUCT_ID, "$_id.productId")
-                        .append("name", "$_id.name")
-                        .append(UNITS, 1)
-                        .append(REVENUE, 1)));
+        Document match = orderMatch("sellerId", sellerId, from, to);
+        Document amount = itemAmount();
+        List<Document> summary = orderSummary(REVENUE, amount, true);
+        List<Document> bestSellers = bestProducts(REVENUE, amount);
 
         Document dailyMatch = new Document("createdAt", new Document("$gte",
                 Date.from(firstDailyDate.atStartOfDay(ZoneOffset.UTC).toInstant()))
@@ -164,26 +135,4 @@ public class SellerSalesStatsService {
                 decimalValue(document.get(REVENUE)));
     }
 
-    private long numberValue(Object value) {
-        if (value instanceof Number number) {
-            return number.longValue();
-        }
-        throw new IllegalStateException("Unexpected MongoDB numeric value type");
-    }
-
-    private BigDecimal decimalValue(Object value) {
-        if (value == null) {
-            return BigDecimal.ZERO;
-        }
-        if (value instanceof Decimal128 decimal128) {
-            return decimal128.bigDecimalValue();
-        }
-        if (value instanceof BigDecimal decimal) {
-            return decimal;
-        }
-        if (value instanceof Number number) {
-            return new BigDecimal(number.toString());
-        }
-        throw new IllegalStateException("Unexpected MongoDB amount value type");
-    }
 }
