@@ -22,5 +22,9 @@ public class UserPurchaseStatsIndexInitializer implements ApplicationRunner {
                 .on("userId", Sort.Direction.ASC)
                 .on("createdAt", Sort.Direction.ASC)
                 .named(UserPurchaseStatsService.INDEX_NAME));
+        mongoTemplate.indexOps("orders").createIndex(new Index()
+                .on("sellerId", Sort.Direction.ASC)
+                .on("createdAt", Sort.Direction.ASC)
+                .named(SellerSalesStatsService.INDEX_NAME));
     }
 }
