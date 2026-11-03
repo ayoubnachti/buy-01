@@ -1,11 +1,16 @@
 package com.ecommerce.cartservice.security;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+
+import com.ecommerce.cartservice.clients.ProductServiceGateway;
+import com.ecommerce.cartservice.repositories.CartRepository;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -27,10 +32,20 @@ class SecurityRulesIntegrationTest {
     @Autowired
     private MockMvc mockMvc;
 
+    @Autowired
+    private CartRepository cartRepository;
+
+    // Security tests must never reach a real product-service
+    @MockitoBean
+    private ProductServiceGateway productGateway;
+
+    @BeforeEach
+    void cleanDatabase() {
+        cartRepository.deleteAll();
+    }
 
     @Test
     void healthIsNotBlockedBySecurity() throws Exception {
-        // 200 (UP) or 503 (DOWN) both mean security let it through; only 401/403 would mean it's blocked.
         mockMvc.perform(get("/actuator/health"))
                 .andExpect(result -> assertThat(result.getResponse().getStatus()).isNotIn(401, 403));
     }
