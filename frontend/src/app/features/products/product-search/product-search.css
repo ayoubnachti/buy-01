@@ -1,0 +1,28 @@
+.search-bar {
+  max-width: 48rem;
+}
+
+.search-filters {
+  display: none;
+}
+
+.search-filters.filters-open {
+  display: block;
+}
+
+.product-image-placeholder {
+  height: 190px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, var(--color-border) 35%, transparent);
+  color: var(--color-muted);
+  font-size: 2rem;
+}
+
+@media (min-width: 992px) {
+  .search-filters,
+  .search-filters.filters-open {
+    display: block;
+  }
+}
