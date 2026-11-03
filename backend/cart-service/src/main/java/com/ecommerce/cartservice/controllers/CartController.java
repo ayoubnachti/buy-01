@@ -59,6 +59,6 @@ public class CartController {
   }
 
   private ResponseEntity<ResponseData<CartResponse>> ok(String message, Cart cart) {
-    return ResponseEntity.ok(ResponseData.success(message, CartResponse.from(cart)));
+    return ResponseEntity.ok(ResponseData.success(message, cartService.describe(cart)));
   }
 }
