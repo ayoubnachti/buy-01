@@ -146,4 +146,27 @@ describe('authInterceptor', () => {
 
     expect(navigateSpy).not.toHaveBeenCalled();
   });
+
+  it.each(['/products/search', '/products/facets'])(
+    'does not attach credentials or redirect for public search endpoint %s',
+    (url) => {
+      localStorage.setItem('jwt', 'my-jwt-token');
+
+      const logoutSpy = vi.spyOn(authService, 'logout');
+      const navigateSpy = vi.spyOn(router, 'navigate');
+
+      http.get(url).subscribe({ error: () => {} });
+
+      const req = httpMock.expectOne(url);
+      expect(req.request.headers.has('Authorization')).toBe(false);
+
+      req.flush(
+        { error: 'Unavailable' },
+        { status: 401, statusText: 'Unauthorized' },
+      );
+
+      expect(logoutSpy).not.toHaveBeenCalled();
+      expect(navigateSpy).not.toHaveBeenCalled();
+    },
+  );
 });

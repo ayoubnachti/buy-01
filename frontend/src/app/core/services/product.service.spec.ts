@@ -76,4 +76,50 @@ describe('ProductService', () => {
 
     expect(errored).toBe(true);
   });
+
+  it('sends search filters using the product search API parameters', () => {
+    service
+      .search({
+        q: 'desk',
+        category: ['HOME', 'BOOKS'],
+        minPrice: 12.5,
+        maxPrice: 80,
+        sort: 'price_asc',
+        page: 1,
+        size: 12,
+      })
+      .subscribe((response) => {
+        expect(response.content).toEqual([]);
+      });
+
+    const req = httpMock.expectOne((request) => request.url === `${environment.apiUrl}/products/search`);
+    expect(req.request.method).toBe('GET');
+    expect(req.request.params.get('q')).toBe('desk');
+    expect(req.request.params.getAll('category')).toEqual(['HOME', 'BOOKS']);
+    expect(req.request.params.get('minPrice')).toBe('12.5');
+    expect(req.request.params.get('maxPrice')).toBe('80');
+    expect(req.request.params.get('sort')).toBe('price_asc');
+    expect(req.request.params.get('page')).toBe('1');
+    expect(req.request.params.get('size')).toBe('12');
+    req.flush({
+      success: true,
+      message: 'Products retrieved successfully',
+      data: { content: [], page: 1, size: 12, totalElements: 0, totalPages: 0 },
+    });
+  });
+
+  it('fetches search facets from the facets endpoint', () => {
+    service.getSearchFacets().subscribe((facets) => {
+      expect(facets.minPrice).toBe(5);
+      expect(facets.maxPrice).toBe(100);
+      expect(facets.categories).toEqual([{ category: 'HOME', count: 2 }]);
+    });
+
+    const req = httpMock.expectOne(`${environment.apiUrl}/products/facets`);
+    req.flush({
+      success: true,
+      message: 'Product search facets retrieved successfully',
+      data: { categories: [{ category: 'HOME', count: 2 }], minPrice: 5, maxPrice: 100 },
+    });
+  });
 });
