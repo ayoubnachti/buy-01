@@ -48,12 +48,12 @@ public class ProductServiceGateway {
         }
     }
 
-    private ProductDto getProductFallback(String productId, Throwable t) {
+    ProductDto getProductFallback(String productId, Throwable t) {
         log.warn("product-service unavailable for {}: {}", productId, t.getMessage());
         throw new ProductServiceUnavailableException("Products are not available now. Please try again.", t);
     }
 
-    private Map<String, ProductDto> getProductsFallback(Collection<String> productIds, Throwable t) {
+    Map<String, ProductDto> getProductsFallback(Collection<String> productIds, Throwable t) {
         log.warn("product-service unavailable for {} products: {}", productIds.size(), t.getMessage());
         throw new ProductServiceUnavailableException("Products are not available now. Please try again.", t);
     }
