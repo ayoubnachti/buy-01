@@ -12,6 +12,9 @@ import org.springframework.web.bind.MissingRequestHeaderException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import com.ecommerce.cartservice.exceptions.custom.CartItemNotFoundException;
+import com.ecommerce.cartservice.exceptions.custom.OutOfStockException;
+import com.ecommerce.cartservice.exceptions.custom.ProductNotFoundException;
+import com.ecommerce.cartservice.exceptions.custom.ProductServiceUnavailableException;
 
 import java.util.List;
 
@@ -105,6 +108,25 @@ class GlobalExceptionHandlerTest {
     @Test
     void concurrentChange_returns409() {
         assertThat(handler.handleConcurrentCartChange(new OptimisticLockingFailureException("x")).getStatusCode())
+                .isEqualTo(HttpStatus.CONFLICT);
+    }
+
+    @Test
+    void productServiceUnavailable_returns503() {
+        var ex = new ProductServiceUnavailableException("down", new RuntimeException());
+        assertThat(handler.handleProductServiceUnavailableException(ex).getStatusCode())
+                .isEqualTo(HttpStatus.SERVICE_UNAVAILABLE);
+    }
+
+    @Test
+    void productNotFound_returns404() {
+        assertThat(handler.handleProductNotFoundException(new ProductNotFoundException("p1")).getStatusCode())
+                .isEqualTo(HttpStatus.NOT_FOUND);
+    }
+
+    @Test
+    void outOfStock_returns409() {
+        assertThat(handler.handleOutOfStockException(new OutOfStockException("p1", 2)).getStatusCode())
                 .isEqualTo(HttpStatus.CONFLICT);
     }
 }

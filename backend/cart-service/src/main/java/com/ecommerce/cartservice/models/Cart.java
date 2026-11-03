@@ -65,4 +65,8 @@ public class Cart {
     private Optional<CartItem> findItem(String productId) {
         return items.stream().filter(i -> i.getProductId().equals(productId)).findFirst();
     }
+
+    public int quantityOf(String productId) {
+        return findItem(productId).map(CartItem::getQuantity).orElse(0);
+    }
 }

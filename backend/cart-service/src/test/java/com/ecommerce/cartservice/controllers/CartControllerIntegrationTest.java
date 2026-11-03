@@ -1,5 +1,10 @@
 package com.ecommerce.cartservice.controllers;
 
+import java.math.BigDecimal;
+import java.util.Collection;
+import java.util.List;
+import java.util.stream.Collectors;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -7,11 +12,18 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 
+import com.ecommerce.cartservice.clients.ProductServiceGateway;
+import com.ecommerce.cartservice.dtos.response.ProductDto;
+import com.ecommerce.cartservice.exceptions.custom.ProductServiceUnavailableException;
 import com.ecommerce.cartservice.repositories.CartRepository;
 
+import static org.mockito.ArgumentMatchers.anyCollection;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -20,7 +32,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
-@ActiveProfiles ("test")
+@ActiveProfiles("test")
 @AutoConfigureMockMvc
 class CartControllerIntegrationTest {
 
@@ -30,9 +42,24 @@ class CartControllerIntegrationTest {
   @Autowired
   private CartRepository cartRepository;
 
+  // no product-service in tests. The real gateway is replaced by a mock.
+  @MockitoBean
+  private ProductServiceGateway productGateway;
+
+  // check the argument order against your ProductDto record
+  private static ProductDto product(String id, int stock) {
+    return new ProductDto(id, "Product " + id, "desc", new BigDecimal("10.00"), stock,
+        "ELECTRONICS", "seller-1", List.of("https://img/" + id + ".jpg"));
+  }
+
   @BeforeEach
   void cleanDatabase() {
     cartRepository.deleteAll();
+    when(productGateway.getProduct(anyString())).thenAnswer(inv -> product(inv.getArgument(0), 100));
+    when(productGateway.getProducts(anyCollection())).thenAnswer(inv -> {
+      Collection<String> ids = inv.getArgument(0);
+      return ids.stream().collect(Collectors.toMap(id -> id, id -> product(id, 100)));
+    });
   }
 
   // ---- helpers: every call goes in as a CLIENT, like the gateway would send it
@@ -68,7 +95,7 @@ class CartControllerIntegrationTest {
   // ---- the cart is stored on the server
 
   @Test
-  void addedItem_isStillThereOnTheNextRequest() throws Exception { 
+  void addedItem_isStillThereOnTheNextRequest() throws Exception {
     addItem("client-1", "p1", 2).andExpect(status().isOk());
 
     getCart("client-1")
@@ -180,5 +207,52 @@ class CartControllerIntegrationTest {
   void updateQuantity_ofProductNotInCart_returns404() throws Exception {
     addItem("client-1", "p1", 2);
     updateQuantity("client-1", "other", 3).andExpect(status().isNotFound());
+  }
+
+  // ---- live product data and product checks
+
+  @Test
+  void getCart_showsLiveProductDataAndSubtotal() throws Exception {
+    addItem("client-1", "p1", 2);
+
+    getCart("client-1")
+        .andExpect(jsonPath("$.data.items[0].name").value("Product p1"))
+        .andExpect(jsonPath("$.data.items[0].imageUrl").value("https://img/p1.jpg"))
+        .andExpect(jsonPath("$.data.items[0].available").value(true))
+        .andExpect(jsonPath("$.data.items[0].lineTotal").value(20.0))
+        .andExpect(jsonPath("$.data.subtotal").value(20.0));
+  }
+
+  @Test
+  void addUnknownProduct_returns404() throws Exception {
+    when(productGateway.getProduct("nope")).thenReturn(null);
+
+    addItem("client-1", "nope", 1).andExpect(status().isNotFound());
+  }
+
+  @Test
+  void addMoreThanStock_returns409() throws Exception {
+    when(productGateway.getProduct("p1")).thenReturn(product("p1", 2));
+
+    addItem("client-1", "p1", 3).andExpect(status().isConflict());
+  }
+
+  @Test
+  void productServiceDown_returns503() throws Exception {
+    addItem("client-1", "p1", 1);
+    when(productGateway.getProducts(anyCollection()))
+        .thenThrow(new ProductServiceUnavailableException("down", new RuntimeException()));
+
+    getCart("client-1")
+        .andExpect(status().isServiceUnavailable())
+        .andExpect(jsonPath("$.success").value(false));
+  }
+
+  @Test
+  void emptyCart_worksEvenWhenProductServiceIsDown() throws Exception {
+    when(productGateway.getProducts(anyCollection()))
+        .thenThrow(new ProductServiceUnavailableException("down", new RuntimeException()));
+
+    getCart("client-1").andExpect(status().isOk());
   }
 }
