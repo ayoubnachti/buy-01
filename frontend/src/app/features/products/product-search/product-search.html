@@ -1,0 +1,207 @@
+<div class="container py-4 py-lg-5">
+  <div class="mb-4">
+    <h1 class="h2 fw-bold mb-1">Find products</h1>
+    <p class="text-body-secondary mb-0">Search and filter items from independent sellers.</p>
+  </div>
+
+  <form [formGroup]="filtersForm" class="search-bar mb-4" role="search" (submit)="$event.preventDefault()">
+    <label class="visually-hidden" for="product-query">Search products</label>
+    <input
+      id="product-query"
+      type="search"
+      class="form-control form-control-lg"
+      formControlName="q"
+      maxlength="100"
+      placeholder="Search products…"
+    />
+  </form>
+
+  <div class="row g-4">
+    <aside class="col-lg-3">
+      <button
+        type="button"
+        class="btn btn-outline-primary w-100 d-lg-none mb-3"
+        [attr.aria-expanded]="filtersOpen()"
+        aria-controls="search-filters"
+        (click)="toggleFilters()"
+      >
+        <i class="bi bi-sliders me-2" aria-hidden="true"></i>Filters
+      </button>
+
+      <form
+        id="search-filters"
+        [formGroup]="filtersForm"
+        class="search-filters card card-body border-0 shadow-sm rounded-4"
+        [class.filters-open]="filtersOpen()"
+        aria-label="Product filters"
+      >
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h2 class="h5 fw-bold mb-0">Filters</h2>
+          <button type="button" class="btn btn-sm btn-link text-decoration-none p-0" (click)="clearFilters()">
+            Reset
+          </button>
+        </div>
+
+        <fieldset class="mb-4">
+          <legend class="fs-6 fw-semibold mb-2">Category</legend>
+          @for (facet of facets()?.categories ?? []; track facet.category) {
+            <div class="form-check">
+              <input
+                class="form-check-input"
+                type="checkbox"
+                [id]="'category-' + facet.category"
+                [checked]="filtersForm.controls.category.value.includes(facet.category)"
+                (change)="onCategoryChange(facet.category, $event)"
+              />
+              <label class="form-check-label d-flex justify-content-between w-100" [for]="'category-' + facet.category">
+                <span>{{ facet.category | titlecase }}</span>
+                <span class="text-body-secondary">{{ facet.count }}</span>
+              </label>
+            </div>
+          }
+          @if (!facets()?.categories?.length) {
+            <p class="small text-body-secondary mb-0">No categories available.</p>
+          }
+        </fieldset>
+
+        <fieldset class="mb-4">
+          <legend class="fs-6 fw-semibold mb-2">Price range</legend>
+          <label class="form-label small mb-1" for="minimum-price">
+            Minimum: {{ minimumPrice | currency }}
+          </label>
+          <input
+            id="minimum-price"
+            class="form-range"
+            type="range"
+            [min]="priceFloor"
+            [max]="priceCeiling"
+            [step]="0.01"
+            [value]="minimumPrice"
+            [disabled]="priceCeiling <= priceFloor"
+            aria-label="Minimum price"
+            (input)="setPriceBound('minPrice', +$any($event.target).value)"
+          />
+          <label class="form-label small mb-1" for="maximum-price">
+            Maximum: {{ maximumPrice | currency }}
+          </label>
+          <input
+            id="maximum-price"
+            class="form-range"
+            type="range"
+            [min]="priceFloor"
+            [max]="priceCeiling"
+            [step]="0.01"
+            [value]="maximumPrice"
+            [disabled]="priceCeiling <= priceFloor"
+            aria-label="Maximum price"
+            (input)="setPriceBound('maxPrice', +$any($event.target).value)"
+          />
+        </fieldset>
+
+        <label for="sort-products" class="form-label fs-6 fw-semibold">Sort by</label>
+        <select id="sort-products" class="form-select" formControlName="sort">
+          <option value="relevance">Relevance</option>
+          <option value="price_asc">Price: low to high</option>
+          <option value="price_desc">Price: high to low</option>
+          <option value="newest">Newest</option>
+        </select>
+      </form>
+    </aside>
+
+    <section class="col-lg-9" aria-live="polite">
+      <div class="d-flex align-items-center justify-content-between gap-3 mb-3">
+        <p class="text-body-secondary mb-0">
+          @if (!loading() && !error()) {
+            {{ totalElements() }} {{ totalElements() === 1 ? 'product' : 'products' }}
+          }
+        </p>
+        @if (hasFilters) {
+          <button type="button" class="btn btn-sm btn-outline-secondary" (click)="clearFilters()">
+            Clear filters
+          </button>
+        }
+      </div>
+
+      @if (loading()) {
+        <app-loading-spinner label="Searching products…" />
+      } @else if (error()) {
+        <div class="alert alert-danger" role="alert">
+          Couldn't load products. Please try again.
+        </div>
+      } @else if (products().length === 0) {
+        <app-empty-state
+          message="No products found."
+          actionLabel="Clear filters"
+          (action)="clearFilters()"
+        />
+      } @else {
+        <div class="row row-cols-1 row-cols-sm-2 row-cols-xl-3 g-4">
+          @for (product of products(); track product.id) {
+            <div class="col">
+              <article class="card h-100 border-0 shadow-sm rounded-4 overflow-hidden product-card">
+                @if (product.imageUrls?.length) {
+                  <app-carousel [images]="product.imageUrls ?? []" [alt]="product.name" height="190px" />
+                } @else {
+                  <div class="product-image-placeholder" role="img" [attr.aria-label]="'No image for ' + product.name">
+                    <i class="bi bi-image" aria-hidden="true"></i>
+                  </div>
+                }
+                <div class="card-body d-flex flex-column">
+                  <a [routerLink]="['/products', product.id]" class="text-decoration-none text-reset">
+                    <h2 class="card-title h6 fw-bold mb-2 text-truncate">{{ product.name }}</h2>
+                  </a>
+                  <p class="text-body-secondary small mb-3 product-card-description">{{ product.description }}</p>
+                  <div class="mt-auto">
+                    <p class="fs-5 fw-bold text-primary mb-3">{{ product.price | currency }}</p>
+                    @if (isClient()) {
+                      <button
+                        type="button"
+                        class="btn btn-primary w-100"
+                        [disabled]="product.quantity < 1"
+                        (click)="addToCart(product)"
+                      >
+                        {{ product.quantity > 0 ? 'Add to cart' : 'Out of stock' }}
+                      </button>
+                    }
+                  </div>
+                </div>
+              </article>
+            </div>
+          }
+        </div>
+
+        @if (totalPages() > 1) {
+          <nav class="mt-4" aria-label="Search result pages">
+            <ul class="pagination justify-content-center">
+              <li class="page-item" [class.disabled]="page() === 0">
+                <button
+                  type="button"
+                  class="page-link"
+                  [disabled]="page() === 0"
+                  aria-label="Previous page"
+                  (click)="goToPage(page() - 1)"
+                >
+                  Previous
+                </button>
+              </li>
+              <li class="page-item disabled">
+                <span class="page-link">Page {{ page() + 1 }} of {{ totalPages() }}</span>
+              </li>
+              <li class="page-item" [class.disabled]="page() + 1 >= totalPages()">
+                <button
+                  type="button"
+                  class="page-link"
+                  [disabled]="page() + 1 >= totalPages()"
+                  aria-label="Next page"
+                  (click)="goToPage(page() + 1)"
+                >
+                  Next
+                </button>
+              </li>
+            </ul>
+          </nav>
+        }
+      }
+    </section>
+  </div>
+</div>
