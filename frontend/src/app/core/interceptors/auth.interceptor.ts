@@ -16,7 +16,10 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
     req.url.endsWith('/auth/register') ||
     req.url.endsWith('/actuator/health') ||
     (req.method === 'GET' &&
-      (req.url.endsWith('/products') || /^.*\/products\/[^/]+$/.test(req.url)));
+      (req.url.endsWith('/products') ||
+        req.url.endsWith('/products/search') ||
+        req.url.endsWith('/products/facets') ||
+        /^.*\/products\/[^/]+$/.test(req.url)));
 
   const request =
     !token || isPublic
