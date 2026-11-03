@@ -84,4 +84,17 @@ class CartTest {
         assertThat(cart.getItems()).hasSize(1);
         assertThat(cart.getUpdatedAt()).isEqualTo(T1);
     }
+
+    @Test
+    void quantityOf_productInCart_returnsItsQuantity() {
+        Cart cart = new Cart("user-1");
+        cart.addItem("p1", 3, T1);
+
+        assertThat(cart.quantityOf("p1")).isEqualTo(3);
+    }
+
+    @Test
+    void quantityOf_productNotInCart_returnsZero() {
+        assertThat(new Cart("user-1").quantityOf("p1")).isZero();
+    }
 }
