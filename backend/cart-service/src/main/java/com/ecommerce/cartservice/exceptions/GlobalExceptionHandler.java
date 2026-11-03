@@ -17,6 +17,8 @@ import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import com.ecommerce.cartservice.dtos.response.ResponseData;
 import com.ecommerce.cartservice.exceptions.custom.CartItemNotFoundException;
+import com.ecommerce.cartservice.exceptions.custom.OutOfStockException;
+import com.ecommerce.cartservice.exceptions.custom.ProductNotFoundException;
 import com.ecommerce.cartservice.exceptions.custom.ProductServiceUnavailableException;
 
 import lombok.extern.slf4j.Slf4j;
@@ -94,5 +96,15 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ResponseData<Void>> handleProductServiceUnavailableException(
             ProductServiceUnavailableException ex) {
         return buildError(HttpStatus.SERVICE_UNAVAILABLE, ex.getMessage());
+    }
+
+    @ExceptionHandler(ProductNotFoundException.class)
+    public ResponseEntity<ResponseData<Void>> handleProductNotFoundException(ProductNotFoundException ex) {
+        return buildError(HttpStatus.NOT_FOUND, ex.getMessage());
+    }
+
+    @ExceptionHandler(OutOfStockException.class)
+    public ResponseEntity<ResponseData<Void>> handleOutOfStockException(OutOfStockException ex) {
+        return buildError(HttpStatus.CONFLICT, ex.getMessage());
     }
 }
