@@ -18,6 +18,13 @@ import org.springframework.stereotype.Service;
 public class UserPurchaseStatsService {
     static final String INDEX_NAME = "user_created_at_stats";
     private static final String ORDERS_COLLECTION = "orders";
+    private static final String TOTAL_SPENT = "totalSpent";
+    private static final String ITEMS_QUANTITY = "$items.quantity";
+    private static final String GROUP_STAGE = "$group";
+    private static final String PROJECT_STAGE = "$project";
+    private static final String PRODUCT_ID = "productId";
+    private static final String UNITS = "units";
+    private static final String AMOUNT = "amount";
 
     private final MongoTemplate mongoTemplate;
 
@@ -43,7 +50,7 @@ public class UserPurchaseStatsService {
 
         Document totals = summary.get(0);
         return new UserPurchaseStats(
-                decimalValue(totals.get("totalSpent")),
+                decimalValue(totals.get(TOTAL_SPENT)),
                 numberValue(totals.get("ordersCount")),
                 result.getList("mostBought", Document.class, List.of()).stream()
                         .map(this::toMostBought)
@@ -69,41 +76,41 @@ public class UserPurchaseStatsService {
             match.append("createdAt", dateRange);
         }
 
-        Document amount = new Document("$multiply", List.of("$items.unitPrice", "$items.quantity"));
+        Document amount = new Document("$multiply", List.of("$items.unitPrice", ITEMS_QUANTITY));
         List<Document> summary = List.of(
-                new Document("$group", new Document("_id", null)
-                        .append("totalSpent", new Document("$sum", amount))
+                new Document(GROUP_STAGE, new Document("_id", null)
+                        .append(TOTAL_SPENT, new Document("$sum", amount))
                         .append("orderIds", new Document("$addToSet", "$_id"))),
-                new Document("$project", new Document("_id", 0)
-                        .append("totalSpent", 1)
+                new Document(PROJECT_STAGE, new Document("_id", 0)
+                        .append(TOTAL_SPENT, 1)
                         .append("ordersCount", new Document("$size", "$orderIds"))));
 
         List<Document> mostBought = List.of(
-                new Document("$group", new Document("_id",
-                        new Document("productId", "$items.productId").append("name", "$items.name"))
-                        .append("units", new Document("$sum", "$items.quantity"))
-                        .append("amount", new Document("$sum", amount))),
-                new Document("$sort", new Document("units", -1).append("amount", -1).append("_id", 1)),
+                new Document(GROUP_STAGE, new Document("_id",
+                        new Document(PRODUCT_ID, "$items.productId").append("name", "$items.name"))
+                        .append(UNITS, new Document("$sum", ITEMS_QUANTITY))
+                        .append(AMOUNT, new Document("$sum", amount))),
+                new Document("$sort", new Document(UNITS, -1).append(AMOUNT, -1).append("_id", 1)),
                 new Document("$limit", 5),
-                new Document("$project", new Document("_id", 0)
-                        .append("productId", "$_id.productId")
+                new Document(PROJECT_STAGE, new Document("_id", 0)
+                        .append(PRODUCT_ID, "$_id.productId")
                         .append("name", "$_id.name")
-                        .append("units", 1)
-                        .append("amount", 1)));
+                        .append(UNITS, 1)
+                        .append(AMOUNT, 1)));
 
         List<Document> topCategories = List.of(
                 new Document("$match",
                         new Document("items.category", new Document("$exists", true)
                                 .append("$nin", Arrays.asList(null, "")))),
-                new Document("$group", new Document("_id", "$items.category")
-                        .append("units", new Document("$sum", "$items.quantity"))
-                        .append("amount", new Document("$sum", amount))),
-                new Document("$sort", new Document("units", -1).append("amount", -1).append("_id", 1)),
+                new Document(GROUP_STAGE, new Document("_id", "$items.category")
+                        .append(UNITS, new Document("$sum", ITEMS_QUANTITY))
+                        .append(AMOUNT, new Document("$sum", amount))),
+                new Document("$sort", new Document(UNITS, -1).append(AMOUNT, -1).append("_id", 1)),
                 new Document("$limit", 5),
-                new Document("$project", new Document("_id", 0)
+                new Document(PROJECT_STAGE, new Document("_id", 0)
                         .append("category", "$_id")
-                        .append("units", 1)
-                        .append("amount", 1)));
+                        .append(UNITS, 1)
+                        .append(AMOUNT, 1)));
 
         return List.of(
                 new Document("$match", match),
@@ -115,17 +122,17 @@ public class UserPurchaseStatsService {
 
     private UserPurchaseStats.MostBoughtProduct toMostBought(Document document) {
         return new UserPurchaseStats.MostBoughtProduct(
-                document.getString("productId"),
+                document.getString(PRODUCT_ID),
                 document.getString("name"),
-                numberValue(document.get("units")),
-                decimalValue(document.get("amount")));
+                numberValue(document.get(UNITS)),
+                decimalValue(document.get(AMOUNT)));
     }
 
     private UserPurchaseStats.TopCategory toTopCategory(Document document) {
         return new UserPurchaseStats.TopCategory(
                 document.getString("category"),
-                numberValue(document.get("units")),
-                decimalValue(document.get("amount")));
+                numberValue(document.get(UNITS)),
+                decimalValue(document.get(AMOUNT)));
     }
 
     private long numberValue(Object value) {
