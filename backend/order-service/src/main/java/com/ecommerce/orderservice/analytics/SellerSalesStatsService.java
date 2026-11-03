@@ -18,7 +18,6 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.stereotype.Service;
 
 import static com.ecommerce.orderservice.analytics.AnalyticsMongoSupport.GROUP_STAGE;
-import static com.ecommerce.orderservice.analytics.AnalyticsMongoSupport.ITEMS_QUANTITY;
 import static com.ecommerce.orderservice.analytics.AnalyticsMongoSupport.PRODUCT_ID;
 import static com.ecommerce.orderservice.analytics.AnalyticsMongoSupport.PROJECT_STAGE;
 import static com.ecommerce.orderservice.analytics.AnalyticsMongoSupport.UNITS;
