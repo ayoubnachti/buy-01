@@ -7,6 +7,7 @@ import { OrdersService } from '../../../core/services/orders.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { LoadingSpinner } from '../../../shared/components/loading-spinner/loading-spinner';
 import { ConfirmationModal } from '../../../shared/components/confirmation-modal/confirmation-modal';
+import { toApiError } from '../../../shared/models/api-error';
 
 @Component({
   selector: 'app-order-details',
@@ -68,9 +69,12 @@ export class OrderDetails implements OnInit {
         this.showCancelConfirm.set(false);
         this.toastService.success('Order cancelled.');
       },
-      error: () => {
+      error: (e) => {
         this.showCancelConfirm.set(false);
-        this.toastService.error('Could not cancel this order. Try again.');
+        const err = toApiError(e, 'Could not cancel this order. Try again.');
+        if (!err.handledGlobally) {
+          this.toastService.error(err.message);
+        }
       },
     });
   }
