@@ -74,7 +74,7 @@
               <p class="small text-body-secondary mb-3">Units purchased for your top products.</p>
               @if (dashboard.mostBought.length > 0) {
                 <div class="chart-container product-chart">
-                  <canvas #productsChart role="img" aria-label="Bar chart of most bought products by units"></canvas>
+                  <canvas #productsChart aria-hidden="true"></canvas>
                 </div>
                 <table class="visually-hidden">
                   <caption>Most bought products by units</caption>
@@ -98,7 +98,7 @@
               <p class="small text-body-secondary mb-3">Units purchased across your top categories.</p>
               @if (dashboard.topCategories.length > 0) {
                 <div class="chart-container category-chart">
-                  <canvas #categoriesChart role="img" aria-label="Donut chart of top categories by units"></canvas>
+                  <canvas #categoriesChart aria-hidden="true"></canvas>
                 </div>
                 <table class="visually-hidden">
                   <caption>Top categories by units</caption>

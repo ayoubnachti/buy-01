@@ -79,10 +79,9 @@ describe('ClientDashboard', () => {
     expect(text).toContain('3');
     expect(text).toContain('Coffee maker');
     expect(text).toContain('HOME');
-    expect(fixture.nativeElement.querySelector('[aria-label="Bar chart of most bought products by units"]'))
-      .toBeTruthy();
-    expect(fixture.nativeElement.querySelector('[aria-label="Donut chart of top categories by units"]'))
-      .toBeTruthy();
+    expect(fixture.nativeElement.querySelector('canvas[aria-hidden="true"]')).toBeTruthy();
+    expect(fixture.nativeElement.textContent).toContain('Most bought products by units');
+    expect(fixture.nativeElement.textContent).toContain('Top categories by units');
   });
 
   it('shows the no-orders state and a link to products when stats are empty', () => {
