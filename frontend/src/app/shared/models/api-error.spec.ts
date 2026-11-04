@@ -21,6 +21,17 @@ describe('toApiError', () => {
   });
 
   it('handles something that is not an HTTP error', () => {
-    expect(toApiError(new Error('boom'))).toEqual({ status: 0, message: 'Something went wrong', handledGlobally: false });
+    expect(toApiError(new Error('boom'))).toEqual({
+      status: 0,
+      message: 'Something went wrong',
+      handledGlobally: false,
+    });
+  });
+
+  it("uses the caller's fallback when the backend sent no message", () => {
+    expect(toApiError(new HttpErrorResponse({ status: 409 }), 'Could not delete').message).toBe(
+      'Could not delete',
+    );
+    expect(toApiError(new Error('boom'), 'Could not delete').message).toBe('Could not delete');
   });
 });

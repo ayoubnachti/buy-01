@@ -10,14 +10,14 @@ export interface ApiError {
   handledGlobally: boolean;
 }
 
-export function toApiError(error: unknown): ApiError {
+export function toApiError(error: unknown, fallback = 'Something went wrong'): ApiError {
   if (error instanceof HttpErrorResponse) {
     const backendMessage = typeof error.error?.message === 'string' ? error.error.message : null;
     return {
       status: error.status,
-      message: backendMessage ?? (error.status === 0 ? "Can't reach the server" : 'Something went wrong'),
+      message: backendMessage ?? (error.status === 0 ? "Can't reach the server" : fallback),
       handledGlobally: isHandledGlobally(error.status),
     };
   }
-  return { status: 0, message: 'Something went wrong', handledGlobally: false };
+  return { status: 0, message: fallback, handledGlobally: false };
 }
