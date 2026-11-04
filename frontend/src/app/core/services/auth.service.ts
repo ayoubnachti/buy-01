@@ -30,32 +30,25 @@ export class AuthService {
 
   logout(): void {
     localStorage.removeItem('jwt');
-
     this.userSignal.set(null);
-
-    window.location.href = '/login';
   }
 
   setUserFromToken(token: string): void {
-    localStorage.setItem('jwt', token);
-
     const user = this.decodeToken(token);
-
-    if (user) {
-      this.userSignal.set(user);
+    if (!user) {
+      return;
     }
+    localStorage.setItem('jwt', token);
+    this.userSignal.set(user);
   }
 
   public initializeUser(): void {
     const token = localStorage.getItem('jwt');
-
     if (!token) {
       return;
     }
 
     const user = this.decodeToken(token);
-
-    console.log('==> ', user);
     if (user) {
       this.userSignal.set(user);
     } else {
@@ -65,16 +58,20 @@ export class AuthService {
 
   private decodeToken(token: string): User | null {
     try {
-      const payload = token.split('.')[1];
+      const payload = JSON.parse(this.base64UrlDecode(token.split('.')[1]));
 
-      const decodedPayload = JSON.parse(atob(payload));
+      if (typeof payload.exp === 'number' && payload.exp * 1000 <= Date.now()) {
+        return null;
+      }
 
-      return {
-        id: decodedPayload.sub,
-        role: decodedPayload.role,
-      };
+      return { id: payload.sub, role: payload.role };
     } catch {
       return null;
     }
+  }
+
+  private base64UrlDecode(value: string): string {
+    const base64 = value.replace(/-/g, '+').replace(/_/g, '/');
+    return atob(base64.padEnd(base64.length + ((4 - (base64.length % 4)) % 4), '='));
   }
 }

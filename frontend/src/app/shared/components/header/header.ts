@@ -1,5 +1,5 @@
 import { Component, computed, inject } from '@angular/core';
-import { RouterLink, RouterLinkActive } from '@angular/router';
+import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
@@ -10,6 +10,7 @@ import { AuthService } from '../../../core/services/auth.service';
   styleUrl: './header.css',
 })
 export class Header {
+  private readonly router = inject(Router);
   private authService = inject(AuthService);
 
   isLoggedIn = computed(() => this.authService.user() !== null);
@@ -18,5 +19,6 @@ export class Header {
 
   logout(): void {
     this.authService.logout();
+    this.router.navigate(['/']);
   }
 }
