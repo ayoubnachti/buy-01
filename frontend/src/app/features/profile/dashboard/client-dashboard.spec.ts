@@ -79,7 +79,8 @@ describe('ClientDashboard', () => {
     expect(text).toContain('3');
     expect(text).toContain('Coffee maker');
     expect(text).toContain('HOME');
-    expect(fixture.nativeElement.querySelector('canvas[aria-hidden="true"]')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('canvas[tabindex="-1"][aria-hidden="true"]'))
+      .toBeTruthy();
     expect(fixture.nativeElement.textContent).toContain('Most bought products by units');
     expect(fixture.nativeElement.textContent).toContain('Top categories by units');
   });
