@@ -347,4 +347,7 @@ describe('ProductSearch', () => {
       expect.objectContaining({ queryParams: expect.objectContaining({ page: null }) }),
     );
   });
+
+
+  
 });

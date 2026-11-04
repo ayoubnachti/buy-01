@@ -7,6 +7,7 @@ import { ToastService } from '../../../core/services/toast.service';
 import { Order, OrderStatus } from '../../../shared/models/order.model';
 import { LoadingSpinner } from '../../../shared/components/loading-spinner/loading-spinner';
 import { EmptyState } from '../../../shared/components/empty-state/empty-state';
+import { toApiError } from '../../../shared/models/api-error';
 
 const PAGE_SIZE = 10;
 
@@ -70,8 +71,11 @@ export class SellerOrders {
         this.toastService.success('Order status updated.');
         this.fetchOrders();
       },
-      error: () => {
-        this.toastService.error('Could not update this order. Try again.');
+      error: (e) => {
+        const err = toApiError(e, 'Could not update this order. Try again.');
+        if (!err.handledGlobally) {
+          this.toastService.error(err.message);
+        }
       },
     });
   }

@@ -2,11 +2,18 @@ import { Component, Input, computed, inject, signal } from '@angular/core';
 import { Observable, catchError, map, of, throwError } from 'rxjs';
 
 import { ImagePreview } from '../../models/image-preview.model';
-import { ApiResponse, DeleteMediaRequest, MediaRequest, SaveMediaRequest, TargetType } from '../../models/media.model';
+import {
+  ApiResponse,
+  DeleteMediaRequest,
+  MediaRequest,
+  SaveMediaRequest,
+  TargetType,
+} from '../../models/media.model';
 import { UploadService } from '../../services/upload.service';
 import { validateImageFiles } from '../../utils/image-validation';
-import { ConfirmationModal } from '../../../../shared/components/confirmation-modal/confirmation-modal'; // adjust path
-import { ToastService } from '../../../../core/services/toast.service'; // adjust path
+import { ConfirmationModal } from '../../../../shared/components/confirmation-modal/confirmation-modal';
+import { ToastService } from '../../../../core/services/toast.service';
+import { toApiError } from '../../../../shared/models/api-error';
 
 @Component({
   selector: 'app-upload',
@@ -148,10 +155,12 @@ export class Upload {
         this.previews.update((list) => list.filter((p) => p !== preview));
         this.toastService.success('Image deleted.');
       },
-      error: (error) => {
-        const message = error?.error?.message || 'Failed to delete image. Please try again.';
-        this.errorMessage.set(message);
-        this.toastService.error(message);
+      error: (e) => {
+        const err = toApiError(e, 'Failed to delete image. Please try again.');
+        this.errorMessage.set(err.message);
+        if (!err.handledGlobally) {
+          this.toastService.error(err.message);
+        }
       },
     });
   }
@@ -167,7 +176,8 @@ export class Upload {
       return of(this.previews().map((preview) => preview.url));
     }
 
-    const oldImagePaths = this.isSingle() && this.originalAvatarUrl ? [this.originalAvatarUrl] : null;
+    const oldImagePaths =
+      this.isSingle() && this.originalAvatarUrl ? [this.originalAvatarUrl] : null;
 
     const request: MediaRequest = {
       targetType: this.targetType,

@@ -14,6 +14,7 @@ import { EmptyState } from '../../../shared/components/empty-state/empty-state';
 import { LoadingSpinner } from '../../../shared/components/loading-spinner/loading-spinner';
 import { Product } from '../../../shared/models/product.model';
 import { ProductSearchFacets } from '../../../shared/models/product-page-response';
+import { toApiError } from '../../../shared/models/api-error';
 
 type SearchSort = NonNullable<ProductSearchParams['sort']>;
 type SearchFormValue = {
@@ -197,7 +198,12 @@ export class ProductSearch implements OnInit {
   addToCart(product: Product): void {
     this.cartService.addItem(product.id).subscribe({
       next: () => this.toastService.success(`${product.name} added to cart.`),
-      error: () => this.toastService.error(`Couldn't add ${product.name} to your cart.`),
+      error: (e) => {
+        const err = toApiError(e, `Couldn't add ${product.name} to your cart.`);
+        if (!err.handledGlobally) {
+          this.toastService.error(err.message);
+        }
+      },
     });
   }
 
