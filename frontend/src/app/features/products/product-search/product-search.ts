@@ -15,6 +15,7 @@ import { Product } from '../../../shared/models/product.model';
 import { ProductSearchFacets } from '../../../shared/models/product-page-response';
 import { toApiError } from '../../../shared/models/api-error';
 import { CartStore } from '../../../core/services/cart.store';
+import { AddToCartButton } from '../../../shared/components/add-to-cart-button/add-to-cart-button';
 
 type SearchSort = NonNullable<ProductSearchParams['sort']>;
 type SearchFormValue = {
@@ -38,7 +39,8 @@ const PAGE_SIZE = 12;
     Carousel,
     EmptyState,
     LoadingSpinner,
-  ],
+    AddToCartButton
+],
   templateUrl: './product-search.html',
   styleUrl: './product-search.css',
 })
