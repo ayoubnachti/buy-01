@@ -8,39 +8,18 @@ import {
   OnDestroy,
   ViewChild,
   inject,
-  signal,
 } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import {
-  BarController,
-  BarElement,
-  CategoryScale,
-  Chart,
-  LineController,
-  LineElement,
-  LinearScale,
-  PointElement,
-  Tooltip,
-} from 'chart.js';
-import { EMPTY, Subject, catchError, map, merge, startWith, switchMap, tap } from 'rxjs';
+import { Chart } from 'chart.js';
+import { EMPTY } from 'rxjs';
 
 import { SellerSalesStatsService } from '../services/seller-sales-stats.service';
 import { SellerSalesStats } from '../models/seller-sales-stats.model';
-import { AnalyticsDateRange, getAnalyticsDateRange } from './analytics-date-range';
+import { AnalyticsDateRange } from './analytics-date-range';
+import { createAnalyticsDashboardState } from './analytics-dashboard-state';
+import { createHorizontalBarChart } from './analytics-charts';
 import { DashboardDateFilter } from './dashboard-date-filter';
-
-Chart.register(
-  BarController,
-  BarElement,
-  CategoryScale,
-  LinearScale,
-  LineController,
-  LineElement,
-  PointElement,
-  Tooltip,
-);
 
 @Component({
   selector: 'app-seller-analytics-dashboard',
@@ -53,7 +32,6 @@ export class SellerAnalyticsDashboard implements AfterViewInit, OnDestroy {
   private readonly statsService = inject(SellerSalesStatsService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly changeDetector = inject(ChangeDetectorRef);
-  private readonly retry = new Subject<void>();
   private viewInitialized = false;
   private revenueChart?: Chart<'line', number[], string>;
   private bestSellersChart?: Chart<'bar', number[], string>;
@@ -62,49 +40,16 @@ export class SellerAnalyticsDashboard implements AfterViewInit, OnDestroy {
   @ViewChild('bestSellersChart') private readonly bestSellersCanvas?: ElementRef<HTMLCanvasElement>;
 
   readonly dateRange = new FormControl<AnalyticsDateRange>('30', { nonNullable: true });
-  readonly stats = signal<SellerSalesStats | null>(null);
-  readonly loading = signal(true);
-  readonly error = signal(false);
-
-  constructor() {
-    merge(
-      this.dateRange.valueChanges.pipe(startWith(this.dateRange.value)),
-      this.retry.pipe(map(() => this.dateRange.value)),
-    )
-      .pipe(
-        tap(() => {
-          this.loading.set(true);
-          this.error.set(false);
-          this.stats.set(null);
-          this.destroyCharts();
-        }),
-        switchMap((range) => {
-          const dates = getAnalyticsDateRange(range);
-          return this.statsService.getStats(dates.from, dates.to).pipe(
-            map((response) => {
-              if (!response.success || !response.data) {
-                throw new Error('The seller sales statistics response was invalid.');
-              }
-              return response.data;
-            }),
-            catchError(() => {
-              this.error.set(true);
-              this.loading.set(false);
-              return EMPTY;
-            }),
-          );
-        }),
-        takeUntilDestroyed(this.destroyRef),
-      )
-      .subscribe((stats) => {
-        this.stats.set(stats);
-        this.loading.set(false);
-        if (this.viewInitialized) {
-          this.changeDetector.detectChanges();
-          this.renderCharts();
-        }
-      });
-  }
+  private readonly state = createAnalyticsDashboardState(
+    this.dateRange,
+    (from, to) => this.statsService.getStats(from, to),
+    this.destroyRef,
+    () => this.destroyCharts(),
+    () => this.onStatsLoaded(),
+  );
+  readonly stats = this.state.stats;
+  readonly loading = this.state.loading;
+  readonly error = this.state.error;
 
   ngAfterViewInit(): void {
     this.viewInitialized = true;
@@ -116,7 +61,14 @@ export class SellerAnalyticsDashboard implements AfterViewInit, OnDestroy {
   }
 
   retryLoad(): void {
-    this.retry.next();
+    this.state.retryLoad();
+  }
+
+  private onStatsLoaded(): void {
+    if (this.viewInitialized) {
+      this.changeDetector.detectChanges();
+      this.renderCharts();
+    }
   }
 
   private renderCharts(): void {
@@ -166,27 +118,12 @@ export class SellerAnalyticsDashboard implements AfterViewInit, OnDestroy {
 
     if (this.bestSellersCanvas && stats.bestSellers.length > 0) {
       this.bestSellersChart?.destroy();
-      this.bestSellersChart = new Chart(this.bestSellersCanvas.nativeElement, {
-        type: 'bar',
-        data: {
-          labels: stats.bestSellers.map((product) => product.name),
-          datasets: [
-            {
-              data: stats.bestSellers.map((product) => product.units),
-              backgroundColor: '#3fa9dc',
-              borderRadius: 6,
-              maxBarThickness: 36,
-            },
-          ],
-        },
-        options: {
-          indexAxis: 'y',
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: { legend: { display: false } },
-          scales: { x: { beginAtZero: true, ticks: { precision: 0 } } },
-        },
-      });
+      this.bestSellersChart = createHorizontalBarChart(
+        this.bestSellersCanvas.nativeElement,
+        stats.bestSellers.map((product) => product.name),
+        stats.bestSellers.map((product) => product.units),
+        '#3fa9dc',
+      );
     }
   }
 
