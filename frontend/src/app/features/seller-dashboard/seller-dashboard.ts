@@ -12,6 +12,7 @@ import { ConfirmationModal } from '../../shared/components/confirmation-modal/co
 import { ProductService } from '../../core/services/product.service';
 import { ToastService } from '../../core/services/toast.service';
 import { AuthService } from '../../core/services/auth.service';
+import { toApiError } from '../../shared/models/api-error';
 
 const PAGE_SIZE = 20;
 
@@ -82,9 +83,12 @@ export class SellerDashboard {
 
           this.fetchProducts();
         },
-        error: () => {
-          this.toastService.error('Could not delete this product. Try again.');
+        error: (e) => {
           this.productPendingDelete.set(null);
+          const err = toApiError(e, 'Could not delete this product. Try again.');
+          if (!err.handledGlobally) {
+            this.toastService.error(err.message);
+          }
         },
       });
   }
