@@ -5,6 +5,7 @@ import { Profile } from './features/profile/profile_component/profile';
 import { guestGuard } from './core/guards/guest.guard';
 import { authGuard } from './core/guards/auth.guard';
 import { sellerGuard } from './core/guards/seller.guard';
+import { roleGuard } from './core/guards/role.guard';
 
 export const routes: Routes = [
   {
@@ -55,6 +56,12 @@ export const routes: Routes = [
     canActivate: [authGuard],
     loadComponent: () =>
       import('./features/profile/dashboard/client-dashboard').then((m) => m.ClientDashboard),
+  },
+  {
+    path: 'seller/dashboard',
+    canActivate: [authGuard, roleGuard('SELLER')],
+    loadComponent: () =>
+      import('./features/profile/dashboard/seller-dashboard').then((m) => m.SellerAnalyticsDashboard),
   },
 
   {
