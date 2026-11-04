@@ -37,8 +37,13 @@
           </li>
           @if (isSeller()) {
             <li class="nav-item">
+              <a class="nav-link" routerLink="/seller/dashboard" routerLinkActive="active">
+                Sales dashboard
+              </a>
+            </li>
+            <li class="nav-item">
               <a class="nav-link" routerLink="/dashboard" routerLinkActive="active">
-                Dashboard
+                Products
               </a>
             </li>
             <li class="nav-item">
