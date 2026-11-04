@@ -1,4 +1,11 @@
-import { ChangeDetectorRef, DestroyRef, Directive, inject } from '@angular/core';
+import {
+  AfterViewInit,
+  ChangeDetectorRef,
+  DestroyRef,
+  Directive,
+  OnDestroy,
+  inject,
+} from '@angular/core';
 import { FormControl } from '@angular/forms';
 import { Chart } from 'chart.js';
 import { Observable } from 'rxjs';
@@ -12,7 +19,9 @@ interface AnalyticsResponse<T> {
 }
 
 @Directive()
-export abstract class AnalyticsDashboardBase<T extends { ordersCount: number }> {
+export abstract class AnalyticsDashboardBase<T extends { ordersCount: number }>
+  implements AfterViewInit, OnDestroy
+{
   protected readonly destroyRef = inject(DestroyRef);
   private readonly changeDetector = inject(ChangeDetectorRef);
   private readonly charts = new Map<string, Chart>();
