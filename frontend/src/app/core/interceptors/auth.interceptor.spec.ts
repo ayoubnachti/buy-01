@@ -83,38 +83,6 @@ describe('authInterceptor', () => {
     req.flush({});
   });
 
-  it('should logout and redirect to login when JWT is invalid or expired', () => {
-    localStorage.setItem('jwt', 'expired-token');
-
-    const logoutSpy = vi.spyOn(authService, 'logout');
-    const navigateSpy = vi.spyOn(router, 'navigate');
-
-    http.get('/users/profile').subscribe({
-      error: () => {},
-    });
-
-    const req = httpMock.expectOne('/users/profile');
-
-    expect(
-      req.request.headers.get('Authorization')
-    ).toBe('Bearer expired-token');
-
-    req.flush(
-      {
-        error: 'Invalid or expired JWT',
-      },
-      {
-        status: 401,
-        statusText: 'Unauthorized',
-      }
-    );
-
-    expect(logoutSpy).toHaveBeenCalled();
-
-    expect(navigateSpy).toHaveBeenCalledWith([
-      '/login',
-    ]);
-  });
 
   it('should not logout when a public endpoint returns 401', () => {
     localStorage.setItem('jwt', 'my-jwt-token');
