@@ -22,6 +22,9 @@ vi.mock('chart.js', () => {
     Legend: {},
     LinearScale: {},
     Tooltip: {},
+    LineController: {},
+    LineElement: {},
+    PointElement: {},
   };
 });
 

@@ -8,39 +8,17 @@ import {
   OnDestroy,
   ViewChild,
   inject,
-  signal,
 } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import {
-  ArcElement,
-  BarController,
-  BarElement,
-  CategoryScale,
-  Chart,
-  DoughnutController,
-  Legend,
-  LinearScale,
-  Tooltip,
-} from 'chart.js';
-import { EMPTY, Subject, catchError, map, merge, startWith, switchMap, tap } from 'rxjs';
+import { Chart } from 'chart.js';
 
 import { UserPurchaseStatsService } from '../services/user-purchase-stats.service';
 import { UserPurchaseStats } from '../models/user-purchase-stats.model';
-import { AnalyticsDateRange, getAnalyticsDateRange } from './analytics-date-range';
+import { AnalyticsDateRange } from './analytics-date-range';
+import { createAnalyticsDashboardState } from './analytics-dashboard-state';
+import { createHorizontalBarChart } from './analytics-charts';
 import { DashboardDateFilter } from './dashboard-date-filter';
-
-Chart.register(
-  ArcElement,
-  BarController,
-  BarElement,
-  CategoryScale,
-  DoughnutController,
-  Legend,
-  LinearScale,
-  Tooltip,
-);
 
 @Component({
   selector: 'app-client-dashboard',
@@ -53,7 +31,6 @@ export class ClientDashboard implements AfterViewInit, OnDestroy {
   private readonly statsService = inject(UserPurchaseStatsService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly changeDetector = inject(ChangeDetectorRef);
-  private readonly retry = new Subject<void>();
   private viewInitialized = false;
   private productChart?: Chart<'bar', number[], string>;
   private categoryChart?: Chart<'doughnut', number[], string>;
@@ -62,49 +39,16 @@ export class ClientDashboard implements AfterViewInit, OnDestroy {
   @ViewChild('categoriesChart') private readonly categoriesCanvas?: ElementRef<HTMLCanvasElement>;
 
   readonly dateRange = new FormControl<AnalyticsDateRange>('30', { nonNullable: true });
-  readonly stats = signal<UserPurchaseStats | null>(null);
-  readonly loading = signal(true);
-  readonly error = signal(false);
-
-  constructor() {
-    merge(
-      this.dateRange.valueChanges.pipe(startWith(this.dateRange.value)),
-      this.retry.pipe(map(() => this.dateRange.value)),
-    )
-      .pipe(
-        tap(() => {
-          this.loading.set(true);
-          this.error.set(false);
-          this.stats.set(null);
-          this.destroyCharts();
-        }),
-        switchMap((range) => {
-          const dates = getAnalyticsDateRange(range);
-          return this.statsService.getStats(dates.from, dates.to).pipe(
-            map((response) => {
-              if (!response.success || !response.data) {
-                throw new Error('The purchase statistics response was invalid.');
-              }
-              return response.data;
-            }),
-            catchError(() => {
-              this.error.set(true);
-              this.loading.set(false);
-              return EMPTY;
-            }),
-          );
-        }),
-        takeUntilDestroyed(this.destroyRef),
-      )
-      .subscribe((stats) => {
-        this.stats.set(stats);
-        this.loading.set(false);
-        if (this.viewInitialized) {
-          this.changeDetector.detectChanges();
-          this.renderCharts();
-        }
-      });
-  }
+  private readonly state = createAnalyticsDashboardState(
+    this.dateRange,
+    (from, to) => this.statsService.getStats(from, to),
+    this.destroyRef,
+    () => this.destroyCharts(),
+    () => this.onStatsLoaded(),
+  );
+  readonly stats = this.state.stats;
+  readonly loading = this.state.loading;
+  readonly error = this.state.error;
 
   ngAfterViewInit(): void {
     this.viewInitialized = true;
@@ -116,7 +60,14 @@ export class ClientDashboard implements AfterViewInit, OnDestroy {
   }
 
   retryLoad(): void {
-    this.retry.next();
+    this.state.retryLoad();
+  }
+
+  private onStatsLoaded(): void {
+    if (this.viewInitialized) {
+      this.changeDetector.detectChanges();
+      this.renderCharts();
+    }
   }
 
   private renderCharts(): void {
@@ -127,27 +78,12 @@ export class ClientDashboard implements AfterViewInit, OnDestroy {
 
     if (this.productsCanvas && stats.mostBought.length > 0) {
       this.productChart?.destroy();
-      this.productChart = new Chart(this.productsCanvas.nativeElement, {
-        type: 'bar',
-        data: {
-          labels: stats.mostBought.map((product) => product.name),
-          datasets: [
-            {
-              data: stats.mostBought.map((product) => product.units),
-              backgroundColor: '#1fae86',
-              borderRadius: 6,
-              maxBarThickness: 36,
-            },
-          ],
-        },
-        options: {
-          indexAxis: 'y',
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: { legend: { display: false } },
-          scales: { x: { beginAtZero: true, ticks: { precision: 0 } } },
-        },
-      });
+      this.productChart = createHorizontalBarChart(
+        this.productsCanvas.nativeElement,
+        stats.mostBought.map((product) => product.name),
+        stats.mostBought.map((product) => product.units),
+        '#1fae86',
+      );
     }
 
     if (this.categoriesCanvas && stats.topCategories.length > 0) {
