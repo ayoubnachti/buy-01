@@ -4,14 +4,7 @@
       <h1 class="h2 fw-bold mb-1">My purchase dashboard</h1>
       <p class="text-body-secondary mb-0">A summary of your spending and shopping habits.</p>
     </div>
-    <div class="date-filter">
-      <label class="form-label small fw-semibold mb-1" for="stats-date-range">Date range</label>
-      <select id="stats-date-range" class="form-select" [formControl]="dateRange">
-        <option value="30">Last 30 days</option>
-        <option value="90">Last 90 days</option>
-        <option value="all">All time</option>
-      </select>
-    </div>
+    <app-dashboard-date-filter [control]="dateRange" [id]="'client-stats-date-range'" />
   </header>
 
   @if (loading()) {
@@ -74,7 +67,11 @@
               <p class="small text-body-secondary mb-3">Units purchased for your top products.</p>
               @if (dashboard.mostBought.length > 0) {
                 <div class="chart-container product-chart">
-                  <canvas #productsChart tabindex="-1" aria-hidden="true"></canvas>
+                  <canvas
+                    #productsChart
+                    tabindex="-1"
+                    aria-label="Bar chart of most bought products by units. See the table for exact values."
+                  ></canvas>
                 </div>
                 <table class="visually-hidden">
                   <caption>Most bought products by units</caption>
@@ -98,7 +95,11 @@
               <p class="small text-body-secondary mb-3">Units purchased across your top categories.</p>
               @if (dashboard.topCategories.length > 0) {
                 <div class="chart-container category-chart">
-                  <canvas #categoriesChart tabindex="-1" aria-hidden="true"></canvas>
+                  <canvas
+                    #categoriesChart
+                    tabindex="-1"
+                    aria-label="Donut chart of top categories by units. See the table for exact values."
+                  ></canvas>
                 </div>
                 <table class="visually-hidden">
                   <caption>Top categories by units</caption>

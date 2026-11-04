@@ -1,0 +1,136 @@
+<main class="container py-4 py-lg-5 dashboard-page">
+  <header class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-end gap-3 mb-4">
+    <div>
+      <h1 class="h2 fw-bold mb-1">Sales dashboard</h1>
+      <p class="text-body-secondary mb-0">Track revenue, units sold, and your best-selling products.</p>
+    </div>
+    <app-dashboard-date-filter [control]="dateRange" [id]="'seller-stats-date-range'" />
+  </header>
+
+  @if (loading()) {
+    <section class="row g-3 mb-4" aria-label="Loading sales statistics">
+      @for (card of [1, 2, 3]; track card) {
+        <div class="col-12 col-sm-6 col-lg-4">
+          <div class="card border-0 shadow-sm rounded-4 p-4 placeholder-glow">
+            <span class="placeholder col-5 mb-3"></span>
+            <span class="placeholder col-7 placeholder-lg"></span>
+          </div>
+        </div>
+      }
+      <div class="col-12">
+        <div class="card border-0 shadow-sm rounded-4 p-4 placeholder-glow chart-skeleton">
+          <span class="placeholder col-4 mb-3"></span>
+          <span class="placeholder col-12"></span>
+        </div>
+      </div>
+    </section>
+  } @else if (error()) {
+    <div
+      class="alert alert-danger d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3"
+      role="alert"
+    >
+      <span>We couldn’t load your sales statistics. Please try again.</span>
+      <button type="button" class="btn btn-outline-danger" (click)="retryLoad()">Try again</button>
+    </div>
+  } @else if (stats(); as dashboard) {
+    <section class="row g-3 mb-4" aria-label="Sales summary">
+      <div class="col-12 col-sm-6 col-lg-4">
+        <article class="card stat-card border-0 shadow-sm rounded-4 h-100">
+          <div class="card-body p-4">
+            <p class="text-body-secondary fw-semibold mb-2">Revenue</p>
+            <p class="stat-value mb-0">{{ dashboard.revenue | currency }}</p>
+          </div>
+        </article>
+      </div>
+      <div class="col-12 col-sm-6 col-lg-4">
+        <article class="card stat-card border-0 shadow-sm rounded-4 h-100">
+          <div class="card-body p-4">
+            <p class="text-body-secondary fw-semibold mb-2">Units sold</p>
+            <p class="stat-value mb-0">{{ dashboard.unitsSold }}</p>
+          </div>
+        </article>
+      </div>
+      <div class="col-12 col-sm-6 col-lg-4">
+        <article class="card stat-card border-0 shadow-sm rounded-4 h-100">
+          <div class="card-body p-4">
+            <p class="text-body-secondary fw-semibold mb-2">Orders</p>
+            <p class="stat-value mb-0">{{ dashboard.ordersCount }}</p>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    @if (dashboard.ordersCount === 0) {
+      <section
+        class="card border-0 shadow-sm rounded-4 text-center p-4 p-md-5"
+        aria-labelledby="empty-sales-title"
+      >
+        <div class="empty-icon mx-auto mb-3" aria-hidden="true">
+          <i class="bi bi-graph-up"></i>
+        </div>
+        <h2 id="empty-sales-title" class="h4 fw-bold">No sales yet</h2>
+        <p class="text-body-secondary mb-4">Your sales insights will appear here after your first sale.</p>
+        <a routerLink="/dashboard" class="btn btn-primary rounded-pill px-4 mx-auto">Manage products</a>
+      </section>
+    } @else {
+      <section class="row g-3">
+        <div class="col-12 col-lg-7">
+          <article class="card chart-card border-0 shadow-sm rounded-4 h-100">
+            <div class="card-body p-3 p-sm-4">
+              <h2 class="h5 fw-bold mb-1">Revenue by day</h2>
+              <p class="small text-body-secondary mb-3">Daily revenue for the last 30 days.</p>
+              @if (dashboard.revenueByDay.length > 0) {
+                <div class="chart-container revenue-chart">
+                  <canvas
+                    #revenueChart
+                    tabindex="-1"
+                    aria-label="Line chart of daily revenue for the last 30 days. See the table for exact values."
+                  ></canvas>
+                </div>
+                <table class="visually-hidden">
+                  <caption>Daily revenue for the last 30 days</caption>
+                  <thead><tr><th scope="col">Date</th><th scope="col">Revenue</th></tr></thead>
+                  <tbody>
+                    @for (day of dashboard.revenueByDay; track day.date) {
+                      <tr><th scope="row">{{ day.date | date: 'mediumDate' : 'UTC' }}</th><td>{{ day.revenue | currency }}</td></tr>
+                    }
+                  </tbody>
+                </table>
+              } @else {
+                <p class="text-body-secondary mb-0">No daily revenue is available for this period.</p>
+              }
+            </div>
+          </article>
+        </div>
+        <div class="col-12 col-lg-5">
+          <article class="card chart-card border-0 shadow-sm rounded-4 h-100">
+            <div class="card-body p-3 p-sm-4">
+              <h2 class="h5 fw-bold mb-1">Best-selling products</h2>
+              <p class="small text-body-secondary mb-3">Products ranked by units sold.</p>
+              @if (dashboard.bestSellers.length > 0) {
+                <div class="chart-container best-sellers-chart">
+                  <canvas
+                    #bestSellersChart
+                    tabindex="-1"
+                    aria-label="Bar chart of best-selling products by units sold. See the table for exact values."
+                  ></canvas>
+                </div>
+                <table class="visually-hidden">
+                  <caption>Best-selling products by units sold</caption>
+                  <thead><tr><th scope="col">Product</th><th scope="col">Units</th><th scope="col">Revenue</th></tr></thead>
+                  <tbody>
+                    @for (product of dashboard.bestSellers; track product.productId) {
+                      <tr><th scope="row">{{ product.name }}</th><td>{{ product.units }}</td><td>{{ product.revenue | currency }}</td></tr>
+                    }
+                  </tbody>
+                </table>
+              } @else {
+                <p class="text-body-secondary mb-0">No best sellers are available for this period.</p>
+              }
+            </div>
+          </article>
+        </div>
+      </section>
+    }
+  }
+</main>

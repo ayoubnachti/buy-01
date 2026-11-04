@@ -2,10 +2,6 @@
   min-height: calc(100vh - 4rem);
 }
 
-.date-filter {
-  width: min(100%, 13rem);
-}
-
 .stat-card {
   background: linear-gradient(135deg, #fff 60%, rgba(31, 174, 134, 0.08));
 }
