@@ -11,7 +11,7 @@ import {
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { FormControl, ReactiveFormsModule } from '@angular/forms';
+import { FormControl } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import {
   ArcElement,
@@ -28,8 +28,8 @@ import { EMPTY, Subject, catchError, map, merge, startWith, switchMap, tap } fro
 
 import { UserPurchaseStatsService } from '../services/user-purchase-stats.service';
 import { UserPurchaseStats } from '../models/user-purchase-stats.model';
-
-type DateRange = '30' | '90' | 'all';
+import { AnalyticsDateRange, getAnalyticsDateRange } from './analytics-date-range';
+import { DashboardDateFilter } from './dashboard-date-filter';
 
 Chart.register(
   ArcElement,
@@ -45,7 +45,7 @@ Chart.register(
 @Component({
   selector: 'app-client-dashboard',
   standalone: true,
-  imports: [CurrencyPipe, ReactiveFormsModule, RouterLink],
+  imports: [CurrencyPipe, DashboardDateFilter, RouterLink],
   templateUrl: './client-dashboard.html',
   styleUrl: './client-dashboard.css',
 })
@@ -61,7 +61,7 @@ export class ClientDashboard implements AfterViewInit, OnDestroy {
   @ViewChild('productsChart') private readonly productsCanvas?: ElementRef<HTMLCanvasElement>;
   @ViewChild('categoriesChart') private readonly categoriesCanvas?: ElementRef<HTMLCanvasElement>;
 
-  readonly dateRange = new FormControl<DateRange>('30', { nonNullable: true });
+  readonly dateRange = new FormControl<AnalyticsDateRange>('30', { nonNullable: true });
   readonly stats = signal<UserPurchaseStats | null>(null);
   readonly loading = signal(true);
   readonly error = signal(false);
@@ -79,7 +79,7 @@ export class ClientDashboard implements AfterViewInit, OnDestroy {
           this.destroyCharts();
         }),
         switchMap((range) => {
-          const dates = this.getDateRange(range);
+          const dates = getAnalyticsDateRange(range);
           return this.statsService.getStats(dates.from, dates.to).pipe(
             map((response) => {
               if (!response.success || !response.data) {
@@ -117,22 +117,6 @@ export class ClientDashboard implements AfterViewInit, OnDestroy {
 
   retryLoad(): void {
     this.retry.next();
-  }
-
-  private getDateRange(range: DateRange): { from?: string; to?: string } {
-    if (range === 'all') {
-      return {};
-    }
-
-    const today = new Date();
-    const to = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()));
-    const from = new Date(to);
-    from.setUTCDate(from.getUTCDate() - Number(range) + 1);
-
-    return {
-      from: from.toISOString().slice(0, 10),
-      to: to.toISOString().slice(0, 10),
-    };
   }
 
   private renderCharts(): void {
