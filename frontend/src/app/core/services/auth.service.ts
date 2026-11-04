@@ -71,7 +71,7 @@ export class AuthService {
   }
 
   private base64UrlDecode(value: string): string {
-    const base64 = value.replace(/-/g, '+').replace(/_/g, '/');
+    const base64 = value.replaceAll('-', '+').replaceAll('_', '/');
     return atob(base64.padEnd(base64.length + ((4 - (base64.length % 4)) % 4), '='));
   }
 }
