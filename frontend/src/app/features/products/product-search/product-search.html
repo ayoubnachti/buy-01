@@ -156,16 +156,7 @@
                   <p class="text-body-secondary small mb-3 product-card-description">{{ product.description }}</p>
                   <div class="mt-auto">
                     <p class="fs-5 fw-bold text-primary mb-3">{{ product.price | currency }}</p>
-                    @if (isClient()) {
-                      <button
-                        type="button"
-                        class="btn btn-primary w-100"
-                        [disabled]="product.quantity < 1"
-                        (click)="addToCart(product)"
-                      >
-                        {{ product.quantity > 0 ? 'Add to cart' : 'Out of stock' }}
-                      </button>
-                    }
+                    <app-add-to-cart-button [productId]="product.id" [productName]="product.name" [stock]="product.quantity" />
                   </div>
                 </div>
               </article>
