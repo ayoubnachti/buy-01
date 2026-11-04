@@ -18,10 +18,6 @@
   position: relative;
   width: 100%;
   max-width: 100%;
-}
-
-.revenue-chart,
-.best-sellers-chart {
   height: 18rem;
 }
 
@@ -46,8 +42,7 @@
     padding-left: 1rem;
   }
 
-  .revenue-chart,
-  .best-sellers-chart {
+  .chart-container {
     height: 16rem;
   }
 }

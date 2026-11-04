@@ -7,56 +7,23 @@
     <app-dashboard-date-filter [control]="dateRange" [id]="'seller-stats-date-range'" />
   </header>
 
-  @if (loading()) {
-    <section class="row g-3 mb-4" aria-label="Loading sales statistics">
-      @for (card of [1, 2, 3]; track card) {
-        <div class="col-12 col-sm-6 col-lg-4">
-          <div class="card border-0 shadow-sm rounded-4 p-4 placeholder-glow">
-            <span class="placeholder col-5 mb-3"></span>
-            <span class="placeholder col-7 placeholder-lg"></span>
-          </div>
-        </div>
-      }
-      <div class="col-12">
-        <div class="card border-0 shadow-sm rounded-4 p-4 placeholder-glow chart-skeleton">
-          <span class="placeholder col-4 mb-3"></span>
-          <span class="placeholder col-12"></span>
-        </div>
-      </div>
-    </section>
-  } @else if (error()) {
-    <div
-      class="alert alert-danger d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3"
-      role="alert"
-    >
-      <span>We couldn’t load your sales statistics. Please try again.</span>
-      <button type="button" class="btn btn-outline-danger" (click)="retryLoad()">Try again</button>
-    </div>
-  } @else if (stats(); as dashboard) {
+  <app-dashboard-content-state
+    [loading]="loading()"
+    [error]="error()"
+    [loadingLabel]="'Loading sales statistics'"
+    [errorMessage]="'We couldn’t load your sales statistics. Please try again.'"
+    (retry)="retryLoad()"
+  >
+    @if (stats(); as dashboard) {
     <section class="row g-3 mb-4" aria-label="Sales summary">
       <div class="col-12 col-sm-6 col-lg-4">
-        <article class="card stat-card border-0 shadow-sm rounded-4 h-100">
-          <div class="card-body p-4">
-            <p class="text-body-secondary fw-semibold mb-2">Revenue</p>
-            <p class="stat-value mb-0">{{ dashboard.revenue | currency }}</p>
-          </div>
-        </article>
+        <app-dashboard-stat-card label="Revenue" [value]="dashboard.revenue | currency" />
       </div>
       <div class="col-12 col-sm-6 col-lg-4">
-        <article class="card stat-card border-0 shadow-sm rounded-4 h-100">
-          <div class="card-body p-4">
-            <p class="text-body-secondary fw-semibold mb-2">Units sold</p>
-            <p class="stat-value mb-0">{{ dashboard.unitsSold }}</p>
-          </div>
-        </article>
+        <app-dashboard-stat-card label="Units sold" [value]="dashboard.unitsSold" />
       </div>
       <div class="col-12 col-sm-6 col-lg-4">
-        <article class="card stat-card border-0 shadow-sm rounded-4 h-100">
-          <div class="card-body p-4">
-            <p class="text-body-secondary fw-semibold mb-2">Orders</p>
-            <p class="stat-value mb-0">{{ dashboard.ordersCount }}</p>
-          </div>
-        </article>
+        <app-dashboard-stat-card label="Orders" [value]="dashboard.ordersCount" />
       </div>
     </section>
 
@@ -132,5 +99,6 @@
         </div>
       </section>
     }
-  }
+    }
+  </app-dashboard-content-state>
 </main>

@@ -12,21 +12,28 @@ import {
 import { FormControl } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { Chart } from 'chart.js';
-import { EMPTY } from 'rxjs';
 
 import { SellerSalesStatsService } from '../services/seller-sales-stats.service';
-import { SellerSalesStats } from '../models/seller-sales-stats.model';
 import { AnalyticsDateRange } from './analytics-date-range';
 import { createAnalyticsDashboardState } from './analytics-dashboard-state';
 import { createHorizontalBarChart } from './analytics-charts';
 import { DashboardDateFilter } from './dashboard-date-filter';
+import { DashboardContentState } from './dashboard-content-state';
+import { DashboardStatCard } from './dashboard-stat-card';
 
 @Component({
   selector: 'app-seller-analytics-dashboard',
   standalone: true,
-  imports: [CurrencyPipe, DashboardDateFilter, DatePipe, RouterLink],
+  imports: [
+    CurrencyPipe,
+    DashboardContentState,
+    DashboardDateFilter,
+    DashboardStatCard,
+    DatePipe,
+    RouterLink,
+  ],
   templateUrl: './seller-dashboard.html',
-  styleUrl: './seller-dashboard.css',
+  styleUrl: './analytics-dashboard.css',
 })
 export class SellerAnalyticsDashboard implements AfterViewInit, OnDestroy {
   private readonly statsService = inject(SellerSalesStatsService);
