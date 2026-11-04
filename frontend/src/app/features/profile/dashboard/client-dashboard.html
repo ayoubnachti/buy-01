@@ -7,45 +7,21 @@
     <app-dashboard-date-filter [control]="dateRange" [id]="'client-stats-date-range'" />
   </header>
 
-  @if (loading()) {
-    <section class="row g-3 mb-4" aria-label="Loading purchase statistics">
-      @for (card of [1, 2]; track card) {
-        <div class="col-12 col-sm-6">
-          <div class="card border-0 shadow-sm rounded-4 p-4 placeholder-glow">
-            <span class="placeholder col-5 mb-3"></span>
-            <span class="placeholder col-7 placeholder-lg"></span>
-          </div>
-        </div>
-      }
-      <div class="col-12">
-        <div class="card border-0 shadow-sm rounded-4 p-4 placeholder-glow chart-skeleton">
-          <span class="placeholder col-4 mb-3"></span>
-          <span class="placeholder col-12"></span>
-        </div>
-      </div>
-    </section>
-  } @else if (error()) {
-    <div class="alert alert-danger d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3" role="alert">
-      <span>We couldn’t load your purchase statistics. Please try again.</span>
-      <button type="button" class="btn btn-outline-danger" (click)="retryLoad()">Try again</button>
-    </div>
-  } @else if (stats(); as dashboard) {
+  <app-dashboard-content-state
+    [loading]="loading()"
+    [error]="error()"
+    [loadingLabel]="'Loading purchase statistics'"
+    [errorMessage]="'We couldn’t load your purchase statistics. Please try again.'"
+    [skeletonCards]="[1, 2]"
+    (retry)="retryLoad()"
+  >
+    @if (stats(); as dashboard) {
     <section class="row g-3 mb-4" aria-label="Purchase summary">
       <div class="col-12 col-sm-6">
-        <article class="card stat-card border-0 shadow-sm rounded-4 h-100">
-          <div class="card-body p-4">
-            <p class="text-body-secondary fw-semibold mb-2">Total spent</p>
-            <p class="stat-value mb-0">{{ dashboard.totalSpent | currency }}</p>
-          </div>
-        </article>
+        <app-dashboard-stat-card label="Total spent" [value]="dashboard.totalSpent | currency" />
       </div>
       <div class="col-12 col-sm-6">
-        <article class="card stat-card border-0 shadow-sm rounded-4 h-100">
-          <div class="card-body p-4">
-            <p class="text-body-secondary fw-semibold mb-2">Orders</p>
-            <p class="stat-value mb-0">{{ dashboard.ordersCount }}</p>
-          </div>
-        </article>
+        <app-dashboard-stat-card label="Orders" [value]="dashboard.ordersCount" />
       </div>
     </section>
 
@@ -118,5 +94,6 @@
         </div>
       </section>
     }
-  }
+    }
+  </app-dashboard-content-state>
 </main>

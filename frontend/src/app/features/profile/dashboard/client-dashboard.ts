@@ -19,13 +19,15 @@ import { AnalyticsDateRange } from './analytics-date-range';
 import { createAnalyticsDashboardState } from './analytics-dashboard-state';
 import { createHorizontalBarChart } from './analytics-charts';
 import { DashboardDateFilter } from './dashboard-date-filter';
+import { DashboardContentState } from './dashboard-content-state';
+import { DashboardStatCard } from './dashboard-stat-card';
 
 @Component({
   selector: 'app-client-dashboard',
   standalone: true,
-  imports: [CurrencyPipe, DashboardDateFilter, RouterLink],
+  imports: [CurrencyPipe, DashboardContentState, DashboardDateFilter, DashboardStatCard, RouterLink],
   templateUrl: './client-dashboard.html',
-  styleUrl: './client-dashboard.css',
+  styleUrl: './analytics-dashboard.css',
 })
 export class ClientDashboard implements AfterViewInit, OnDestroy {
   private readonly statsService = inject(UserPurchaseStatsService);
