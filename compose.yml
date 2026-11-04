@@ -12,7 +12,7 @@ services:
       SPRING_PROFILES_ACTIVE: ${APP_PROFILE:-prod}
     restart: unless-stopped
     ports:
-      - "8761:8761"
+      - "127.0.0.1:8761:8761"
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "http://localhost:8761/actuator/health"]
       interval: 5s
