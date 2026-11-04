@@ -58,8 +58,8 @@ export class ClientDashboard implements AfterViewInit, OnDestroy {
   private productChart?: Chart<'bar', number[], string>;
   private categoryChart?: Chart<'doughnut', number[], string>;
 
-  @ViewChild('productsChart') private productsCanvas?: ElementRef<HTMLCanvasElement>;
-  @ViewChild('categoriesChart') private categoriesCanvas?: ElementRef<HTMLCanvasElement>;
+  @ViewChild('productsChart') private readonly productsCanvas?: ElementRef<HTMLCanvasElement>;
+  @ViewChild('categoriesChart') private readonly categoriesCanvas?: ElementRef<HTMLCanvasElement>;
 
   readonly dateRange = new FormControl<DateRange>('30', { nonNullable: true });
   readonly stats = signal<UserPurchaseStats | null>(null);
