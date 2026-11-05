@@ -87,11 +87,15 @@
   }
 
   @case ('done') {
-  <div class="alert alert-success" role="status">
-    <h2 class="h5">Thank you, your order is placed.</h2>
-    <p class="mb-0">You'll pay on delivery. {{ orders().length > 1 ? 'Your items come from several sellers, so they
-      arrive as separate orders:' : 'Your order number:' }}</p>
-  </div>
+  <output class="alert alert-success d-block">
+    <strong class="d-block h5 mb-2">Thank you, your order is placed.</strong>
+    <span>
+      You'll pay on delivery.
+      {{ orders().length > 1 ? 'Your items come from several sellers, so they arrive as separate orders:' : 'Your order
+      number:' }}
+    </span>
+  </output>
+
   <ul class="list-group mb-3">
     @for (order of orders(); track order.id) {
     <li class="list-group-item d-flex justify-content-between">
