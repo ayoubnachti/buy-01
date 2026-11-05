@@ -12,12 +12,12 @@ export const routes: Routes = [
   {
     path: '',
     loadComponent: () =>
-      import('./features/products/product-list/product-list').then((m) => m.ProductList),
+      import('./features/products/product-search/product-search').then((m) => m.ProductSearch),
   },
   {
     path: 'search',
-    loadComponent: () =>
-      import('./features/products/product-search/product-search').then((m) => m.ProductSearch),
+    redirectTo: '',
+    pathMatch: 'full',
   },
   {
     path: 'system-design',
