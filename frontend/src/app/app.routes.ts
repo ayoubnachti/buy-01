@@ -5,6 +5,7 @@ import { Profile } from './features/profile/profile_component/profile';
 import { guestGuard } from './core/guards/guest.guard';
 import { authGuard } from './core/guards/auth.guard';
 import { roleGuard } from './core/guards/role.guard';
+import { cartReadyGuard } from './core/guards/cart-ready.guard';
 
 // Protected routes: authGuard first (logged out -> login with returnUrl), then roleGuard (wrong role -> shop).
 export const routes: Routes = [
@@ -62,12 +63,20 @@ export const routes: Routes = [
     path: 'seller/dashboard',
     canActivate: [authGuard, roleGuard('SELLER')],
     loadComponent: () =>
-      import('./features/profile/dashboard/seller-dashboard').then((m) => m.SellerAnalyticsDashboard),
+      import('./features/profile/dashboard/seller-dashboard').then(
+        (m) => m.SellerAnalyticsDashboard,
+      ),
   },
-    {
+  {
     path: 'cart',
     canActivate: [authGuard, roleGuard('CLIENT')],
     loadComponent: () => import('./features/cart/cart-page/cart-page').then((m) => m.CartPage),
+  },
+  {
+    path: 'checkout',
+    canActivate: [authGuard, roleGuard('CLIENT'), cartReadyGuard],
+    loadComponent: () =>
+      import('./features/checkout/checkout-page/checkout-page').then((m) => m.CheckoutPage),
   },
   {
     path: 'login',
