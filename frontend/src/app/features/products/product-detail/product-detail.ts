@@ -6,10 +6,11 @@ import { Product } from '../../../shared/models/product.model';
 import { ProductService } from '../../../core/services/product.service';
 import { Carousel } from '../../../shared/components/carousel/carousel';
 import { LoadingSpinner } from '../../../shared/components/loading-spinner/loading-spinner';
+import { AddToCartButton } from '../../../shared/components/add-to-cart-button/add-to-cart-button';
 
 @Component({
   selector: 'app-product-detail',
-  imports: [CurrencyPipe, Carousel, LoadingSpinner],
+  imports: [CurrencyPipe, Carousel, LoadingSpinner, AddToCartButton],
   templateUrl: './product-detail.html',
 })
 export class ProductDetail implements OnInit {

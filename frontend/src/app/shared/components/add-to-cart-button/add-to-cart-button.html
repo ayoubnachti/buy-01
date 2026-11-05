@@ -1,0 +1,17 @@
+@if (isClient()) {
+  <button
+    type="button"
+    class="btn btn-primary"
+    [class.btn-sm]="size() === 'sm'"
+    [class.btn-lg]="size() === 'lg'"
+    [disabled]="stock() === 0 || adding()"
+    (click)="add($event)"
+  >
+    @if (adding()) {
+      <span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span>
+    }
+    {{ stock() === 0 ? 'Out of stock' : 'Add to cart' }}
+  </button>
+} @else if (isVisitor()) {
+  <a class="btn btn-outline-primary" [class.btn-sm]="size() === 'sm'" routerLink="/login">Log in to buy</a>
+}

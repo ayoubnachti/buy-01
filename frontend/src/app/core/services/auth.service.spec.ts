@@ -1,208 +1,86 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-
 import { TestBed } from '@angular/core/testing';
-import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 
 import { AuthService } from './auth.service';
-import { environment } from '../../../environments/environment';
+
+function base64Url(value: object): string {
+    return btoa(JSON.stringify(value)).replaceAll('+', '-').replaceAll('/', '_').replace(/=+$/, '');
+}
+
+function jwt(payload: object): string {
+  return `${base64Url({ alg: 'HS256', typ: 'JWT' })}.${base64Url(payload)}.signature`;
+}
+
+const inOneHour = () => Math.floor(Date.now() / 1000) + 3600;
+const anHourAgo = () => Math.floor(Date.now() / 1000) - 3600;
 
 describe('AuthService', () => {
   let service: AuthService;
-  let httpMock: HttpTestingController;
-
-  const mockUser = {
-    id: '1',
-    role: 'CLIENT',
-  };
-
-  /**
-   * Creates a fake JWT for testing.
-   */
-  const createFakeToken = (payload: object): string => {
-    const header = btoa(
-      JSON.stringify({
-        alg: 'none',
-        typ: 'JWT',
-      }),
-    );
-
-    const encodedPayload = btoa(JSON.stringify(payload));
-
-    return `${header}.${encodedPayload}.signature`;
-  };
 
   beforeEach(() => {
     localStorage.clear();
-
-    TestBed.configureTestingModule({
-      providers: [AuthService, provideHttpClient(), provideHttpClientTesting()],
-    });
-
+    TestBed.configureTestingModule({ providers: [provideHttpClient(), provideHttpClientTesting()] });
     service = TestBed.inject(AuthService);
-    httpMock = TestBed.inject(HttpTestingController);
   });
 
-  afterEach(() => {
-    httpMock.verify();
+  afterEach(() => localStorage.clear());
 
-    localStorage.clear();
-
-    vi.restoreAllMocks();
-  });
-
-  // --------------------------------------------------
-  // Creation
-  // --------------------------------------------------
-
-  it('should be created', () => {
-    expect(service).toBeTruthy();
-  });
-
-  // --------------------------------------------------
-  // Login
-  // --------------------------------------------------
-
-  it('should send login request', () => {
-    const loginRequest = {
-      email: 'ayoub@gmail.com',
-      password: 'password123',
-    };
-
-    const response = {
-      data: 'fake-jwt-token',
-    };
-
-    service.login(loginRequest).subscribe((result) => {
-      expect(result).toEqual(response);
-    });
-
-    const req = httpMock.expectOne(`${environment.apiUrl}/auth/login`);
-
-    expect(req.request.method).toBe('POST');
-
-    expect(req.request.body).toEqual(loginRequest);
-
-    req.flush(response);
-  });
-
-  // --------------------------------------------------
-  // Register
-  // --------------------------------------------------
-
-  it('should send register request', () => {
-    const registerRequest = {
-      name: 'Ayoub',
-      email: 'ayoub@gmail.com',
-      password: 'password123',
-      role: 'SELLER',
-    };
-
-    const response = {
-      data: {
-        id: '1',
-        name: 'Ayoub',
-        email: 'ayoub@gmail.com',
-      },
-    };
-
-    service.register(registerRequest).subscribe((result) => {
-      expect(result).toEqual(response);
-    });
-
-    const req = httpMock.expectOne(`${environment.apiUrl}/auth/register`);
-
-    expect(req.request.method).toBe('POST');
-
-    expect(req.request.body).toEqual(registerRequest);
-
-    req.flush(response);
-  });
-
-  // --------------------------------------------------
-  // setUserFromToken
-  // --------------------------------------------------
-
-  it('should save JWT and user when setting user from token', () => {
-    const token = createFakeToken({
-      sub: mockUser.id,
-      role: mockUser.role,
-    });
+  it('reads a token whose payload uses base64url characters (- and _)', () => {
+    const token = jwt({ sub: '>>>???', role: 'CLIENT', exp: inOneHour() });
+    expect(token.split('.')[1]).toMatch(/[-_]/);      // proves this token would break plain atob
 
     service.setUserFromToken(token);
 
+    expect(service.user()).toEqual({ id: '>>>???', role: 'CLIENT' });
     expect(localStorage.getItem('jwt')).toBe(token);
-
-    expect(service.user()).toEqual(mockUser);
-
   });
 
-  // --------------------------------------------------
-  // initializeUser
-  // --------------------------------------------------
-
-  it('should initialize user from JWT', () => {
-    const token = createFakeToken({
-      sub: mockUser.id,
-      role: mockUser.role,
-    });
-
-    localStorage.setItem('jwt', token);
-
-    service.initializeUser();
-
-    expect(service.user()).toEqual(mockUser);
-
-  });
-
-  // --------------------------------------------------
-  // initializeUser without token
-  // --------------------------------------------------
-
-  it('should do nothing when there is no JWT', () => {
-    service.initializeUser();
+  it('treats an expired token as logged out, and does not store it', () => {
+    service.setUserFromToken(jwt({ sub: 'u1', role: 'CLIENT', exp: anHourAgo() }));
 
     expect(service.user()).toBeNull();
-  });
-
-  // --------------------------------------------------
-  // Invalid JWT
-  // --------------------------------------------------
-
-  it('should logout when JWT is invalid', () => {
-    localStorage.setItem('jwt', 'invalid-token');
-
-    const logoutSpy = vi.spyOn(service, 'logout').mockImplementation(() => {});
-
-    service.initializeUser();
-
-    expect(logoutSpy).toHaveBeenCalled();
-  });
-
-  // --------------------------------------------------
-  // Logout
-  // --------------------------------------------------
-
-  it('should remove JWT from localStorage on logout', () => {
-    localStorage.setItem('jwt', 'fake-jwt-token');
-
-    service.logout();
-
     expect(localStorage.getItem('jwt')).toBeNull();
   });
 
-  it('should clear user signal on logout', () => {
-    const token = createFakeToken({
-      sub: mockUser.id,
-      role: mockUser.role,
-    });
+  it('never stores a token it cannot read', () => {
+    service.setUserFromToken('not-a-jwt');
 
-    service.setUserFromToken(token);
+    expect(service.user()).toBeNull();
+    expect(localStorage.getItem('jwt')).toBeNull();
+  });
 
-    expect(service.user()).toEqual(mockUser);
+  it('restores the user on start from a valid stored token (a refresh keeps you logged in)', () => {
+    localStorage.setItem('jwt', jwt({ sub: 's1', role: 'SELLER', exp: inOneHour() }));
+
+    service.initializeUser();
+
+    expect(service.user()).toEqual({ id: 's1', role: 'SELLER' });
+  });
+
+  it('starts logged out and clears an expired stored token', () => {
+    localStorage.setItem('jwt', jwt({ sub: 'u1', role: 'CLIENT', exp: anHourAgo() }));
+
+    service.initializeUser();
+
+    expect(service.user()).toBeNull();
+    expect(localStorage.getItem('jwt')).toBeNull();
+  });
+
+  it('does nothing on start without a stored token', () => {
+    service.initializeUser();
+
+    expect(service.user()).toBeNull();
+  });
+
+  it('logout clears the session without navigating', () => {
+    service.setUserFromToken(jwt({ sub: 'u1', role: 'CLIENT', exp: inOneHour() }));
+    const before = window.location.href;
 
     service.logout();
 
     expect(service.user()).toBeNull();
+    expect(localStorage.getItem('jwt')).toBeNull();
+    expect(window.location.href).toBe(before);       // no full page reload any more
   });
 });

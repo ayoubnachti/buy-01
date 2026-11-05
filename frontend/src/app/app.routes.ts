@@ -64,6 +64,11 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./features/profile/dashboard/seller-dashboard').then((m) => m.SellerAnalyticsDashboard),
   },
+    {
+    path: 'cart',
+    canActivate: [authGuard, roleGuard('CLIENT')],
+    loadComponent: () => import('./features/cart/cart-page/cart-page').then((m) => m.CartPage),
+  },
   {
     path: 'login',
     canActivate: [guestGuard],

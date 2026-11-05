@@ -1,6 +1,7 @@
 import { Component, computed, inject } from '@angular/core';
-import { RouterLink, RouterLinkActive } from '@angular/router';
+import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
+import { CartStore } from '../../../core/services/cart.store';
 
 @Component({
   selector: 'app-header',
@@ -10,7 +11,10 @@ import { AuthService } from '../../../core/services/auth.service';
   styleUrl: './header.css',
 })
 export class Header {
+  private readonly router = inject(Router);
   private authService = inject(AuthService);
+  private readonly cartStore = inject(CartStore);
+  readonly cartCount = this.cartStore.count;
 
   isLoggedIn = computed(() => this.authService.user() !== null);
   isSeller = computed(() => this.authService.user()?.role === 'SELLER');
@@ -18,5 +22,6 @@ export class Header {
 
   logout(): void {
     this.authService.logout();
+    this.router.navigate(['/']);
   }
 }

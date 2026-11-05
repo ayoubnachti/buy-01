@@ -6,7 +6,6 @@ import { ActivatedRoute, ParamMap, Router, RouterLink } from '@angular/router';
 import { catchError, debounceTime, distinctUntilChanged, EMPTY, switchMap, tap } from 'rxjs';
 
 import { AuthService } from '../../../core/services/auth.service';
-import { CartService } from '../../../core/services/cart.service';
 import { ProductSearchParams, ProductService } from '../../../core/services/product.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { Carousel } from '../../../shared/components/carousel/carousel';
@@ -15,6 +14,8 @@ import { LoadingSpinner } from '../../../shared/components/loading-spinner/loadi
 import { Product } from '../../../shared/models/product.model';
 import { ProductSearchFacets } from '../../../shared/models/product-page-response';
 import { toApiError } from '../../../shared/models/api-error';
+import { CartStore } from '../../../core/services/cart.store';
+import { AddToCartButton } from '../../../shared/components/add-to-cart-button/add-to-cart-button';
 
 type SearchSort = NonNullable<ProductSearchParams['sort']>;
 type SearchFormValue = {
@@ -38,7 +39,8 @@ const PAGE_SIZE = 12;
     Carousel,
     EmptyState,
     LoadingSpinner,
-  ],
+    AddToCartButton
+],
   templateUrl: './product-search.html',
   styleUrl: './product-search.css',
 })
@@ -46,7 +48,7 @@ export class ProductSearch implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly productService = inject(ProductService);
-  private readonly cartService = inject(CartService);
+  private readonly cartStore = inject(CartStore);
   private readonly authService = inject(AuthService);
   private readonly toastService = inject(ToastService);
   private readonly destroyRef = inject(DestroyRef);
@@ -196,7 +198,7 @@ export class ProductSearch implements OnInit {
   }
 
   addToCart(product: Product): void {
-    this.cartService.addItem(product.id).subscribe({
+    this.cartStore.add(product.id).subscribe({
       next: () => this.toastService.success(`${product.name} added to cart.`),
       error: (e) => {
         const err = toApiError(e, `Couldn't add ${product.name} to your cart.`);

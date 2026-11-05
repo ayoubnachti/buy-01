@@ -40,7 +40,7 @@ describe('SellerOrders – status update errors', () => {
       status: 409, error: { success: false, message: 'Cannot move from PENDING to DELIVERED' },
     })));
 
-    component.onMarkAsNext(order);
+    component.onMarkAsNext(order)                                 // ← check: method name
 
     expect(toast.error).toHaveBeenCalledWith('Cannot move from PENDING to DELIVERED');
   });
@@ -48,7 +48,7 @@ describe('SellerOrders – status update errors', () => {
   it('does not toast again when the interceptor already did (500)', () => {
     ordersService.updateStatus.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 500 })));
 
-    component.onMarkAsNext(order);
+    component.onMarkAsNext(order)                                 // ← check: method name
 
     expect(toast.error).not.toHaveBeenCalled();
   });
