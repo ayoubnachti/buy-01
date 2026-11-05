@@ -6,10 +6,11 @@ import { ProductService } from '../../../core/services/product.service';
 import { Carousel } from '../../../shared/components/carousel/carousel';
 import { LoadingSpinner } from '../../../shared/components/loading-spinner/loading-spinner';
 import { EmptyState } from '../../../shared/components/empty-state/empty-state';
+import { AddToCartButton } from '../../../shared/components/add-to-cart-button/add-to-cart-button';
 
 @Component({
   selector: 'app-product-list',
-  imports: [CurrencyPipe, Carousel, RouterLink, LoadingSpinner, EmptyState],
+  imports: [CurrencyPipe, Carousel, RouterLink, LoadingSpinner, EmptyState, AddToCartButton],
   templateUrl: './product-list.html',
 })
 export class ProductList implements OnInit {

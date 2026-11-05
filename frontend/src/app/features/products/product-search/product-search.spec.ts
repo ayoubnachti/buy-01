@@ -6,7 +6,7 @@ import { BehaviorSubject, finalize, of, Subject, throwError } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { AuthService } from '../../../core/services/auth.service';
-import { CartService } from '../../../core/services/cart.service';
+import { CartStore } from '../../../core/services/cart.store';
 import { ProductService } from '../../../core/services/product.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { Product } from '../../../shared/models/product.model';
@@ -18,7 +18,7 @@ describe('ProductSearch', () => {
     getSearchFacets: ReturnType<typeof vi.fn>;
     search: ReturnType<typeof vi.fn>;
   };
-  let cartService: { addItem: ReturnType<typeof vi.fn> };
+  let cartStore: { add: ReturnType<typeof vi.fn> };
   let authService: { user: ReturnType<typeof vi.fn> };
   let toastService: { success: ReturnType<typeof vi.fn>; error: ReturnType<typeof vi.fn> };
   let router: { navigate: ReturnType<typeof vi.fn> };
@@ -63,7 +63,7 @@ describe('ProductSearch', () => {
       getSearchFacets: vi.fn(() => of(facets)),
       search: vi.fn(() => of(emptyResults)),
     };
-    cartService = { addItem: vi.fn(() => of({})) };
+    cartStore = { add: vi.fn().mockReturnValue(of({ items: [], subtotal: 0, updatedAt: null })) };
     authService = { user: vi.fn(() => null) };
     toastService = { success: vi.fn(), error: vi.fn() };
     router = { navigate: vi.fn(() => Promise.resolve(true)) };
@@ -81,7 +81,7 @@ describe('ProductSearch', () => {
         },
         { provide: Router, useValue: router },
         { provide: ProductService, useValue: productService },
-        { provide: CartService, useValue: cartService },
+        { provide: CartStore, useValue: cartStore },
         { provide: AuthService, useValue: authService },
         { provide: ToastService, useValue: toastService },
       ],
@@ -167,9 +167,7 @@ describe('ProductSearch', () => {
     const firstSearch = new Subject<typeof emptyResults>();
     let firstSearchCancelled = false;
     productService.search
-      .mockImplementationOnce(() =>
-        firstSearch.pipe(finalize(() => (firstSearchCancelled = true))),
-      )
+      .mockImplementationOnce(() => firstSearch.pipe(finalize(() => (firstSearchCancelled = true))))
       .mockImplementationOnce(() => of(emptyResults));
 
     const fixture = TestBed.createComponent(ProductSearch);
@@ -201,7 +199,7 @@ describe('ProductSearch', () => {
     ) as HTMLButtonElement;
     expect(addButton.textContent).toContain('Add to cart');
     addButton.click();
-    expect(cartService.addItem).toHaveBeenCalledWith('p1');
+    expect(cartStore.add).toHaveBeenCalledWith('p1');
     expect(toastService.success).toHaveBeenCalledWith('Desk lamp added to cart.');
 
     const unavailableButton = Array.from(
@@ -280,7 +278,7 @@ describe('ProductSearch', () => {
   });
 
   it('reports add-to-cart failures', () => {
-    cartService.addItem.mockReturnValue(throwError(() => new Error('Cart unavailable')));
+    cartStore.add.mockReturnValue(throwError(() => new Error('Cart unavailable')));
     const fixture = TestBed.createComponent(ProductSearch);
     fixture.componentInstance.addToCart(products[0]);
 
@@ -347,7 +345,4 @@ describe('ProductSearch', () => {
       expect.objectContaining({ queryParams: expect.objectContaining({ page: null }) }),
     );
   });
-
-
-  
 });
