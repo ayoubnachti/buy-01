@@ -6,11 +6,18 @@ import { Order, OrderStatus } from '../../shared/models/order.model';
 import { OrderPageResponse } from '../../shared/models/order-page-response';
 import { ResponseData } from '../../shared/models/response-data';
 import { environment } from '../../../environments/environment.prod';
+import { CreateOrderRequest } from '../../shared/models/create-order-request';
 
 @Injectable({ providedIn: 'root' })
 export class OrdersService {
   private readonly http = inject(HttpClient);
   private readonly apiUrl = `${environment.apiUrl}/orders`;
+
+  create(request: CreateOrderRequest) {
+    return this.http
+      .post<ResponseData<Order[]>>(this.apiUrl, request)
+      .pipe(map((response) => response.data));
+  }
 
   getMy(page: number, size: number) {
     const params = new HttpParams().set('page', page.toString()).set('size', size.toString());

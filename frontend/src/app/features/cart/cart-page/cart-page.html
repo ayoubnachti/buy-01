@@ -50,7 +50,7 @@
               <button class="btn btn-outline-secondary" type="button" [disabled]="displayedQuantity(item) <= 1"
                 (click)="changeQuantity(item, -1)" [attr.aria-label]="'Decrease quantity of ' + item.name">−</button>
               <span class="form-control text-center" aria-live="polite">{{ displayedQuantity(item) }}</span>
-              <button class="btn btn-outline-secondary" type="button" [disabled]="displayedQuantity(item) >= item.stock"
+              <button class="btn btn-outline-secondary" type="button" [disabled]="displayedQuantity(item) >= item.stock || displayedQuantity(item) >= 99"
                 (click)="changeQuantity(item, 1)" [attr.aria-label]="'Increase quantity of ' + item.name">+</button>
             </div>
 
