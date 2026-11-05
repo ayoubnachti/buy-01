@@ -1,0 +1,110 @@
+<div class="container py-4" style="max-width: 760px;">
+  <h1 class="h3 mb-4">Checkout</h1>
+
+  @if (step() !== 'done') {
+  <!-- Step header -->
+  <ol class="list-unstyled d-flex gap-2 mb-4" aria-label="Checkout steps">
+    @for (s of [['address', '1. Address'], ['review', '2. Review'], ['confirm', '3. Confirm']]; track s[0]) {
+    <li class="flex-fill text-center py-2 rounded border" [class.bg-primary]="step() === s[0]"
+      [class.text-white]="step() === s[0]" [attr.aria-current]="step() === s[0] ? 'step' : null">
+      {{ s[1] }}
+    </li>
+    }
+  </ol>
+  }
+
+  @switch (step()) {
+  @case ('address') {
+  <form [formGroup]="address" (ngSubmit)="goToReview()" novalidate>
+    @for (f of [['fullName', 'Full name', 'name'], ['phone', 'Phone', 'tel'], ['street', 'Street', 'street-address'],
+    ['city', 'City', 'address-level2'], ['postalCode', 'Postal code', 'postal-code'], ['country', 'Country',
+    'country-name']]; track f[0]) {
+    <div class="mb-3">
+      <label class="form-label" [for]="'addr-' + f[0]">{{ f[1] }}</label>
+      <input class="form-control" [id]="'addr-' + f[0]" [formControlName]="f[0]" [attr.autocomplete]="f[2]"
+        [class.is-invalid]="errorFor($any(f[0]))"
+        [attr.aria-describedby]="errorFor($any(f[0])) ? 'err-' + f[0] : null" />
+      @if (errorFor($any(f[0])); as message) {
+      <div class="invalid-feedback" [id]="'err-' + f[0]">{{ message }}</div>
+      }
+    </div>
+    }
+    <div class="d-flex justify-content-between">
+      <a class="btn btn-outline-secondary" routerLink="/cart">Back to cart</a>
+      <button class="btn btn-primary" type="submit">Continue</button>
+    </div>
+  </form>
+  }
+
+  @case ('review') {
+  <h2 class="h5">Items</h2>
+  <ul class="list-group mb-3">
+    @for (item of items(); track item.productId) {
+    <li class="list-group-item d-flex justify-content-between">
+      <span>{{ item.name }} × {{ item.quantity }}</span>
+      <span>{{ item.lineTotal | currency }}</span>
+    </li>
+    }
+    <li class="list-group-item d-flex justify-content-between fw-bold">
+      <span>Total</span><span>{{ subtotal() | currency }}</span>
+    </li>
+  </ul>
+
+  <h2 class="h5">Shipping address</h2>
+  @let a = address.getRawValue();
+  <p class="mb-3">{{ a.fullName }}<br />{{ a.street }}<br />{{ a.postalCode }} {{ a.city }}, {{ a.country }}<br />{{
+    a.phone }}</p>
+
+  <h2 class="h5">Payment</h2>
+  @for (m of paymentMethods; track m.value) {
+  <div class="form-check mb-3">
+    <input class="form-check-input" type="radio" [id]="'pay-' + m.value" [value]="m.value"
+      [formControl]="paymentMethod" />
+    <label class="form-check-label" [for]="'pay-' + m.value">{{ m.label }}</label>
+  </div>
+  }
+
+  <div class="d-flex justify-content-between">
+    <button class="btn btn-outline-secondary" type="button" (click)="goTo('address')">Edit address</button>
+    <button class="btn btn-primary" type="button" (click)="goTo('confirm')">Continue</button>
+  </div>
+  }
+
+  @case ('confirm') {
+  <p>You're ordering {{ items().length }} item(s) for <strong>{{ subtotal() | currency }}</strong>, paid on delivery.
+  </p>
+  @if (submitError(); as message) {
+  <div class="alert alert-danger" role="alert">{{ message }}</div>
+  }
+  <div class="d-flex justify-content-between">
+    <button class="btn btn-outline-secondary" type="button" (click)="goTo('review')"
+      [disabled]="submitting()">Back</button>
+    <button class="btn btn-primary" type="button" (click)="placeOrder()" [disabled]="submitting()">
+      @if (submitting()) { <span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span> }
+      Place order
+    </button>
+  </div>
+  }
+
+  @case ('done') {
+  <output class="alert alert-success d-block">
+    <strong class="d-block h5 mb-2">Thank you, your order is placed.</strong>
+    <span>
+      You'll pay on delivery.
+      {{ orders().length > 1 ? 'Your items come from several sellers, so they arrive as separate orders:' : 'Your order
+      number:' }}
+    </span>
+  </output>
+
+  <ul class="list-group mb-3">
+    @for (order of orders(); track order.id) {
+    <li class="list-group-item d-flex justify-content-between">
+      <a [routerLink]="['/orders', order.id]">Order {{ order.id }}</a>
+      <span>{{ order.totalAmount | currency }}</span>
+    </li>
+    }
+  </ul>
+  <a class="btn btn-primary" routerLink="/orders">See my orders</a>
+  }
+  }
+</div>

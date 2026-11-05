@@ -13,6 +13,7 @@ import { EmptyState } from '../../../shared/components/empty-state/empty-state';
 
 /** Wait this long after the last click before sending the new quantity. */
 export const QUANTITY_DEBOUNCE_MS = 400;
+export const MAX_QUANTITY_PER_ITEM = 99;
 
 @Component({
   selector: 'app-cart-page',
@@ -86,7 +87,7 @@ export class CartPage implements OnInit {
 
   changeQuantity(item: CartItem, delta: number): void {
     const next = this.displayedQuantity(item) + delta;
-    if (next < 1 || next > item.stock) {
+    if (next < 1 || next > Math.min(item.stock, MAX_QUANTITY_PER_ITEM)) {
       return;
     }
     this.pendingQuantities.update((p) => ({ ...p, [item.productId]: next }));
