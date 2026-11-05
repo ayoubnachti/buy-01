@@ -262,4 +262,14 @@ describe('CartPage', () => {
 
     expect(toast.error).toHaveBeenCalledWith('Product p1 is not in your cart');
   });
+
+  it('does not go above 99, the order limit, even with more stock', () => {
+    items.set([item('p1', 99, { stock: 150 })]);
+    const page = render().componentInstance;
+
+    page.changeQuantity(items()[0], 1);
+    vi.advanceTimersByTime(QUANTITY_DEBOUNCE_MS);
+
+    expect(store.updateQuantity).not.toHaveBeenCalled();
+  });
 });
