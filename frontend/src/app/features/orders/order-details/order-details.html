@@ -26,6 +26,19 @@
             Cancel order
           </button>
         }
+        @if (isOwner() && canRedoOrRemove(o)) {
+          <button
+            type="button"
+            class="btn btn-primary btn-sm"
+            [disabled]="redoing()"
+            (click)="onRedoClick()"
+          >
+            Order again
+          </button>
+          <button type="button" class="btn btn-outline-secondary btn-sm" (click)="onRemoveClick()">
+            Remove
+          </button>
+        }
       </div>
     </div>
 
@@ -94,6 +107,16 @@
         confirmLabel="Cancel order"
         (confirmed)="onCancelConfirmed()"
         (cancelled)="onCancelDismissed()"
+      />
+    }
+
+    @if (showRemoveConfirm()) {
+      <app-confirmation-modal
+        title="Remove this order?"
+        message="This can't be undone. The order will no longer appear in your order history."
+        confirmLabel="Remove"
+        (confirmed)="onRemoveConfirmed()"
+        (cancelled)="onRemoveDismissed()"
       />
     }
   }
