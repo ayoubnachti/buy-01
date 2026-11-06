@@ -46,6 +46,16 @@ export class OrdersService {
       .pipe(map((response) => response.data));
   }
 
+  redo(id: string) {
+    return this.http
+      .post<ResponseData<Order[]>>(`${this.apiUrl}/${id}/redo`, {})
+      .pipe(map((response) => response.data));
+  }
+
+  remove(id: string) {
+    return this.http.delete<void>(`${this.apiUrl}/${id}`);
+  }
+
   getSellerOrders(page: number, size: number, filters: OrderSearchFilters = {}) {
     const params = this.buildParams(page, size, filters);
 
