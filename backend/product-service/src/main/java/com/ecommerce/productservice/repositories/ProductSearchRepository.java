@@ -102,9 +102,8 @@ public class ProductSearchRepository {
   }
 
   private void addFilters(Query query, ProductSearchRequest request) {
-    List<Criteria> filters = new ArrayList<>();
     if (request.categories() != null && !request.categories().isEmpty()) {
-      filters.add(Criteria.where(CATEGORY_FIELD).in(request.categories()));
+      query.addCriteria(Criteria.where(CATEGORY_FIELD).in(request.categories()));
     }
     if (request.minPrice() != null || request.maxPrice() != null) {
       Criteria priceCriteria = Criteria.where(PRICE_FIELD);
@@ -114,10 +113,7 @@ public class ProductSearchRepository {
       if (request.maxPrice() != null) {
         priceCriteria.lte(request.maxPrice());
       }
-      filters.add(priceCriteria);
-    }
-    if (!filters.isEmpty()) {
-      query.addCriteria(new Criteria().andOperator(filters));
+      query.addCriteria(priceCriteria);
     }
   }
 
@@ -126,8 +122,8 @@ public class ProductSearchRepository {
         Aggregation.match(Criteria.where(CATEGORY_FIELD).exists(true).ne(null)),
         Aggregation.group(CATEGORY_FIELD).count().as("count"),
         Aggregation.sort(Sort.by(Sort.Direction.ASC, "_id")));
-    AggregationResults<Document> categoryResults =
-        mongoTemplate.aggregate(categoriesAggregation, Product.class, Document.class);
+    AggregationResults<Document> categoryResults = mongoTemplate.aggregate(categoriesAggregation, Product.class,
+        Document.class);
     List<CategoryCount> categories = categoryResults.getMappedResults().stream()
         .map(result -> new CategoryCount(
             ProductCategory.valueOf(result.getString("_id")),
@@ -138,8 +134,8 @@ public class ProductSearchRepository {
         Aggregation.group()
             .min(PRICE_FIELD).as("minPrice")
             .max(PRICE_FIELD).as("maxPrice"));
-    AggregationResults<Document> priceResults =
-        mongoTemplate.aggregate(priceAggregation, Product.class, Document.class);
+    AggregationResults<Document> priceResults = mongoTemplate.aggregate(priceAggregation, Product.class,
+        Document.class);
     Document priceRange = priceResults.getUniqueMappedResult();
 
     return new ProductSearchFacetsResponse(
