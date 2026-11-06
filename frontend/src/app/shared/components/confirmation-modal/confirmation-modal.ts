@@ -10,7 +10,20 @@ export class ConfirmationModal {
   message = input.required<string>();
   confirmLabel = input('Confirm');
   cancelLabel = input('Cancel');
+  busy = input(false);
 
   confirmed = output<void>();
   cancelled = output<void>();
+
+  onConfirm(): void {
+    if (!this.busy()) {
+      this.confirmed.emit();
+    }
+  }
+
+  onDismiss(): void {
+    if (!this.busy()) {
+      this.cancelled.emit();
+    }
+  }
 }

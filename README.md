@@ -304,8 +304,8 @@ and setup instructions.
 
 ## CI/CD and code quality
 
-Every PR is built, tested and analysed by Jenkins and SonarQube; a PR can't be merged if a test or the quality gate fails. Every push to `main` is additionally deployed to staging, with automatic rollback if the new release's health check fails, then smoke-tested end-to-end. A nightly build re-runs tests, analysis and the e2e smoke test on `main` without redeploying.
+Every PR is built, tested and analysed by Jenkins and SonarQube; a PR can't be merged if a test or the quality gate fails. Every push to `main` is additionally deployed to staging, then smoke-tested end-to-end against that same live site, with automatic rollback if either the deploy's health check or the e2e test fails. A nightly build re-runs tests and analysis on `main` without redeploying.
 
-Pipeline stages (`Jenkinsfile`): **Prepare → Build & test (backend JUnit/JaCoCo + SonarQube per service, frontend Vitest + SonarQube, in parallel) → Build images → Deploy → E2E tests** (the last three only on `main`).
+Pipeline stages (`Jenkinsfile`): **Prepare → Build & test (backend JUnit/JaCoCo + SonarQube per service, frontend Vitest + SonarQube, in parallel) → Build images → Deploy → E2E tests** (the last three only on `main`). A release is tagged as the one to roll back to only once both `Deploy`'s health check and `E2E tests` pass.
 
 Full pipeline architecture, Jenkins/SonarQube setup and live URLs: [jenkins/CI-CD.md](jenkins/CI-CD.md).

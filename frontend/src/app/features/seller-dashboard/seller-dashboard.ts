@@ -35,6 +35,8 @@ export class SellerDashboard {
   editingProduct = signal<Product | null>(null);
   focusTrigger = signal(0);
   productPendingDelete = signal<Product | null>(null);
+  saving = signal(false);
+  deleting = signal(false);
 
   currentPage = signal(0);
   hasNext = signal(false);
@@ -65,15 +67,17 @@ export class SellerDashboard {
 
   onConfirmDelete(): void {
     const product = this.productPendingDelete();
-    if (!product) {
+    if (!product || this.deleting()) {
       return;
     }
 
+    this.deleting.set(true);
     this.productService
       .delete(product.id)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {
+          this.deleting.set(false);
           this.toastService.success('Product deleted.');
           this.productPendingDelete.set(null);
 
@@ -84,6 +88,7 @@ export class SellerDashboard {
           this.fetchProducts();
         },
         error: (e) => {
+          this.deleting.set(false);
           this.productPendingDelete.set(null);
           const err = toApiError(e, 'Could not delete this product. Try again.');
           if (!err.handledGlobally) {
@@ -94,16 +99,23 @@ export class SellerDashboard {
   }
 
   onFormSave(request: CreateProductRequest): void {
+    if (this.saving()) {
+      return;
+    }
+
     const editing = this.editingProduct();
     const save$ = editing
       ? this.productService.update(editing.id, request)
       : this.productService.create(request);
+
+    this.saving.set(true);
 
     // Product first: only attempt the media upload once the product itself
     // is confirmed saved (and we have a real product id to attach images to).
     save$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (savedProduct) => this.uploadPendingImages(savedProduct, editing),
       error: () => {
+        this.saving.set(false);
         this.toastService.error(
           editing ? 'Could not update this product.' : 'Could not create this product.',
         );
@@ -122,6 +134,7 @@ export class SellerDashboard {
         this.finishSave();
       },
       error: () => {
+        this.saving.set(false);
         this.toastService.error(
           'Product saved, but the image(s) failed to upload. You can retry from the edit form.',
         );
@@ -133,6 +146,8 @@ export class SellerDashboard {
   }
 
   private finishSave(): void {
+    this.saving.set(false);
+
     // Reset the form (same mechanism as Create/Edit clicks) so a
     // second, accidental Submit can't re-post the same data.
     this.editingProduct.set(null);

@@ -105,6 +105,7 @@
         title="Cancel order?"
         message="This can't be undone."
         confirmLabel="Cancel order"
+        [busy]="cancelling()"
         (confirmed)="onCancelConfirmed()"
         (cancelled)="onCancelDismissed()"
       />
@@ -115,6 +116,7 @@
         title="Remove this order?"
         message="This can't be undone. The order will no longer appear in your order history."
         confirmLabel="Remove"
+        [busy]="removing()"
         (confirmed)="onRemoveConfirmed()"
         (cancelled)="onRemoveDismissed()"
       />

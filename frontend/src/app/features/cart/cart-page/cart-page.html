@@ -57,7 +57,7 @@
             <div class="text-end fw-semibold" style="min-width: 90px;">{{ lineTotal(item) | currency }}</div>
             }
 
-            <button class="btn btn-link text-danger p-0" type="button" (click)="remove(item)"
+            <button class="btn btn-link text-danger p-0" type="button" [disabled]="isRemoving(item)" (click)="remove(item)"
               [attr.aria-label]="'Remove ' + (item.name ?? 'item') + ' from cart'">Remove</button>
           </div>
         </li>
