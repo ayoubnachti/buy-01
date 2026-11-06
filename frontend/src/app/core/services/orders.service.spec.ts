@@ -101,6 +101,35 @@ describe('OrdersService', () => {
     req.flush(wrapped(page));
   });
 
+  it('getMy: adds status/from/to/q when given, omits them otherwise', () => {
+    service.getMy(0, 10, { status: 'SHIPPED', from: '2026-01-01', to: '2026-02-01', q: 'shoes' }).subscribe();
+
+    const req = http.expectOne((r) => r.url === `${url}/my`);
+    expect(req.request.params.get('status')).toBe('SHIPPED');
+    expect(req.request.params.get('from')).toBe('2026-01-01');
+    expect(req.request.params.get('to')).toBe('2026-02-01');
+    expect(req.request.params.get('q')).toBe('shoes');
+    req.flush(wrapped(page));
+
+    service.getMy(0, 10).subscribe();
+    const noFilters = http.expectOne((r) => r.url === `${url}/my`);
+    expect(noFilters.request.params.has('status')).toBe(false);
+    expect(noFilters.request.params.has('from')).toBe(false);
+    expect(noFilters.request.params.has('to')).toBe(false);
+    expect(noFilters.request.params.has('q')).toBe(false);
+    noFilters.flush(wrapped(page));
+  });
+
+  it('getSellerOrders: adds status/from/to/q when given', () => {
+    service.getSellerOrders(0, 10, { status: 'PENDING', q: 'mug' }).subscribe();
+
+    const req = http.expectOne((r) => r.url === `${url}/seller`);
+    expect(req.request.params.get('status')).toBe('PENDING');
+    expect(req.request.params.get('q')).toBe('mug');
+    expect(req.request.params.has('from')).toBe(false);
+    req.flush(wrapped(page));
+  });
+
   // ---- one order
 
   it('getOne: GET /orders/{id}', () => {
