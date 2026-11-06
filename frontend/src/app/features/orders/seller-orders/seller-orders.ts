@@ -1,6 +1,7 @@
 import { Component, inject, signal } from '@angular/core';
 import { CurrencyPipe, DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
+import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 
 import { OrdersService } from '../../../core/services/orders.service';
 import { ToastService } from '../../../core/services/toast.service';
@@ -22,12 +23,21 @@ const NEXT_STATUS: Partial<Record<OrderStatus, OrderStatus>> = {
 @Component({
   selector: 'app-seller-orders',
   standalone: true,
-  imports: [CurrencyPipe, DatePipe, RouterLink, LoadingSpinner, EmptyState],
+  imports: [CurrencyPipe, DatePipe, RouterLink, ReactiveFormsModule, LoadingSpinner, EmptyState],
   templateUrl: './seller-orders.html',
 })
 export class SellerOrders {
   private readonly ordersService = inject(OrdersService);
   private readonly toastService = inject(ToastService);
+
+  readonly statuses: OrderStatus[] = ['PENDING', 'CONFIRMED', 'SHIPPED', 'DELIVERED', 'CANCELLED'];
+
+  readonly filtersForm = new FormGroup({
+    status: new FormControl<OrderStatus | ''>(''),
+    from: new FormControl(''),
+    to: new FormControl(''),
+    q: new FormControl(''),
+  });
 
   orders = signal<Order[]>([]);
   loading = signal(true);
@@ -37,6 +47,17 @@ export class SellerOrders {
   totalPages = signal(0);
 
   constructor() {
+    this.fetchOrders();
+  }
+
+  onSearch(): void {
+    this.currentPage.set(0);
+    this.fetchOrders();
+  }
+
+  onClearFilters(): void {
+    this.filtersForm.reset({ status: '', from: '', to: '', q: '' });
+    this.currentPage.set(0);
     this.fetchOrders();
   }
 
@@ -84,16 +105,25 @@ export class SellerOrders {
     this.loading.set(true);
     this.error.set(false);
 
-    this.ordersService.getSellerOrders(this.currentPage(), PAGE_SIZE).subscribe({
-      next: (response) => {
-        this.orders.set(response.content);
-        this.totalPages.set(response.totalPages);
-        this.loading.set(false);
-      },
-      error: () => {
-        this.error.set(true);
-        this.loading.set(false);
-      },
-    });
+    const { status, from, to, q } = this.filtersForm.getRawValue();
+
+    this.ordersService
+      .getSellerOrders(this.currentPage(), PAGE_SIZE, {
+        status: status || undefined,
+        from: from || undefined,
+        to: to || undefined,
+        q: q?.trim() || undefined,
+      })
+      .subscribe({
+        next: (response) => {
+          this.orders.set(response.content);
+          this.totalPages.set(response.totalPages);
+          this.loading.set(false);
+        },
+        error: () => {
+          this.error.set(true);
+          this.loading.set(false);
+        },
+      });
   }
 }
