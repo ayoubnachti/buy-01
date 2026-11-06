@@ -1,6 +1,42 @@
 <div class="container py-5">
   <h1 class="h2 fw-bold mb-4">Orders to fulfill</h1>
 
+  <form [formGroup]="filtersForm" (ngSubmit)="onSearch()" class="row g-2 align-items-end mb-4">
+    <div class="col-sm-6 col-md-3">
+      <label class="form-label small fw-semibold mb-1" for="seller-order-status">Status</label>
+      <select id="seller-order-status" class="form-select" formControlName="status">
+        <option value="">All statuses</option>
+        @for (status of statuses; track status) {
+          <option [value]="status">{{ status }}</option>
+        }
+      </select>
+    </div>
+    <div class="col-sm-6 col-md-2">
+      <label class="form-label small fw-semibold mb-1" for="seller-order-from">From</label>
+      <input id="seller-order-from" type="date" class="form-control" formControlName="from" />
+    </div>
+    <div class="col-sm-6 col-md-2">
+      <label class="form-label small fw-semibold mb-1" for="seller-order-to">To</label>
+      <input id="seller-order-to" type="date" class="form-control" formControlName="to" />
+    </div>
+    <div class="col-sm-6 col-md-3">
+      <label class="form-label small fw-semibold mb-1" for="seller-order-q">Search</label>
+      <input
+        id="seller-order-q"
+        type="text"
+        class="form-control"
+        placeholder="Product name…"
+        formControlName="q"
+      />
+    </div>
+    <div class="col-md-2 d-flex gap-2">
+      <button type="submit" class="btn btn-primary flex-grow-1" [disabled]="loading()">Search</button>
+      <button type="button" class="btn btn-outline-secondary" [disabled]="loading()" (click)="onClearFilters()">
+        Clear
+      </button>
+    </div>
+  </form>
+
   @if (loading()) {
     <app-loading-spinner label="Loading orders…" />
   }
@@ -40,7 +76,15 @@
               <td class="border-end">{{ order.createdAt | date: 'medium' }}</td>
               <td>
                 @if (nextStatusFor(order); as next) {
-                  <button type="button" class="btn btn-primary btn-sm" (click)="onMarkAsNext(order)">
+                  <button
+                    type="button"
+                    class="btn btn-primary btn-sm"
+                    [disabled]="isUpdating(order)"
+                    (click)="onMarkAsNext(order)"
+                  >
+                    @if (isUpdating(order)) {
+                      <span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span>
+                    }
                     Mark as {{ next }}
                   </button>
                 } @else {
@@ -57,7 +101,7 @@
       <button
         type="button"
         class="btn btn-outline-primary btn-sm"
-        [disabled]="currentPage() === 0"
+        [disabled]="loading() || currentPage() === 0"
         (click)="onPreviousPage()"
       >
         Previous
@@ -66,7 +110,7 @@
       <button
         type="button"
         class="btn btn-outline-primary btn-sm"
-        [disabled]="currentPage() + 1 >= totalPages()"
+        [disabled]="loading() || currentPage() + 1 >= totalPages()"
         (click)="onNextPage()"
       >
         Next

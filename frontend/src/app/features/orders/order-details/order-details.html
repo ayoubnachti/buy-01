@@ -26,10 +26,35 @@
             Cancel order
           </button>
         }
+        @if (isOwner() && canRedoOrRemove(o)) {
+          <button
+            type="button"
+            class="btn btn-primary btn-sm"
+            [disabled]="redoing()"
+            (click)="onRedoClick()"
+          >
+            Order again
+          </button>
+          <button type="button" class="btn btn-outline-secondary btn-sm" (click)="onRemoveClick()">
+            Remove
+          </button>
+        }
       </div>
     </div>
 
     <p class="text-body-secondary mb-4">Placed on {{ o.createdAt | date: 'medium' }}</p>
+
+    @if (o.statusHistory.length > 0) {
+      <h2 class="fs-6 text-uppercase text-body-secondary fw-semibold mb-2">Status history</h2>
+      <ul class="list-unstyled mb-4">
+        @for (entry of o.statusHistory; track entry.at) {
+          <li class="d-flex align-items-center gap-2 mb-2">
+            <span class="badge rounded-pill text-bg-secondary">{{ entry.status }}</span>
+            <span class="text-body-secondary small">{{ entry.at | date: 'medium' }}</span>
+          </li>
+        }
+      </ul>
+    }
 
     <h2 class="fs-6 text-uppercase text-body-secondary fw-semibold mb-2">Items</h2>
     <div class="table-responsive mb-4">
@@ -80,8 +105,20 @@
         title="Cancel order?"
         message="This can't be undone."
         confirmLabel="Cancel order"
+        [busy]="cancelling()"
         (confirmed)="onCancelConfirmed()"
         (cancelled)="onCancelDismissed()"
+      />
+    }
+
+    @if (showRemoveConfirm()) {
+      <app-confirmation-modal
+        title="Remove this order?"
+        message="This can't be undone. The order will no longer appear in your order history."
+        confirmLabel="Remove"
+        [busy]="removing()"
+        (confirmed)="onRemoveConfirmed()"
+        (cancelled)="onRemoveDismissed()"
       />
     }
   }

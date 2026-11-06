@@ -18,7 +18,7 @@ pipeline {
     TAG     = "${BUILD_NUMBER}"                        // image tag for this build
     COMPOSE = 'docker compose -p ecommerce -f compose.yml'
     BACKEND_SVCS = 'discovery-server api-gateway user-service product-service media-service order-service cart-service'
-    DEPLOY       = 'false'
+    DEPLOY       = 'true'
   }
 
   stages {
@@ -134,7 +134,10 @@ pipeline {
     }
 
     // Runs only for pushes to main, and only if tests and quality gates passed.
-    // Both stages share one agent and checkout.
+    // One deploy, tested in place: Deploy replaces the live containers, then
+    // E2E tests runs against that same live site before this stage decides
+    // whether to keep it. Only a build whose deploy health-checked AND
+    // passed e2e becomes "last-good" — a failure in either rolls back.
     stage('Deliver') {
       when {
         branch 'main'
@@ -142,7 +145,7 @@ pipeline {
         not { triggeredBy 'TimerTrigger' }   // the nightly run tests and analyses, but doesn't redeploy
         beforeAgent true                     // check first, so PR and nightly builds don't take the backend agent
       }
-      agent { label 'backend' }
+      agent { label 'backend' }   // default for children below; E2E tests overrides it
       stages {
         stage('Build images') {
           steps {
@@ -171,33 +174,59 @@ pipeline {
               sh '$COMPOSE --env-file "$APP_ENV" up -d --wait --wait-timeout 300'
             }
           }
-          post {
-            success {
-              // This release is healthy: remember it as the one to roll back to
-              sh '''
-                for svc in $BACKEND_SVCS frontend; do
-                  docker tag ecommerce/$svc:$TAG ecommerce/$svc:last-good
-                done
-                docker images 'ecommerce/*' --format '{{.Repository}}:{{.Tag}}' \
-                  | grep -vE ":($TAG|last-good)$" \
-                  | xargs -r docker rmi
-                docker image prune -f
-              '''
-              script { env.DEPLOYED = 'true' }   // reported in the email
+        }
+
+        // Runs on the frontend agent (it has Node; the backend agent has no
+        // browser deps) against the site Deploy just put live.
+        stage('E2E tests') {
+          agent { label 'frontend' }
+          environment {
+            E2E_BASE_URL = 'https://shop.ayoubnachti.dev'
+          }
+          steps {
+            dir('frontend') {
+              sh 'npm ci'
+              sh 'npx playwright install --with-deps chromium'
+              sh 'npx playwright test'
             }
-            failure {
-              script {
-                // Roll back only if a previous healthy release exists
-                if (sh(returnStatus: true, script: 'docker image inspect ecommerce/api-gateway:last-good > /dev/null 2>&1') == 0) {
-                  echo "Deploy of build ${TAG} is unhealthy: rolling back to last-good"
-                  withCredentials([file(credentialsId: 'ecommerce-env', variable: 'APP_ENV')]) {
-                    sh 'TAG=last-good $COMPOSE --env-file "$APP_ENV" up -d --wait --wait-timeout 300'
-                  }
-                  env.ROLLED_BACK = 'true'   // reported in the email
-                } else {
-                  echo 'Deploy failed and there is no previous good release to roll back to'
-                }
+          }
+          post {
+            always {
+              dir('frontend') {
+                junit allowEmptyResults: true, testResults: 'test-results/e2e-junit.xml'
+                archiveArtifacts artifacts: 'playwright-report/**', allowEmptyArchive: true
               }
+            }
+          }
+        }
+      }
+      post {
+        // Runs on this stage's own agent (backend), regardless of which
+        // child — Deploy or E2E tests — passed or failed.
+        success {
+          // Deploy health-checked AND e2e passed: remember it as the one to roll back to
+          sh '''
+            for svc in $BACKEND_SVCS frontend; do
+              docker tag ecommerce/$svc:$TAG ecommerce/$svc:last-good
+            done
+            docker images 'ecommerce/*' --format '{{.Repository}}:{{.Tag}}' \
+              | grep -vE ":($TAG|last-good)$" \
+              | xargs -r docker rmi
+            docker image prune -f
+          '''
+          script { env.DEPLOYED = 'true' }   // reported in the email
+        }
+        failure {
+          script {
+            // Roll back only if a previous healthy release exists
+            if (sh(returnStatus: true, script: 'docker image inspect ecommerce/api-gateway:last-good > /dev/null 2>&1') == 0) {
+              echo "Build ${TAG} failed its health check or e2e test: rolling back to last-good"
+              withCredentials([file(credentialsId: 'ecommerce-env', variable: 'APP_ENV')]) {
+                sh 'TAG=last-good $COMPOSE --env-file "$APP_ENV" up -d --wait --wait-timeout 300'
+              }
+              env.ROLLED_BACK = 'true'   // reported in the email
+            } else {
+              echo 'Deploy or e2e failed and there is no previous good release to roll back to'
             }
           }
         }

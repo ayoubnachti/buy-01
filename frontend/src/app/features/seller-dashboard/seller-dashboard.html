@@ -50,7 +50,7 @@
           <button
             type="button"
             class="btn btn-outline-primary btn-sm"
-            [disabled]="!hasPrevious()"
+            [disabled]="loading() || !hasPrevious()"
             (click)="onPreviousPage()"
           >
             Previous
@@ -59,7 +59,7 @@
           <button
             type="button"
             class="btn btn-outline-primary btn-sm"
-            [disabled]="!hasNext()"
+            [disabled]="loading() || !hasNext()"
             (click)="onNextPage()"
           >
             Next
@@ -73,6 +73,7 @@
         <app-product-form
           [editingProduct]="editingProduct()"
           [focusTrigger]="focusTrigger()"
+          [saving]="saving()"
           (save)="onFormSave($event)"
         />
       </div>
@@ -84,6 +85,7 @@
       title="Delete product?"
       [message]="'Delete \'' + product.name + '\'? This can\'t be undone.'"
       confirmLabel="Delete"
+      [busy]="deleting()"
       (confirmed)="onConfirmDelete()"
       (cancelled)="onCancelDelete()"
     />

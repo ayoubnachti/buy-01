@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { HttpErrorResponse } from '@angular/common/http';
 import { provideRouter } from '@angular/router';
-import { of, throwError } from 'rxjs';
+import { Subject, of, throwError } from 'rxjs';
 import { vi } from 'vitest';
 
 import { SellerOrders } from './seller-orders';
@@ -51,5 +51,31 @@ describe('SellerOrders – status update errors', () => {
     component.onMarkAsNext(order)                                 // ← check: method name
 
     expect(toast.error).not.toHaveBeenCalled();
+  });
+
+  it('a second click on the same order while it is updating does not send a second request', () => {
+    const subject = new Subject<Order>();
+    ordersService.updateStatus.mockReturnValue(subject.asObservable());
+
+    component.onMarkAsNext(order);
+    expect(component.isUpdating(order)).toBe(true);
+
+    component.onMarkAsNext(order);
+    expect(ordersService.updateStatus).toHaveBeenCalledTimes(1);
+
+    subject.next({ ...order, status: 'CONFIRMED' });
+    subject.complete();
+    expect(component.isUpdating(order)).toBe(false);
+  });
+
+  it('updating one order does not disable another order\'s button', () => {
+    const subject = new Subject<Order>();
+    ordersService.updateStatus.mockReturnValue(subject.asObservable());
+    const otherOrder = { id: 'o2', status: 'PENDING' } as Order;
+
+    component.onMarkAsNext(order);
+
+    expect(component.isUpdating(order)).toBe(true);
+    expect(component.isUpdating(otherOrder)).toBe(false);
   });
 });

@@ -1,20 +1,23 @@
 
-<div class="modal-backdrop fade show" aria-hidden="true" (click)="cancelled.emit()" (keydown.escape)="cancelled.emit()"></div>
-<div class="modal fade show d-block" tabindex="-1" role="dialog" aria-modal="true" (keydown.escape)="cancelled.emit()">
+<div class="modal-backdrop fade show" aria-hidden="true" (click)="onDismiss()" (keydown.escape)="onDismiss()"></div>
+<div class="modal fade show d-block" tabindex="-1" role="dialog" aria-modal="true" (keydown.escape)="onDismiss()">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title">{{ title() }}</h5>
-        <button type="button" class="btn-close" aria-label="Close" (click)="cancelled.emit()"></button>
+        <button type="button" class="btn-close" aria-label="Close" [disabled]="busy()" (click)="onDismiss()"></button>
       </div>
       <div class="modal-body">
         <p class="mb-0">{{ message() }}</p>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-outline-primary" (click)="cancelled.emit()">
+        <button type="button" class="btn btn-outline-primary" [disabled]="busy()" (click)="onDismiss()">
           {{ cancelLabel() }}
         </button>
-        <button type="button" class="btn btn-danger" (click)="confirmed.emit()">
+        <button type="button" class="btn btn-danger" [disabled]="busy()" (click)="onConfirm()">
+          @if (busy()) {
+            <span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span>
+          }
           {{ confirmLabel() }}
         </button>
       </div>

@@ -359,4 +359,60 @@ describe('SellerDashboard', () => {
     expect(toastService.error).toHaveBeenCalledWith('Could not update this product.');
     expect(productService.getAll).toHaveBeenCalledTimes(1);
   });
+
+  // --------------------------------------------------
+  // Double-click guards
+  // --------------------------------------------------
+
+  it('should be saving while create is in flight, and block a second submit until it resolves', () => {
+    const fixture = createFixture();
+    fixture.detectChanges();
+    const component = fixture.componentInstance;
+    const subject = new Subject<Product>();
+    productService.create.mockReturnValue(subject.asObservable());
+
+    const request = { name: 'table', description: 'desc', price: 50, quantity: 5, category: 'HOME' as const };
+    component.onFormSave(request);
+    expect(component.saving()).toBe(true);
+
+    // A second click before the response comes back must not fire a second request.
+    component.onFormSave(request);
+    expect(productService.create).toHaveBeenCalledTimes(1);
+
+    subject.next({ id: '3', ...request });
+    subject.complete();
+    expect(component.saving()).toBe(false);
+  });
+
+  it('should turn saving back off when create fails', () => {
+    const fixture = createFixture();
+    fixture.detectChanges();
+    const component = fixture.componentInstance;
+    productService.create.mockReturnValue(throwError(() => new Error('network error')));
+
+    component.onFormSave({ name: 'table', description: 'desc', price: 50, quantity: 5, category: 'HOME' });
+
+    expect(component.saving()).toBe(false);
+  });
+
+  it('should be deleting while the delete is in flight, and block a second confirm until it resolves', () => {
+    const fixture = createFixture();
+    fixture.detectChanges();
+    const component = fixture.componentInstance;
+    const subject = new Subject<void>();
+    productService.delete.mockReturnValue(subject.asObservable());
+
+    component.onDeleteClick(mockProduct);
+    component.onConfirmDelete();
+    expect(component.deleting()).toBe(true);
+
+    // A second click (e.g. the modal's confirm button double-clicked) must not re-delete.
+    component.onConfirmDelete();
+    expect(productService.delete).toHaveBeenCalledTimes(1);
+
+    productService.getAll.mockReturnValue(of(pageResponse([])));
+    subject.next();
+    subject.complete();
+    expect(component.deleting()).toBe(false);
+  });
 });
