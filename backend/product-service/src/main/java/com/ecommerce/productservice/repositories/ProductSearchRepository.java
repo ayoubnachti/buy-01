@@ -1,7 +1,6 @@
 package com.ecommerce.productservice.repositories;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
 

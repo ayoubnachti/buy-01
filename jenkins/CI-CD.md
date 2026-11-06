@@ -1,6 +1,6 @@
 # CI/CD with Jenkins and SonarQube
 
-Every change goes through a pull request. Jenkins tests it and SonarQube analyses it; if a test or the quality gate fails, the PR can't be merged. Every push to `main` is built, tested, analysed, deployed and reported by email. If a deploy is unhealthy, the previous release is restored automatically.
+Every change goes through a pull request. Jenkins tests it and SonarQube analyses it; if a test or the quality gate fails, the PR can't be merged. Every push to `main` is built, tested, analysed, deployed, smoke-tested end-to-end and reported by email. If the deploy's health check fails, or the deployed site fails its e2e test, the previous release is restored automatically.
 
 Live: app at `https://shop.ayoubnachti.dev`, Jenkins at `https://jenkins.ayoubnachti.dev`, SonarQube at `https://sonar.ayoubnachti.dev`.
 
@@ -34,19 +34,20 @@ The job is a **Multibranch Pipeline** with the GitHub Branch Source: it builds `
 | Stage | Agent | What it does |
 |---|---|---|
 | **Prepare** | — | Tells SonarQube whether this is a PR (`sonar.pullrequest.*`) or a branch analysis |
-| **Backend tests** / **Frontend tests** | backend / frontend, **in parallel** | Backend: `./mvnw clean test` with JaCoCo coverage for the 5 Spring services (with a throwaway MongoDB). Frontend: `npm ci` + `ng test --coverage` (Vitest). JUnit results are published. |
-| **Backend analysis** / **Frontend analysis** | same agent and workspace as the tests | SonarQube analysis per service (6 projects). `sonar.qualitygate.wait=true`: the scanner fails the stage if the **quality gate** fails. |
+| **Backend tests** / **Frontend tests** | backend / frontend, **in parallel** | Backend: `./mvnw clean test` with JaCoCo coverage for the 7 Spring services (with a throwaway MongoDB). Frontend: `npm ci` + `ng test --coverage` (Vitest). JUnit results are published. |
+| **Backend analysis** / **Frontend analysis** | same agent and workspace as the tests | SonarQube analysis per service (8 projects). `sonar.qualitygate.wait=true`: the scanner fails the stage if the **quality gate** fails. |
 | **Build images** | backend | `docker compose build`, images tagged with the build number — **`main` only** |
-| **Deploy** | backend | `docker compose up -d --wait`: succeeds only when every container's healthcheck reports healthy — **`main` only** |
-| *post* | | Email on success and on failure |
+| **Deploy** | backend | `docker compose up -d --wait`: replaces the live containers, succeeds only once every one reports healthy — **`main` only** |
+| **E2E tests** | frontend | Playwright drives a real browser against the site `Deploy` just put live (`https://shop.ayoubnachti.dev`): register, log in, search, add to cart, check out on delivery, see the order. Runs right after `Deploy`, same build, **`main` only**. |
+| *post (on Deliver)* | backend | Only once **both** `Deploy`'s health check **and** `E2E tests` passed: tag the release `last-good`. If either failed: redeploy `last-good` instead. Email on success and on failure. |
 
 Any failing stage stops the pipeline. Builds of the same branch or PR run one at a time.
 
-**Nightly scan:** `main` is also built every night (`H 3 * * *`): tests and analysis run, so SonarQube's dashboards stay current even without pushes; build and deploy are skipped (the code is already deployed).
+**Nightly scan:** `main` is also built every night (`H 3 * * *`): tests and analysis run, so SonarQube's dashboards stay current even without pushes; build, deploy and e2e are skipped (there is nothing new to deploy or test).
 
 **Test reports:** backend (Surefire) and frontend (Vitest `junit` reporter) results are published with the `junit` step, even when tests fail. Each build keeps them under *Test Result*; the last 20 builds are kept.
 
-**Rollback:** after a healthy deploy, the images are also tagged `last-good`. If a deploy is unhealthy, the pipeline redeploys `last-good`, marks the build failed, and the email says "(rolled back)". Only images are rolled back; MongoDB data is untouched. Older images are deleted after each healthy deploy.
+**Rollback:** `Deploy` and `E2E tests` are both children of the same `Deliver` stage, and `Deliver`'s own `post` block only sees one combined result — so a failure in *either* one is treated the same way: the images are **not** tagged `last-good`, and the pipeline redeploys whatever the previous `last-good` was, marks the build failed, and the email says "(rolled back)". This means a broken release is live for however long `Deploy` + `E2E tests` take to run (roughly a minute) before it's caught and replaced — there is no separate, untested copy of the app to switch to instead, so this short window of exposure is a deliberate trade-off for not running two instances of the stack at once. Only images are rolled back; MongoDB data is untouched. Older images are deleted after each healthy deploy.
 
 **Frontend tests use Vitest**, Angular's default runner (Karma is deprecated). The subject's Jasmine/Karma is a suggestion; Vitest runs in Node with jsdom, so the agent needs no browser.
 
@@ -107,6 +108,17 @@ Remaining Medium/Low maintainability issues are tracked debt; the gate prevents 
 - Admin password changed before SonarQube was exposed; **Force user authentication** on; default project visibility **private**. Anonymous requests get `401`:
   `curl -s -o /dev/null -w '%{http_code}\n' https://sonar.ayoubnachti.dev/api/components/search?qualifiers=TRK`
 - Jenkins uses a Global Analysis Token, not the admin account.
+
+## End-to-end (e2e) tests
+
+Playwright drives a real Chromium browser through the actual user journey: register → log in → search for a product → add it to the cart → check out with pay on delivery → see the order land in "My Orders". A second test adds an item to the cart, refreshes the page, and checks it's still there with the right quantity.
+
+- **Where:** `frontend/e2e/*.spec.ts`, config in `frontend/playwright.config.ts`. Run locally with `cd frontend && npm run e2e` against whatever `E2E_BASE_URL` points at (default `http://localhost:4200`).
+- **Self-contained:** each test registers its own seller, client and product with a unique, timestamped name, so repeated runs never collide with each other or with demo data — nothing to seed first.
+- **In CI:** `E2E tests` is a child stage of `Deliver`, right after `Deploy`, and points at the real site `Deploy` just put live (`https://shop.ayoubnachti.dev`). It only runs on a real push to `main` (not the nightly run, not a PR — a PR has nothing deployed to test against).
+- **One instance, tested in place — not a separate copy:** `Deploy` replaces the live containers with the new ones; `E2E tests` then runs against that same, already-live site. This catches the class of bug that passes unit tests and the health check but still breaks the real flow (a button wired to the wrong endpoint, a form field that silently stopped submitting) — without needing a second, isolated copy of the stack (which this project's single staging host, with fixed ports in `compose.yml`, doesn't have room for).
+- **Gates the rollback:** `Deploy` and `E2E tests` share one outcome at the `Deliver` level (see **Rollback** above) — if e2e fails, the release is **not** kept; the pipeline redeploys `last-good` automatically, same as a failed health check. The trade-off: the new, possibly-broken version is briefly live (the time it takes e2e to run, roughly a minute) before that happens.
+- **Reports:** the JUnit result (`frontend/test-results/e2e-junit.xml`) is published the same way as the other stages; the full Playwright HTML report is archived as a build artifact for when a test fails and a screenshot/trace is needed.
 
 ## Run it locally
 
@@ -190,6 +202,13 @@ Saving scans the repository and builds `main`. Without a public URL there is no 
 2. *Deploy* fails, the console shows `rolling back to last-good`, and the email says "(rolled back)".
 3. `docker ps` shows every service on `:last-good`, all healthy.
 4. Revert through another PR.
+
+**An e2e regression triggers a rollback**
+1. On `main`, rename the "Add to cart" button's visible text in `add-to-cart-button.html`, or change the checkout "Place order" button's click handler, and merge through a PR.
+2. Tests, the quality gate, the build and `Deploy`'s own health check all pass — none of them exercise the actual browser flow, so the regression reaches a real deploy.
+3. `E2E tests` runs next, against that same now-live site, and fails on the step that used that exact button text/selector; the archived Playwright report shows a screenshot and trace of the failure.
+4. Because `E2E tests` is a child of `Deliver`, that failure counts as `Deliver` failing: the console shows `rolling back to last-good`, the email says "(rolled back)", and `docker ps` shows every service back on `:last-good`. The broken version was live only for the minute or so `Deploy` + `E2E tests` took to run.
+5. Revert through another PR; the next build's e2e run goes green and gets tagged `last-good` again.
 
 **Notifications:** every build sends "SUCCESS: ..." (with "deployed" only when a deploy happened) or "FAILED: ...", with links to the changes, test results and console. A failed quality gate fails the build, so it is reported as "FAILED".
 
