@@ -46,6 +46,10 @@ export class SellerOrders {
   currentPage = signal(0);
   totalPages = signal(0);
 
+  // Order ids currently being updated, so each row's own button is disabled
+  // only while its own request is in flight — other rows stay usable.
+  updatingIds = signal<ReadonlySet<string>>(new Set());
+
   constructor() {
     this.fetchOrders();
   }
@@ -81,23 +85,38 @@ export class SellerOrders {
     return NEXT_STATUS[order.status];
   }
 
+  isUpdating(order: Order): boolean {
+    return this.updatingIds().has(order.id);
+  }
+
   onMarkAsNext(order: Order): void {
     const next = NEXT_STATUS[order.status];
-    if (!next) {
+    if (!next || this.isUpdating(order)) {
       return;
     }
 
+    this.updatingIds.update((ids) => new Set(ids).add(order.id));
     this.ordersService.updateStatus(order.id, next).subscribe({
       next: () => {
+        this.removeUpdatingId(order.id);
         this.toastService.success('Order status updated.');
         this.fetchOrders();
       },
       error: (e) => {
+        this.removeUpdatingId(order.id);
         const err = toApiError(e, 'Could not update this order. Try again.');
         if (!err.handledGlobally) {
           this.toastService.error(err.message);
         }
       },
+    });
+  }
+
+  private removeUpdatingId(orderId: string): void {
+    this.updatingIds.update((ids) => {
+      const next = new Set(ids);
+      next.delete(orderId);
+      return next;
     });
   }
 

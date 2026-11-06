@@ -29,6 +29,8 @@ export class OrderDetails implements OnInit {
   showCancelConfirm = signal(false);
   showRemoveConfirm = signal(false);
   redoing = signal(false);
+  cancelling = signal(false);
+  removing = signal(false);
 
   // Only the client who placed the order can redo/remove it. A seller
   // viewing the same order via /orders/{id} must not see those buttons.
@@ -72,17 +74,20 @@ export class OrderDetails implements OnInit {
 
   onCancelConfirmed(): void {
     const order = this.order();
-    if (!order) {
+    if (!order || this.cancelling()) {
       return;
     }
 
+    this.cancelling.set(true);
     this.ordersService.cancel(order.id).subscribe({
       next: (updatedOrder) => {
+        this.cancelling.set(false);
         this.order.set(updatedOrder);
         this.showCancelConfirm.set(false);
         this.toastService.success('Order cancelled.');
       },
       error: (e) => {
+        this.cancelling.set(false);
         this.showCancelConfirm.set(false);
         const err = toApiError(e, 'Could not cancel this order. Try again.');
         if (!err.handledGlobally) {
@@ -125,17 +130,20 @@ export class OrderDetails implements OnInit {
 
   onRemoveConfirmed(): void {
     const order = this.order();
-    if (!order) {
+    if (!order || this.removing()) {
       return;
     }
 
+    this.removing.set(true);
     this.ordersService.remove(order.id).subscribe({
       next: () => {
+        this.removing.set(false);
         this.showRemoveConfirm.set(false);
         this.toastService.success('Order removed.');
         this.router.navigate(['/orders']);
       },
       error: (e) => {
+        this.removing.set(false);
         this.showRemoveConfirm.set(false);
         const err = toApiError(e, 'Could not remove this order. Try again.');
         if (!err.handledGlobally) {

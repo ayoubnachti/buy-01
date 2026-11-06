@@ -60,4 +60,32 @@ describe('ConfirmationModal', () => {
     fixture.nativeElement.querySelector('.modal-backdrop').click();
     expect(cancelledSpy).toHaveBeenCalledOnce();
   });
+
+  it('while busy: disables both buttons and ignores clicks on either', () => {
+    fixture.componentRef.setInput('busy', true);
+    fixture.detectChanges();
+
+    const confirmedSpy = vi.fn();
+    const cancelledSpy = vi.fn();
+    fixture.componentInstance.confirmed.subscribe(confirmedSpy);
+    fixture.componentInstance.cancelled.subscribe(cancelledSpy);
+
+    const buttons: HTMLButtonElement[] = fixture.nativeElement.querySelectorAll('.modal-footer button');
+    expect(buttons[0].disabled).toBe(true);
+    expect(buttons[1].disabled).toBe(true);
+
+    buttons[0].click();
+    buttons[1].click();
+    fixture.nativeElement.querySelector('.modal-backdrop').click();
+
+    expect(confirmedSpy).not.toHaveBeenCalled();
+    expect(cancelledSpy).not.toHaveBeenCalled();
+  });
+
+  it('while busy: shows a spinner on the confirm button', () => {
+    fixture.componentRef.setInput('busy', true);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('.btn-danger .spinner-border')).toBeTruthy();
+  });
 });

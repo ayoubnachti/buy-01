@@ -38,6 +38,10 @@ export class CartPage implements OnInit {
   private readonly pendingQuantities = signal<Record<string, number>>({});
   readonly hasPendingChanges = computed(() => Object.keys(this.pendingQuantities()).length > 0);
 
+  // Product ids currently being removed, so only that item's own "Remove"
+  // button is disabled while its request is in flight.
+  private readonly removingIds = signal<ReadonlySet<string>>(new Set());
+
   readonly canCheckout = computed(
     () => this.items().length > 0 && !this.hasUnavailableItems() && !this.hasPendingChanges(),
   );
@@ -94,15 +98,36 @@ export class CartPage implements OnInit {
     this.quantityChanges.next({ productId: item.productId, quantity: next });
   }
 
+  isRemoving(item: CartItem): boolean {
+    return this.removingIds().has(item.productId);
+  }
+
   remove(item: CartItem): void {
+    if (this.isRemoving(item)) {
+      return;
+    }
+
+    this.removingIds.update((ids) => new Set(ids).add(item.productId));
     this.cartStore.remove(item.productId).subscribe({
-      next: () => this.toastService.success(`${item.name ?? 'Item'} removed from your cart.`),
+      next: () => {
+        this.clearRemoving(item.productId);
+        this.toastService.success(`${item.name ?? 'Item'} removed from your cart.`);
+      },
       error: (e) => {
+        this.clearRemoving(item.productId);
         const err = toApiError(e, 'Could not remove this item. Try again.');
         if (!err.handledGlobally) {
           this.toastService.error(err.message);
         }
       },
+    });
+  }
+
+  private clearRemoving(productId: string): void {
+    this.removingIds.update((ids) => {
+      const next = new Set(ids);
+      next.delete(productId);
+      return next;
     });
   }
 

@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { HttpErrorResponse } from '@angular/common/http';
 import { computed, signal } from '@angular/core';
 import { provideRouter, Router } from '@angular/router';
-import { of, throwError } from 'rxjs';
+import { Subject, of, throwError } from 'rxjs';
 import { vi } from 'vitest';
 
 import { CartPage, QUANTITY_DEBOUNCE_MS } from './cart-page';
@@ -261,6 +261,24 @@ describe('CartPage', () => {
     page.remove(items()[0]);
 
     expect(toast.error).toHaveBeenCalledWith('Product p1 is not in your cart');
+  });
+
+  it('a second click on the same item while it is removing does not send a second request', () => {
+    items.set([item('p1', 1)]);
+    const subject = new Subject<void>();
+    store.remove.mockReturnValue(subject.asObservable());
+    const page = render().componentInstance;
+    const target = items()[0];
+
+    page.remove(target);
+    expect(page.isRemoving(target)).toBe(true);
+
+    page.remove(target);
+    expect(store.remove).toHaveBeenCalledTimes(1);
+
+    subject.next();
+    subject.complete();
+    expect(page.isRemoving(target)).toBe(false);
   });
 
   it('does not go above 99, the order limit, even with more stock', () => {

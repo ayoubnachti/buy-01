@@ -30,8 +30,8 @@
       />
     </div>
     <div class="col-md-2 d-flex gap-2">
-      <button type="submit" class="btn btn-primary flex-grow-1">Search</button>
-      <button type="button" class="btn btn-outline-secondary" (click)="onClearFilters()">
+      <button type="submit" class="btn btn-primary flex-grow-1" [disabled]="loading()">Search</button>
+      <button type="button" class="btn btn-outline-secondary" [disabled]="loading()" (click)="onClearFilters()">
         Clear
       </button>
     </div>
@@ -76,7 +76,15 @@
               <td class="border-end">{{ order.createdAt | date: 'medium' }}</td>
               <td>
                 @if (nextStatusFor(order); as next) {
-                  <button type="button" class="btn btn-primary btn-sm" (click)="onMarkAsNext(order)">
+                  <button
+                    type="button"
+                    class="btn btn-primary btn-sm"
+                    [disabled]="isUpdating(order)"
+                    (click)="onMarkAsNext(order)"
+                  >
+                    @if (isUpdating(order)) {
+                      <span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span>
+                    }
                     Mark as {{ next }}
                   </button>
                 } @else {
@@ -93,7 +101,7 @@
       <button
         type="button"
         class="btn btn-outline-primary btn-sm"
-        [disabled]="currentPage() === 0"
+        [disabled]="loading() || currentPage() === 0"
         (click)="onPreviousPage()"
       >
         Previous
@@ -102,7 +110,7 @@
       <button
         type="button"
         class="btn btn-outline-primary btn-sm"
-        [disabled]="currentPage() + 1 >= totalPages()"
+        [disabled]="loading() || currentPage() + 1 >= totalPages()"
         (click)="onNextPage()"
       >
         Next
