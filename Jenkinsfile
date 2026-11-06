@@ -203,6 +203,37 @@ pipeline {
         }
       }
     }
+
+    // Smoke-tests the real, already-deployed site with Playwright. Runs on
+    // every main build (including the nightly one) but never on a PR: a PR
+    // isn't deployed anywhere yet, so there would be nothing to point it at.
+    // Kept as its own stage, separate from Deliver/rollback, so a flaky e2e
+    // run never blocks a deploy that otherwise passed its health check.
+    stage('E2E tests') {
+      when {
+        branch 'main'
+        beforeAgent true
+      }
+      agent { label 'frontend' }
+      environment {
+        E2E_BASE_URL = 'https://shop.ayoubnachti.dev'
+      }
+      steps {
+        dir('frontend') {
+          sh 'npm ci'
+          sh 'npx playwright install --with-deps chromium'
+          sh 'npx playwright test'
+        }
+      }
+      post {
+        always {
+          dir('frontend') {
+            junit allowEmptyResults: true, testResults: 'test-results/e2e-junit.xml'
+            archiveArtifacts artifacts: 'playwright-report/**', allowEmptyArchive: true
+          }
+        }
+      }
+    }
   }
 
   post {
