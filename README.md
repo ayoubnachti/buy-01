@@ -299,12 +299,13 @@ and setup instructions.
 
 - Backend: each service has its own JUnit test suite — `./mvnw test` from inside `backend/<service>/`.
 - Frontend: `cd frontend && npm test` (Vitest) — unit and component tests, including HTTP-mocked service tests.
+- End-to-end: `cd frontend && npm run e2e` (Playwright) — a critical-path smoke test (register → log in → search → add to cart → checkout, pay on delivery → see the order) against a real running stack. Point it elsewhere with `E2E_BASE_URL` (defaults to `http://localhost:4200`); it also runs in CI against the live staging site.
 - Security: `./scripts/security-check.sh` logs in as a demo client and seller and checks every auth/role/ownership rule in [docs/security.md](docs/security.md) against the running stack.
 
 ## CI/CD and code quality
 
-Every PR is built, tested and analysed by Jenkins and SonarQube; a PR can't be merged if a test or the quality gate fails. Every push to `main` is additionally deployed to staging, with automatic rollback if the new release's health check fails. A nightly build re-runs tests and analysis on `main` without redeploying.
+Every PR is built, tested and analysed by Jenkins and SonarQube; a PR can't be merged if a test or the quality gate fails. Every push to `main` is additionally deployed to staging, with automatic rollback if the new release's health check fails, then smoke-tested end-to-end. A nightly build re-runs tests, analysis and the e2e smoke test on `main` without redeploying.
 
-Pipeline stages (`Jenkinsfile`): **Prepare → Build & test (backend JUnit/JaCoCo + SonarQube per service, frontend Vitest + SonarQube, in parallel) → Build images → Deploy** (the last two only on `main`).
+Pipeline stages (`Jenkinsfile`): **Prepare → Build & test (backend JUnit/JaCoCo + SonarQube per service, frontend Vitest + SonarQube, in parallel) → Build images → Deploy → E2E tests** (the last three only on `main`).
 
 Full pipeline architecture, Jenkins/SonarQube setup and live URLs: [jenkins/CI-CD.md](jenkins/CI-CD.md).

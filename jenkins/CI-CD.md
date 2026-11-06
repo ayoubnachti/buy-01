@@ -34,15 +34,16 @@ The job is a **Multibranch Pipeline** with the GitHub Branch Source: it builds `
 | Stage | Agent | What it does |
 |---|---|---|
 | **Prepare** | — | Tells SonarQube whether this is a PR (`sonar.pullrequest.*`) or a branch analysis |
-| **Backend tests** / **Frontend tests** | backend / frontend, **in parallel** | Backend: `./mvnw clean test` with JaCoCo coverage for the 5 Spring services (with a throwaway MongoDB). Frontend: `npm ci` + `ng test --coverage` (Vitest). JUnit results are published. |
-| **Backend analysis** / **Frontend analysis** | same agent and workspace as the tests | SonarQube analysis per service (6 projects). `sonar.qualitygate.wait=true`: the scanner fails the stage if the **quality gate** fails. |
+| **Backend tests** / **Frontend tests** | backend / frontend, **in parallel** | Backend: `./mvnw clean test` with JaCoCo coverage for the 7 Spring services (with a throwaway MongoDB). Frontend: `npm ci` + `ng test --coverage` (Vitest). JUnit results are published. |
+| **Backend analysis** / **Frontend analysis** | same agent and workspace as the tests | SonarQube analysis per service (8 projects). `sonar.qualitygate.wait=true`: the scanner fails the stage if the **quality gate** fails. |
 | **Build images** | backend | `docker compose build`, images tagged with the build number — **`main` only** |
 | **Deploy** | backend | `docker compose up -d --wait`: succeeds only when every container's healthcheck reports healthy — **`main` only** |
+| **E2E tests** | frontend | Playwright drives a real browser against the live site (`https://shop.ayoubnachti.dev`): register, log in, search, add to cart, check out on delivery, see the order. Runs on every `main` build (incl. nightly), never on a PR — a PR has nothing deployed to point it at. Kept separate from Deploy/rollback, so a flaky e2e run never undoes a healthy deploy. |
 | *post* | | Email on success and on failure |
 
 Any failing stage stops the pipeline. Builds of the same branch or PR run one at a time.
 
-**Nightly scan:** `main` is also built every night (`H 3 * * *`): tests and analysis run, so SonarQube's dashboards stay current even without pushes; build and deploy are skipped (the code is already deployed).
+**Nightly scan:** `main` is also built every night (`H 3 * * *`): tests, analysis and the e2e smoke test run, so SonarQube's dashboards and the live site's critical path stay verified even without pushes; build and deploy are skipped (the code is already deployed).
 
 **Test reports:** backend (Surefire) and frontend (Vitest `junit` reporter) results are published with the `junit` step, even when tests fail. Each build keeps them under *Test Result*; the last 20 builds are kept.
 
