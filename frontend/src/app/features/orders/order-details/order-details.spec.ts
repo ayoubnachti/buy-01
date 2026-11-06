@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
-import { throwError } from 'rxjs';
+import { of, throwError } from 'rxjs';
 import { vi } from 'vitest';
 
 import { OrderDetails } from './order-details';
@@ -51,5 +51,63 @@ describe('OrderDetails – cancel errors', () => {
 
     expect(toast.error).not.toHaveBeenCalled();
     expect(component.showCancelConfirm()).toBe(false);
+  });
+});
+
+describe('OrderDetails – status history', () => {
+  let ordersService: { getOne: ReturnType<typeof vi.fn> };
+
+  const baseOrder: Order = {
+    id: 'o1',
+    userId: 'u1',
+    sellerId: 's1',
+    status: 'SHIPPED',
+    items: [],
+    shippingAddress: { fullName: 'A', phone: null, street: 's', city: 'c', postalCode: '1', country: 'M' },
+    paymentMethod: 'PAY_ON_DELIVERY',
+    totalAmount: 0,
+    createdAt: '2026-01-01T00:00:00Z',
+    updatedAt: '2026-01-03T00:00:00Z',
+    statusHistory: [
+      { status: 'PENDING', at: '2026-01-01T00:00:00Z', by: 'u1' },
+      { status: 'CONFIRMED', at: '2026-01-02T00:00:00Z', by: 's1' },
+      { status: 'SHIPPED', at: '2026-01-03T00:00:00Z', by: 's1' },
+    ],
+  };
+
+  beforeEach(() => {
+    ordersService = { getOne: vi.fn() };
+
+    TestBed.configureTestingModule({
+      imports: [OrderDetails],
+      providers: [
+        provideRouter([]),
+        { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap({ id: 'o1' }) } } },
+        { provide: OrdersService, useValue: ordersService },
+        { provide: ToastService, useValue: { success: vi.fn(), error: vi.fn() } },
+      ],
+    });
+  });
+
+  it('shows every status history entry as a timeline', () => {
+    ordersService.getOne.mockReturnValue(of(baseOrder));
+
+    const fixture = TestBed.createComponent(OrderDetails);
+    fixture.detectChanges();
+
+    const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(text).toContain('PENDING');
+    expect(text).toContain('CONFIRMED');
+    expect(text).toContain('SHIPPED');
+  });
+
+  it('hides the status history section when there is no history', () => {
+    ordersService.getOne.mockReturnValue(of({ ...baseOrder, statusHistory: [] }));
+
+    const fixture = TestBed.createComponent(OrderDetails);
+    fixture.detectChanges();
+
+    const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(text).not.toContain('Status history');
   });
 });

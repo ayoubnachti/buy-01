@@ -31,6 +31,18 @@
 
     <p class="text-body-secondary mb-4">Placed on {{ o.createdAt | date: 'medium' }}</p>
 
+    @if (o.statusHistory.length > 0) {
+      <h2 class="fs-6 text-uppercase text-body-secondary fw-semibold mb-2">Status history</h2>
+      <ul class="list-unstyled mb-4">
+        @for (entry of o.statusHistory; track entry.at) {
+          <li class="d-flex align-items-center gap-2 mb-2">
+            <span class="badge rounded-pill text-bg-secondary">{{ entry.status }}</span>
+            <span class="text-body-secondary small">{{ entry.at | date: 'medium' }}</span>
+          </li>
+        }
+      </ul>
+    }
+
     <h2 class="fs-6 text-uppercase text-body-secondary fw-semibold mb-2">Items</h2>
     <div class="table-responsive mb-4">
       <table class="table table-hover align-middle mb-0">
