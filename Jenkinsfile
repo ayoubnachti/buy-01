@@ -96,6 +96,7 @@ pipeline {
               steps {
                 dir('frontend') {
                   sh 'npm ci'
+                  sh 'npx ng build' 
                   sh 'npx ng test --watch=false --coverage --coverage-reporters=lcov --reporters=junit --reporters=default --output-file=test-results/junit.xml'
                 }
               }
@@ -182,11 +183,11 @@ pipeline {
           agent { label 'frontend' }
           environment {
             E2E_BASE_URL = 'https://shop.ayoubnachti.dev'
+            PLAYWRIGHT_BROWSERS_PATH = '/ms-playwright'
           }
           steps {
             dir('frontend') {
               sh 'npm ci'
-              sh 'npx playwright install --with-deps chromium'
               sh 'npx playwright test'
             }
           }
