@@ -16,7 +16,7 @@ RUN ln -s ../lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm \
 # as jenkins and cannot apt-get. Must be the exact @playwright/test version from
 # frontend/package-lock.json: each Playwright release expects its own browser build.
 # The pipeline sets PLAYWRIGHT_BROWSERS_PATH too, since SSH sessions don't inherit this ENV.
-ARG PLAYWRIGHT_VERSION=<exact version>
+ARG PLAYWRIGHT_VERSION=1.65.0
 ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
 RUN npx -y playwright@${PLAYWRIGHT_VERSION} install --with-deps chromium \
   && chmod -R a+rx /ms-playwright \
