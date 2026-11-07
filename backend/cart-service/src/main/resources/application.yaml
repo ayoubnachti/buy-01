@@ -2,6 +2,10 @@ server:
   port: 8085
 
 spring:
+  cloud:
+    loadbalancer:
+      cache:
+        ttl: 5s 
   application:
     name: cart-service
   mongodb:
@@ -16,6 +20,7 @@ management:
 
 eureka:
   client:
+    registry-fetch-interval-seconds: 5
     service-url:
       defaultZone: ${EUREKA_CLIENT_SERVICEURL_DEFAULTZONE:http://localhost:8761/eureka/}
     fetch-registry: true
