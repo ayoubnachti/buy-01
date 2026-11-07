@@ -8,6 +8,10 @@ cloudinary:
   url: ${CLOUDINARY_URL:}
 
 spring:
+  cloud:
+    loadbalancer:
+      cache:
+        ttl: 5s
   application:
     name: media-service
   servlet:
@@ -25,6 +29,7 @@ management:
 
 eureka:
   client:
+    registry-fetch-interval-seconds: 5
     service-url:
       defaultZone: ${EUREKA_CLIENT_SERVICEURL_DEFAULTZONE:http://discovery-server:8761/eureka}
     fetch-registry: true
