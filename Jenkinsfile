@@ -188,6 +188,15 @@ pipeline {
           steps {
             dir('frontend') {
               sh 'npm ci'
+              sh '''
+                for i in $(seq 1 24); do
+                  if node -e "fetch(process.env.READY_URL).then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"; then
+                    echo "Stack is ready"; exit 0
+                  fi
+                  echo "Waiting for the stack to answer ($i/24)..."; sleep 5
+                done
+                echo "Stack did not become ready in 2 minutes"; exit 1
+              '''
               sh 'npx playwright test'
             }
           }

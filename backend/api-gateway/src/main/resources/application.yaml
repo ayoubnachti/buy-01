@@ -14,11 +14,16 @@ jwt:
   secret: ${JWT_SECRET}
 
 spring:
+  cloud:
+    loadbalancer:
+      cache:
+        ttl: 5s 
   application:
     name: api-gateway
 
 eureka:
   client:
+    registry-fetch-interval-seconds: 5
     service-url:
       defaultZone: ${EUREKA_CLIENT_SERVICEURL_DEFAULTZONE:http://localhost:8761/eureka/}
     fetch-registry: true
