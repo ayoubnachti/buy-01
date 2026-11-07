@@ -184,6 +184,7 @@ pipeline {
           environment {
             E2E_BASE_URL = 'https://shop.ayoubnachti.dev'
             PLAYWRIGHT_BROWSERS_PATH = '/ms-playwright'
+            READY_URL = 'https://shop.ayoubnachti.dev/api/products'
           }
           steps {
             dir('frontend') {
