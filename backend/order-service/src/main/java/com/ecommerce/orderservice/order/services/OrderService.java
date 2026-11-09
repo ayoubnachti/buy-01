@@ -47,59 +47,18 @@ public class OrderService {
         // Step 1: if the same product appears twice in the request, add the quantities together.
         Map<String, Integer> quantityByProduct = new HashMap<>();
         for (OrderItemRequest itemRequest : request.items()) {
-            String productId = itemRequest.productId();
-            int quantity = itemRequest.quantity();
-
-            if (quantityByProduct.containsKey(productId)) {
-                int existingQuantity = quantityByProduct.get(productId);
-                quantityByProduct.put(productId, existingQuantity + quantity);
-            } else {
-                quantityByProduct.put(productId, quantity);
-            }
+            quantityByProduct.merge(itemRequest.productId(), itemRequest.quantity(), Integer::sum);
         }
 
-        // Step 2: check every product first. Nothing is saved yet.
+        // Step 2: check every product first and group the items by seller. Nothing is saved yet.
         Map<String, List<OrderItem>> itemsBySeller = new HashMap<>();
 
         for (Map.Entry<String, Integer> entry : quantityByProduct.entrySet()) {
-            String productId = entry.getKey();
             int quantity = entry.getValue();
+            ProductDto product = getProductUserCanBuy(userId, entry.getKey(), quantity);
 
-            ProductDto product = productServiceGateway.getProduct(productId);
-            if (product == null) {
-                throw new ProductNotFoundException("Product not found: " + productId);
-            }
-
-            if (userId.equals(product.userId())) {
-                throw new CannotOrderOwnProductException("You cannot buy your own product: " + product.name());
-            }
-
-            if (product.quantity() != null && product.quantity() < quantity) {
-                throw new OutOfStockException("Not enough stock for: " + product.name());
-            }
-
-            // OrderItem.imageUrl is one String. product.imageUrls() is a list of images.
-            // We just keep the first image, or none.
-            String imageUrl = null;
-            if (product.imageUrls() != null && !product.imageUrls().isEmpty()) {
-                imageUrl = product.imageUrls().get(0);
-            }
-
-            OrderItem item = new OrderItem(
-                    product.id(),
-                    product.name(),
-                    product.category(),
-                    product.price(),
-                    quantity,
-                    imageUrl);
-
-            String sellerId = product.userId();
-            List<OrderItem> sellerItems = itemsBySeller.get(sellerId);
-            if (sellerItems == null) {
-                sellerItems = new ArrayList<>();
-                itemsBySeller.put(sellerId, sellerItems);
-            }
-            sellerItems.add(item);
+            itemsBySeller.computeIfAbsent(product.userId(), sellerId -> new ArrayList<>())
+                    .add(toOrderItem(product, quantity));
         }
 
         // Step 3: build one order per seller.
@@ -256,6 +215,35 @@ public class OrderService {
 
         order.setDeletedByUser(true);
         orderRepository.save(order);
+    }
+
+    /** Throws if the product doesn't exist, belongs to the buyer, or has too few left. */
+    private ProductDto getProductUserCanBuy(String userId, String productId, int quantity) {
+        ProductDto product = productServiceGateway.getProduct(productId);
+        if (product == null) {
+            throw new ProductNotFoundException("Product not found: " + productId);
+        }
+
+        if (userId.equals(product.userId())) {
+            throw new CannotOrderOwnProductException("You cannot buy your own product: " + product.name());
+        }
+
+        if (product.quantity() != null && product.quantity() < quantity) {
+            throw new OutOfStockException("Not enough stock for: " + product.name());
+        }
+
+        return product;
+    }
+
+    private OrderItem toOrderItem(ProductDto product, int quantity) {
+        // OrderItem.imageUrl is one String. product.imageUrls() is a list of images.
+        // We just keep the first image, or none.
+        String imageUrl = null;
+        if (product.imageUrls() != null && !product.imageUrls().isEmpty()) {
+            imageUrl = product.imageUrls().get(0);
+        }
+
+        return new OrderItem(product.id(), product.name(), product.category(), product.price(), quantity, imageUrl);
     }
 
     private Map<String, Integer> quantitiesOf(Order order) {
