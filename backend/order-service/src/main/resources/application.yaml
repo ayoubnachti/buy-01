@@ -40,3 +40,7 @@ resilience4j:
         failureRateThreshold: 50
         waitDurationInOpenState: 5s
         permittedNumberOfCallsInHalfOpenState: 3
+        # Business answers (not outages) must not open the circuit.
+        ignoreExceptions:
+          - com.ecommerce.orderservice.exceptions.orderExceptions.OutOfStockException
+          - com.ecommerce.orderservice.exceptions.orderExceptions.ProductNotFoundException

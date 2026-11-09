@@ -25,6 +25,7 @@ import com.ecommerce.orderservice.order.repositories.OrderRepository;
 import org.springframework.stereotype.Service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -33,6 +34,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class OrderService {
@@ -45,59 +47,18 @@ public class OrderService {
         // Step 1: if the same product appears twice in the request, add the quantities together.
         Map<String, Integer> quantityByProduct = new HashMap<>();
         for (OrderItemRequest itemRequest : request.items()) {
-            String productId = itemRequest.productId();
-            int quantity = itemRequest.quantity();
-
-            if (quantityByProduct.containsKey(productId)) {
-                int existingQuantity = quantityByProduct.get(productId);
-                quantityByProduct.put(productId, existingQuantity + quantity);
-            } else {
-                quantityByProduct.put(productId, quantity);
-            }
+            quantityByProduct.merge(itemRequest.productId(), itemRequest.quantity(), Integer::sum);
         }
 
-        // Step 2: check every product first. Nothing is saved yet.
+        // Step 2: check every product first and group the items by seller. Nothing is saved yet.
         Map<String, List<OrderItem>> itemsBySeller = new HashMap<>();
 
         for (Map.Entry<String, Integer> entry : quantityByProduct.entrySet()) {
-            String productId = entry.getKey();
             int quantity = entry.getValue();
+            ProductDto product = getProductUserCanBuy(userId, entry.getKey(), quantity);
 
-            ProductDto product = productServiceGateway.getProduct(productId);
-            if (product == null) {
-                throw new ProductNotFoundException("Product not found: " + productId);
-            }
-
-            if (userId.equals(product.userId())) {
-                throw new CannotOrderOwnProductException("You cannot buy your own product: " + product.name());
-            }
-
-            if (product.quantity() != null && product.quantity() < quantity) {
-                throw new OutOfStockException("Not enough stock for: " + product.name());
-            }
-
-            // OrderItem.imageUrl is one String. product.imageUrls() is a list of images.
-            // We just keep the first image, or none.
-            String imageUrl = null;
-            if (product.imageUrls() != null && !product.imageUrls().isEmpty()) {
-                imageUrl = product.imageUrls().get(0);
-            }
-
-            OrderItem item = new OrderItem(
-                    product.id(),
-                    product.name(),
-                    product.category(),
-                    product.price(),
-                    quantity,
-                    imageUrl);
-
-            String sellerId = product.userId();
-            List<OrderItem> sellerItems = itemsBySeller.get(sellerId);
-            if (sellerItems == null) {
-                sellerItems = new ArrayList<>();
-                itemsBySeller.put(sellerId, sellerItems);
-            }
-            sellerItems.add(item);
+            itemsBySeller.computeIfAbsent(product.userId(), sellerId -> new ArrayList<>())
+                    .add(toOrderItem(product, quantity));
         }
 
         // Step 3: build one order per seller.
@@ -117,7 +78,18 @@ public class OrderService {
             orders.add(order);
         }
 
-        List<Order> savedOrders = orderRepository.saveAll(orders);
+        // Step 3b: take the units out of stock. product-service does it atomically per
+        // product and all-or-nothing for the batch, so two buyers can't both get the last unit.
+        productServiceGateway.reserveStock(quantityByProduct);
+
+        List<Order> savedOrders;
+        try {
+            savedOrders = orderRepository.saveAll(orders);
+        } catch (RuntimeException ex) {
+            // The orders don't exist, so the stock they took must go back.
+            releaseStockQuietly(quantityByProduct);
+            throw ex;
+        }
 
         // Step 4: turn the saved orders into the response shape.
         List<OrderResponse> response = new ArrayList<>();
@@ -184,8 +156,20 @@ public class OrderService {
             throw new OrderAlreadyShippedException("This order has already shipped");
         }
 
+        OrderStatus previousStatus = order.getStatus();
         order.changeStatus(OrderStatus.CANCELLED, callerId);
+        // Save first: @Version makes a second, concurrent cancel fail here, so stock is returned only once.
         Order savedOrder = orderRepository.save(order);
+
+        try {
+            productServiceGateway.releaseStock(quantitiesOf(savedOrder));
+        } catch (RuntimeException ex) {
+            // Stock was not returned: undo the cancel so the client can retry, instead of losing the units.
+            savedOrder.setStatus(previousStatus);
+            savedOrder.getStatusHistory().remove(savedOrder.getStatusHistory().size() - 1);
+            orderRepository.save(savedOrder);
+            throw ex;
+        }
 
         boolean forSeller = savedOrder.getSellerId().equals(callerId);
         return ResponseData.success("Order cancelled successfully", OrderResponse.from(savedOrder, forSeller));
@@ -231,6 +215,51 @@ public class OrderService {
 
         order.setDeletedByUser(true);
         orderRepository.save(order);
+    }
+
+    /** Throws if the product doesn't exist, belongs to the buyer, or has too few left. */
+    private ProductDto getProductUserCanBuy(String userId, String productId, int quantity) {
+        ProductDto product = productServiceGateway.getProduct(productId);
+        if (product == null) {
+            throw new ProductNotFoundException("Product not found: " + productId);
+        }
+
+        if (userId.equals(product.userId())) {
+            throw new CannotOrderOwnProductException("You cannot buy your own product: " + product.name());
+        }
+
+        if (product.quantity() != null && product.quantity() < quantity) {
+            throw new OutOfStockException("Not enough stock for: " + product.name());
+        }
+
+        return product;
+    }
+
+    private OrderItem toOrderItem(ProductDto product, int quantity) {
+        // OrderItem.imageUrl is one String. product.imageUrls() is a list of images.
+        // We just keep the first image, or none.
+        String imageUrl = null;
+        if (product.imageUrls() != null && !product.imageUrls().isEmpty()) {
+            imageUrl = product.imageUrls().get(0);
+        }
+
+        return new OrderItem(product.id(), product.name(), product.category(), product.price(), quantity, imageUrl);
+    }
+
+    private Map<String, Integer> quantitiesOf(Order order) {
+        Map<String, Integer> quantityByProduct = new HashMap<>();
+        for (OrderItem item : order.getItems()) {
+            quantityByProduct.merge(item.productId(), item.quantity(), Integer::sum);
+        }
+        return quantityByProduct;
+    }
+
+    private void releaseStockQuietly(Map<String, Integer> quantityByProduct) {
+        try {
+            productServiceGateway.releaseStock(quantityByProduct);
+        } catch (RuntimeException releaseError) {
+            log.error("Could not return stock {} after a failed order save", quantityByProduct, releaseError);
+        }
     }
 
     private boolean canCancel(OrderStatus status) {
