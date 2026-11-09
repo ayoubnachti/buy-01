@@ -48,7 +48,9 @@ class StockServiceTest {
         when(productRepository.decreaseQuantityIfEnough("p2", 3, -3)).thenReturn(0L);
         when(productRepository.existsById("p2")).thenReturn(true);
 
-        assertThatThrownBy(() -> stockService.reserve(List.of(new StockItem("p1", 5), new StockItem("p2", 3))))
+        List<StockItem> items = List.of(new StockItem("p1", 5), new StockItem("p2", 3));
+
+        assertThatThrownBy(() -> stockService.reserve(items))
                 .isInstanceOf(InsufficientStockException.class);
 
         verify(productRepository).increaseQuantity("p1", 5);
@@ -59,7 +61,9 @@ class StockServiceTest {
         when(productRepository.decreaseQuantityIfEnough("missing", 1, -1)).thenReturn(0L);
         when(productRepository.existsById("missing")).thenReturn(false);
 
-        assertThatThrownBy(() -> stockService.reserve(List.of(new StockItem("missing", 1))))
+        List<StockItem> items = List.of(new StockItem("missing", 1));
+
+        assertThatThrownBy(() -> stockService.reserve(items))
                 .isInstanceOf(ResourceNotFoundException.class);
     }
 
@@ -68,7 +72,9 @@ class StockServiceTest {
         when(productRepository.increaseQuantity("p1", 5)).thenReturn(1L);
         when(productRepository.increaseQuantity("deleted", 2)).thenReturn(0L);
 
-        assertThatCode(() -> stockService.release(List.of(new StockItem("p1", 5), new StockItem("deleted", 2))))
+        List<StockItem> items = List.of(new StockItem("p1", 5), new StockItem("deleted", 2));
+
+        assertThatCode(() -> stockService.release(items))
                 .doesNotThrowAnyException();
 
         verify(productRepository).increaseQuantity("p1", 5);
