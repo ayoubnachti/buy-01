@@ -56,12 +56,13 @@ public class ProductServiceGateway {
         productServiceClient.releaseStock(StockChangeRequest.of(quantityByProduct));
     }
 
-    private ProductDto getProductFallback(String productId, Throwable t) {
+    // Fallbacks are package-private (not private) so the unit test can call them directly.
+    ProductDto getProductFallback(String productId, Throwable t) {
         log.warn("product-service unavailable for {}: {}", productId, t.getMessage());
         throw new ProductServiceUnavailableException("Products are not available now. Please try again.", t);
     }
 
-    private void stockFallback(Map<String, Integer> quantityByProduct, Throwable t) {
+    void stockFallback(Map<String, Integer> quantityByProduct, Throwable t) {
         // Out-of-stock and not-found are answers from product-service, not outages: pass them through.
         if (t instanceof OutOfStockException || t instanceof ProductNotFoundException) {
             throw (RuntimeException) t;
