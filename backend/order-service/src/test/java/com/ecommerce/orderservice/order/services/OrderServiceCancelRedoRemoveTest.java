@@ -6,6 +6,7 @@ import com.ecommerce.orderservice.exceptions.orderExceptions.OrderAlreadyDeliver
 import com.ecommerce.orderservice.exceptions.orderExceptions.OrderAlreadyShippedException;
 import com.ecommerce.orderservice.exceptions.orderExceptions.OrderNotFoundException;
 import com.ecommerce.orderservice.exceptions.orderExceptions.OrderStillActiveException;
+import com.ecommerce.orderservice.exceptions.orderExceptions.ProductServiceUnavailableException;
 import com.ecommerce.orderservice.order.clients.ProductServiceGateway;
 import com.ecommerce.orderservice.order.dtos.response.OrderResponse;
 import com.ecommerce.orderservice.order.dtos.response.ProductDto;
@@ -23,11 +24,15 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -63,6 +68,20 @@ class OrderServiceCancelRedoRemoveTest {
         ResponseData<OrderResponse> result = orderService.cancel("order-1", "client-1");
 
         assertThat(result.getData().status()).isEqualTo(OrderStatus.CANCELLED);
+        verify(productServiceGateway).releaseStock(Map.of("product-1", 1));
+    }
+
+    @Test
+    void cancelWhenStockReleaseFails_orderStaysPending() {
+        Order order = orderWithStatus(OrderStatus.PENDING);
+        when(orderRepository.findById("order-1")).thenReturn(Optional.of(order));
+        when(orderRepository.save(order)).thenReturn(order);
+        doThrow(new ProductServiceUnavailableException("down")).when(productServiceGateway).releaseStock(any());
+
+        assertThatThrownBy(() -> orderService.cancel("order-1", "client-1"))
+                .isInstanceOf(ProductServiceUnavailableException.class);
+        assertThat(order.getStatus()).isEqualTo(OrderStatus.PENDING);
+        assertThat(order.getStatusHistory()).hasSize(1);
     }
 
     @Test
@@ -117,6 +136,7 @@ class OrderServiceCancelRedoRemoveTest {
 
         assertThat(result.getData()).hasSize(1);
         assertThat(result.getData().get(0).status()).isEqualTo(OrderStatus.PENDING);
+        verify(productServiceGateway).reserveStock(Map.of("product-1", 1));
     }
 
     @Test

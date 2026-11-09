@@ -19,10 +19,15 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -75,6 +80,41 @@ class OrderServiceCreateTest {
         assertThat(seller1Order.totalAmount()).isEqualByComparingTo("39.98");
         assertThat(seller2Order.totalAmount()).isEqualByComparingTo("5.50");
         assertThat(seller1Order.statusHistory()).hasSize(1);
+        verify(productServiceGateway).reserveStock(Map.of("p1", 2, "p2", 1));
+    }
+
+    @Test
+    void sameProductTwice_reservesSummedQuantity() {
+        when(productServiceGateway.getProduct("p1")).thenReturn(product("p1", "seller-1", "19.99", 10));
+        when(orderRepository.saveAll(anyList())).thenAnswer(invocation -> invocation.getArgument(0));
+
+        CreateOrderRequest request = new CreateOrderRequest(address, List.of(
+                new OrderItemRequest("p1", 2), new OrderItemRequest("p1", 3)));
+        orderService.createOrders("user-1", request);
+
+        verify(productServiceGateway).reserveStock(Map.of("p1", 5));
+    }
+
+    @Test
+    void reserveRejected_noOrderSaved() {
+        when(productServiceGateway.getProduct("p1")).thenReturn(product("p1", "seller-1", "19.99", 10));
+        doThrow(new OutOfStockException("gone")).when(productServiceGateway).reserveStock(any());
+        CreateOrderRequest request = new CreateOrderRequest(address, List.of(new OrderItemRequest("p1", 5)));
+
+        assertThatThrownBy(() -> orderService.createOrders("user-1", request))
+                .isInstanceOf(OutOfStockException.class);
+        verify(orderRepository, never()).saveAll(anyList());
+    }
+
+    @Test
+    void saveFails_stockIsReleased() {
+        when(productServiceGateway.getProduct("p1")).thenReturn(product("p1", "seller-1", "19.99", 10));
+        when(orderRepository.saveAll(anyList())).thenThrow(new RuntimeException("db down"));
+        CreateOrderRequest request = new CreateOrderRequest(address, List.of(new OrderItemRequest("p1", 5)));
+
+        assertThatThrownBy(() -> orderService.createOrders("user-1", request))
+                .hasMessage("db down");
+        verify(productServiceGateway).releaseStock(Map.of("p1", 5));
     }
 
     @Test
@@ -84,6 +124,7 @@ class OrderServiceCreateTest {
 
         assertThatThrownBy(() -> orderService.createOrders("user-1", request))
                 .isInstanceOf(OutOfStockException.class);
+        verify(productServiceGateway, never()).reserveStock(any());
     }
 
     @Test

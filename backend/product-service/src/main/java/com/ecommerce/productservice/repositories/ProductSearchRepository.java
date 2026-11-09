@@ -147,7 +147,8 @@ public class ProductSearchRepository {
     return switch (sort) {
       case "price_asc" -> Sort.by(Sort.Order.asc(PRICE_FIELD), Sort.Order.desc(CREATED_AT_FIELD));
       case "price_desc" -> Sort.by(Sort.Order.desc(PRICE_FIELD), Sort.Order.desc(CREATED_AT_FIELD));
-      case "newest", "relevance" -> Sort.by(Sort.Direction.DESC, CREATED_AT_FIELD);
+      // _id also holds the creation time, so it orders products saved without createdAt too.
+      case "newest", "relevance" -> Sort.by(Sort.Direction.DESC, CREATED_AT_FIELD, "_id");
       default -> throw new IllegalArgumentException("Unsupported product search sort: " + sort);
     };
   }

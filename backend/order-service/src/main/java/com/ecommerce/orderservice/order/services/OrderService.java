@@ -25,6 +25,7 @@ import com.ecommerce.orderservice.order.repositories.OrderRepository;
 import org.springframework.stereotype.Service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -33,6 +34,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class OrderService {
@@ -117,7 +119,18 @@ public class OrderService {
             orders.add(order);
         }
 
-        List<Order> savedOrders = orderRepository.saveAll(orders);
+        // Step 3b: take the units out of stock. product-service does it atomically per
+        // product and all-or-nothing for the batch, so two buyers can't both get the last unit.
+        productServiceGateway.reserveStock(quantityByProduct);
+
+        List<Order> savedOrders;
+        try {
+            savedOrders = orderRepository.saveAll(orders);
+        } catch (RuntimeException ex) {
+            // The orders don't exist, so the stock they took must go back.
+            releaseStockQuietly(quantityByProduct);
+            throw ex;
+        }
 
         // Step 4: turn the saved orders into the response shape.
         List<OrderResponse> response = new ArrayList<>();
@@ -184,8 +197,20 @@ public class OrderService {
             throw new OrderAlreadyShippedException("This order has already shipped");
         }
 
+        OrderStatus previousStatus = order.getStatus();
         order.changeStatus(OrderStatus.CANCELLED, callerId);
+        // Save first: @Version makes a second, concurrent cancel fail here, so stock is returned only once.
         Order savedOrder = orderRepository.save(order);
+
+        try {
+            productServiceGateway.releaseStock(quantitiesOf(savedOrder));
+        } catch (RuntimeException ex) {
+            // Stock was not returned: undo the cancel so the client can retry, instead of losing the units.
+            savedOrder.setStatus(previousStatus);
+            savedOrder.getStatusHistory().remove(savedOrder.getStatusHistory().size() - 1);
+            orderRepository.save(savedOrder);
+            throw ex;
+        }
 
         boolean forSeller = savedOrder.getSellerId().equals(callerId);
         return ResponseData.success("Order cancelled successfully", OrderResponse.from(savedOrder, forSeller));
@@ -231,6 +256,22 @@ public class OrderService {
 
         order.setDeletedByUser(true);
         orderRepository.save(order);
+    }
+
+    private Map<String, Integer> quantitiesOf(Order order) {
+        Map<String, Integer> quantityByProduct = new HashMap<>();
+        for (OrderItem item : order.getItems()) {
+            quantityByProduct.merge(item.productId(), item.quantity(), Integer::sum);
+        }
+        return quantityByProduct;
+    }
+
+    private void releaseStockQuietly(Map<String, Integer> quantityByProduct) {
+        try {
+            productServiceGateway.releaseStock(quantityByProduct);
+        } catch (RuntimeException releaseError) {
+            log.error("Could not return stock {} after a failed order save", quantityByProduct, releaseError);
+        }
     }
 
     private boolean canCancel(OrderStatus status) {
